@@ -8,7 +8,7 @@ import sklearn.utils.validation
 import factor_analyzer.factor_analyzer
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, f_oneway
 
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
@@ -18,8 +18,8 @@ OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
 # Целевая шкала для корреляционного анализа (можно менять)
-TARGET_SCALE = 'MIJS-2+'
-# TARGET_SCALE = 'MIJS-3+'
+# TARGET_SCALE = 'MIJS-2+'
+TARGET_SCALE = 'MIJS-3+'
 # TARGET_SCALE = 'MIJS-2'
 # TARGET_SCALE = 'MIJS'
 
@@ -212,7 +212,7 @@ def generate_report():
     report_content += hm.get_header(2, "Демографические характеристики") + "\n\n"
     
     plt.figure(figsize=(10, 5))
-    sns.histplot(demo_data['age'].dropna(), bins=20, kde=True, color='teal')
+    sns.histplot(demo_data['age'].dropna(), bins=10, kde=True, color='teal')
     plt.title("Распределение респондентов по возрасту")
     plt.xlabel("Возраст")
     plt.ylabel("Количество")
@@ -285,7 +285,7 @@ def generate_report():
         
         # График распределения баллов по шкале
         plt.figure(figsize=(8, 5))
-        sns.histplot(data_scales[scale_name + '_total'], bins=12, kde=True, color='indigo')
+        sns.histplot(data_scales[scale_name + '_total'], bins=8, kde=True, color='indigo')
         plt.title(f"Распределение баллов по шкале {scale_name}")
         plt.xlabel("Суммарный балл")
         plt.ylabel("Количество")
@@ -374,7 +374,12 @@ def generate_report():
     report_content += "| Шкала | Alpha | Omega | % Variance | KMO | Bartlett χ² | Bartlett p |\n"
     report_content += "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n"
     for row in summary_rows:
-        report_content += f"| {row['Scale']} | {row['Alpha']:.3f} | {row['Omega']:.3f} | {row['Variance']:.1f}% | {row['KMO']:.3f} | {row['Bartlett_Chi2']:.2f} | {row['Bartlett_p']:.4f} |\n"
+        if row['Scale'] == TARGET_SCALE:
+            report_content += f"| **{row['Scale']}** | **{row['Alpha']:.3f}** | **{row['Omega']:.3f}** | **{row['Variance']:.1f}%** | **{row['KMO']:.3f}** | **{row['Bartlett_Chi2']:.2f}** | **{row['Bartlett_p']:.4f}** |\n"
+        else:
+            report_content += f"| {row['Scale']} | {row['Alpha']:.3f} | {row['Omega']:.3f} | {row['Variance']:.1f}% | {row['KMO']:.3f} | {row['Bartlett_Chi2']:.2f} | {row['Bartlett_p']:.4f} |\n"
+    report_content += "\n"
+    report_content += f"==Дальнейший анализ основан на шкале  **{TARGET_SCALE}**==."
     report_content += "\n"
 
     # --- Раздел 3: Корреляционный анализ ---
@@ -425,6 +430,77 @@ def generate_report():
     for i, res in enumerate(corr_results, 1):
         report_content += f"| {i} | {res['Label']} | {res['Rho']:.3f} | {res['PVal']:.4f} | {res['Sig']} |\n"
     report_content += "\n*Примечание: * p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале MIJS (меньше стресса/завала).* \n\n"
+
+    # --- Раздел 4: Сравнение средних (ANOVA) ---
+    report_content += hm.get_header(1, "Сравнение средних (ANOVA)") + "\n\n"
+    report_content += "В данном разделе анализируется, как частота использования или уровень внедрения приема связаны со средним значением продуктивности. "
+    report_content += "Для проверки значимости различий между группами используется однофакторный дисперсионный анализ (One-way ANOVA).\n\n"
+
+    # --- 4.1. Частота использования приемов ---
+    report_content += hm.get_header(2, "Частота использования приемов") + "\n\n"
+    report_content += "Респонденты разделены на группы по частоте использования (0 — никогда, 4 — всегда).\n\n"
+
+    anova_results_prac = []
+    for feat in prac_cols:
+        groups = []
+        means = {}
+        for level in range(5):
+            group_data = data_scales[data_scales[feat] == level][TARGET_SCALE + '_total'].dropna()
+            if len(group_data) > 3:
+                groups.append(group_data)
+                means[level] = group_data.mean()
+            else:
+                means[level] = np.nan
+        
+        if len(groups) >= 2:
+            f_stat, pval = f_oneway(*groups)
+            sig = "****" if pval < 0.0001 else "***" if pval < 0.001 else "**" if pval < 0.01 else "*" if pval < 0.05 else ""
+            anova_results_prac.append({
+                'Label': FEATURE_LABELS.get(feat, feat),
+                'Means': [means.get(l, np.nan) for l in range(5)],
+                'F': f_stat, 'PVal': pval, 'Sig': sig
+            })
+
+    anova_results_prac.sort(key=lambda x: x['PVal'])
+    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | Ср. (4) | F | p-value | Знач. |\n"
+    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    for i, res in enumerate(anova_results_prac, 1):
+        m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
+        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
+    report_content += f"\n*Примечание: 0 — никогда/редко, 4 — всегда. В ячейках указан средний балл по шкале {TARGET_SCALE}. Чем ниже балл, тем выше продуктивность.* \n\n"
+
+    # --- 4.2. Уровень внедрения приемов ---
+    report_content += hm.get_header(2, "Уровень внедрения приемов") + "\n\n"
+    report_content += "Респонденты разделены на группы по уровню внедрения (0 — не применил(а), 3 — применил(а) по максимуму).\n\n"
+
+    anova_results_setup = []
+    for feat in setup_cols:
+        groups = []
+        means = {}
+        for level in range(4): # 0, 1, 2, 3
+            group_data = data_scales[data_scales[feat] == level][TARGET_SCALE + '_total'].dropna()
+            if len(group_data) > 3:
+                groups.append(group_data)
+                means[level] = group_data.mean()
+            else:
+                means[level] = np.nan
+        
+        if len(groups) >= 2:
+            f_stat, pval = f_oneway(*groups)
+            sig = "***" if pval < 0.001 else "**" if pval < 0.01 else "*" if pval < 0.05 else ""
+            anova_results_setup.append({
+                'Label': FEATURE_LABELS.get(feat, feat),
+                'Means': [means.get(l, np.nan) for l in range(4)],
+                'F': f_stat, 'PVal': pval, 'Sig': sig
+            })
+
+    anova_results_setup.sort(key=lambda x: x['PVal'])
+    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | F | p-value | Знач. |\n"
+    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    for i, res in enumerate(anova_results_setup, 1):
+        m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
+        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
+    report_content += f"\n*Примечание: 0 — не применил(а), 3 — по максимуму. В ячейках указан средний балл по шкале {TARGET_SCALE}.*\n\n"
 
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(report_content)
