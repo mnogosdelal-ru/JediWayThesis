@@ -382,8 +382,10 @@ def generate_report():
     report_content += f"==Дальнейший анализ основан на шкале  **{TARGET_SCALE}**==."
     report_content += "\n"
 
-    # --- Раздел 3: Корреляционный анализ ---
-    report_content += hm.get_header(1, "Корреляционный анализ (ранговая корреляция)") + "\n\n"
+    # --- Раздел 3: Выбираем лучшие приемы и практики ---
+    report_content += hm.get_header(1, "Выбираем лучшие приемы и практики") + "\n\n"
+    # --- Раздел 3.1: Корреляционный анализ ---
+    report_content += hm.get_header(2, "Корреляционный анализ (ранговая корреляция)") + "\n\n"
     report_content += f"В данном разделе представлена связь различных практик с целевой шкалой **{TARGET_SCALE}**. "
     report_content += "Для анализа используется коэффициент ранговой корреляции Спирмена (ρ).\n\n"
 
@@ -431,13 +433,13 @@ def generate_report():
         report_content += f"| {i} | {res['Label']} | {res['Rho']:.3f} | {res['PVal']:.4f} | {res['Sig']} |\n"
     report_content += "\n*Примечание: * p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале MIJS (меньше стресса/завала).* \n\n"
 
-    # --- Раздел 4: Сравнение средних (ANOVA) ---
-    report_content += hm.get_header(1, "Сравнение средних (ANOVA)") + "\n\n"
+    # --- Раздел 3.2: Сравнение средних (ANOVA) ---
+    report_content += hm.get_header(2, "Сравнение средних (ANOVA)") + "\n\n"
     report_content += "В данном разделе анализируется, как частота использования или уровень внедрения приема связаны со средним значением продуктивности. "
     report_content += "Для проверки значимости различий между группами используется однофакторный дисперсионный анализ (One-way ANOVA).\n\n"
 
-    # --- 4.1. Частота использования приемов ---
-    report_content += hm.get_header(2, "Частота использования приемов") + "\n\n"
+    # --- 3.2.1. Частота использования приемов ---
+    report_content += hm.get_header(3, "Частота использования приемов") + "\n\n"
     report_content += "Респонденты разделены на группы по частоте использования (0 — никогда, 4 — всегда).\n\n"
 
     anova_results_prac = []
@@ -446,7 +448,7 @@ def generate_report():
         means = {}
         for level in range(5):
             group_data = data_scales[data_scales[feat] == level][TARGET_SCALE + '_total'].dropna()
-            if len(group_data) > 3:
+            if len(group_data) > 10:
                 groups.append(group_data)
                 means[level] = group_data.mean()
             else:
@@ -469,8 +471,8 @@ def generate_report():
         report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
     report_content += f"\n*Примечание: 0 — никогда/редко, 4 — всегда. В ячейках указан средний балл по шкале {TARGET_SCALE}. Чем ниже балл, тем выше продуктивность.* \n\n"
 
-    # --- 4.2. Уровень внедрения приемов ---
-    report_content += hm.get_header(2, "Уровень внедрения приемов") + "\n\n"
+    # --- 3.2.2. Уровень внедрения приемов ---
+    report_content += hm.get_header(3, "Уровень внедрения приемов") + "\n\n"
     report_content += "Респонденты разделены на группы по уровню внедрения (0 — не применил(а), 3 — применил(а) по максимуму).\n\n"
 
     anova_results_setup = []
@@ -479,7 +481,7 @@ def generate_report():
         means = {}
         for level in range(4): # 0, 1, 2, 3
             group_data = data_scales[data_scales[feat] == level][TARGET_SCALE + '_total'].dropna()
-            if len(group_data) > 3:
+            if len(group_data) > 10:
                 groups.append(group_data)
                 means[level] = group_data.mean()
             else:
