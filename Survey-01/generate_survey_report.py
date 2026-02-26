@@ -766,6 +766,37 @@ def generate_report():
         report_content += f"- **Альфа Кронбаха:** {alpha:.3f}\n"
         report_content += f"- **Омега МакДональда:** {omega:.3f}\n\n"
 
+        # --- Корреляция суммарного балла всей шкалы с целевой шкалой ---
+        report_content += hm.get_header(2, "Валидность по отношению к целевой шкале") + "\n\n"
+        # Корреляция суммарного балла шкалы с целевой шкалой продуктивности
+        total_score = scale_data.mean(axis=1)  # или scale_data.sum(axis=1)
+        target = data_scales.loc[scale_data.index, TARGET_SCALE + '_total']
+        r_pearson, p_pearson = pearsonr(total_score, target)
+        r_spearman, p_spearman = spearmanr(total_score, target)
+        
+        report_content += f"- **Корреляция с {TARGET_SCALE} (Пирсон r):** {r_pearson:.3f}, p = {p_pearson:.4f}\n"
+        report_content += f"- **Корреляция с {TARGET_SCALE} (Спирмен ρ):** {r_spearman:.3f}, p = {p_spearman:.4f}\n\n"
+
+        # Описательные статистики суммарного балла (среднее)
+        report_content += hm.get_header(2, "Описательные характеристики") + "\n\n"
+        total_score = scale_data.sum(axis=1)
+        report_content += "**Описательные статистики суммарного балла (среднее по пунктам):**\n\n"
+        report_content += f"- Среднее: {total_score.mean():.3f}\n"
+        report_content += f"- Стандартное отклонение: {total_score.std():.3f}\n"
+        report_content += f"- Минимум: {total_score.min():.3f}\n"
+        report_content += f"- Максимум: {total_score.max():.3f}\n\n"
+
+        # Гистограмма распределения
+        plt.figure(figsize=(8, 5))
+        sns.histplot(total_score, bins=8, kde=True, color='skyblue')
+        plt.title('Распределение суммарного балла по шкале')
+        plt.xlabel('Средний балл по шкале')
+        plt.ylabel('Частота')
+        plot_filename = f"scale_{i}_hist.png"
+        save_plot(plot_filename)
+        report_content += f"![Гистограмма](images/{plot_filename})\n\n"
+
+
         # --- Пригодность для факторного анализа ---
         report_content += hm.get_header(2, "Пригодность для факторного анализа") + "\n\n"
         kmo_all, kmo_model = calculate_kmo(scale_data)
@@ -877,21 +908,28 @@ def generate_report():
 
                 # Корреляция подшкалы с целевой шкалой продуктивности
                 # Создаём суммарный балл подшкалы (среднее или сумма)
-                sub_score = scale_data[items].mean(axis=1)
+                sub_score = scale_data[items].sum(axis=1)
                 target = data_scales.loc[scale_data.index, TARGET_SCALE + '_total']
                 rho, pval = spearmanr(sub_score, target)
                 report_content += f"- **Корреляция с целевой шкалой (Spearman ρ):** {rho:.3f}, p = {pval:.4f}\n\n"
 
-        # --- Корреляция суммарного балла всей шкалы с целевой шкалой ---
-        report_content += hm.get_header(2, "Валидность по отношению к целевой шкале") + "\n\n"
-        # Корреляция суммарного балла шкалы с целевой шкалой продуктивности
-        total_score = scale_data.mean(axis=1)  # или scale_data.sum(axis=1)
-        target = data_scales.loc[scale_data.index, TARGET_SCALE + '_total']
-        r_pearson, p_pearson = pearsonr(total_score, target)
-        r_spearman, p_spearman = spearmanr(total_score, target)
-        
-        report_content += f"- **Корреляция с {TARGET_SCALE} (Пирсон r):** {r_pearson:.3f}, p = {p_pearson:.4f}\n"
-        report_content += f"- **Корреляция с {TARGET_SCALE} (Спирмен ρ):** {r_spearman:.3f}, p = {p_spearman:.4f}\n\n"
+                # Описательные статистики суммарного балла (среднее)
+                report_content += "**Описательные статистики суммарного балла (среднее по пунктам):**\n\n"
+                report_content += f"- Среднее: {sub_score.mean():.3f}\n"
+                report_content += f"- Стандартное отклонение: {sub_score.std():.3f}\n"
+                report_content += f"- Минимум: {sub_score.min():.3f}\n"
+                report_content += f"- Максимум: {sub_score.max():.3f}\n\n"
+
+                # Гистограмма распределения
+                plt.figure(figsize=(8, 5))
+                sns.histplot(sub_score, bins=8, kde=True, color='skyblue')
+                plt.title(f'Распределение суммарного балла подшкалы фактора {factor_num}')
+                plt.xlabel('Средний балл по подшкале')
+                plt.ylabel('Частота')
+                plot_filename = f"subscale_{factor_num}_hist.png"
+                save_plot(plot_filename)
+                report_content += f"![Гистограмма](images/{plot_filename})\n\n"
+
 
 
 
