@@ -8,13 +8,13 @@ import sklearn.utils.validation
 import factor_analyzer.factor_analyzer
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import spearmanr, f_oneway, mannwhitneyu
+from scipy.stats import spearmanr, f_oneway, mannwhitneyu, pearsonr
 from statsmodels.stats.multitest import multipletests
 
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
 REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-REPORT_DIR = ''
+#REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
@@ -22,7 +22,7 @@ IMAGES_DIR = REPORT_DIR + 'images'
 # TARGET_SCALE = 'MIJS-2+'
 TARGET_SCALE = 'MIJS-3+'
 # TARGET_SCALE = 'MIJS-2'
-# TARGET_SCALE = 'MIJS'
+#TARGET_SCALE = 'MIJS'
 
 if not os.path.exists(IMAGES_DIR):
     os.makedirs(IMAGES_DIR)
@@ -655,9 +655,243 @@ def generate_report():
 
 
 
+    # --- Раздел 3.4: Сводная таблица лучших практик по версии разных методов ---
+    report_content += hm.get_header(2, "Сводная таблица лучших практик") + "\n\n"
+    report_content += "В этой таблице представлены практики, которые вошли в топ-15 по каждому из использованных методов анализа. "
+    report_content += "✅ означает, что практика входит в топ-15 по версии данного метода.\n\n"
+
+    # Собираем топ-15 из каждого метода
+    # Корреляционный анализ (Spearman)
+    top15_corr = [r['Label'] for r in corr_results[:15]] if len(corr_results) >= 15 else [r['Label'] for r in corr_results]
+    
+    # ANOVA частота
+    top15_anova_prac = [r['Label'] for r in anova_results_prac[:15]] if len(anova_results_prac) >= 15 else [r['Label'] for r in anova_results_prac]
+    
+    # ANOVA внедрение
+    top15_anova_setup = [r['Label'] for r in anova_results_setup[:15]] if len(anova_results_setup) >= 15 else [r['Label'] for r in anova_results_setup]
+    
+    # Kruskal-Wallis
+    top15_kw = [r['label'] for r in kw_results[:15]] if len(kw_results) >= 15 else [r['label'] for r in kw_results]
+
+    # Все практики (только приемы, без дополнительных переменных)
+    all_practice_labels = []
+    for feat in (prac_cols + setup_cols):
+        label = FEATURE_LABELS.get(feat, feat)
+        all_practice_labels.append((feat, label))  # сохраняем и внутреннее имя, и метку для отладки
+
+    # Сортируем практики по алфавиту для удобства чтения
+    all_practice_labels.sort(key=lambda x: x[1])
+
+    # Формируем строки таблицы
+    table_rows = []
+    for feat, label in all_practice_labels:
+        in_corr = "✅" if label in top15_corr else ""
+        in_anova_prac = "✅" if label in top15_anova_prac else ""
+        in_kw = "✅" if label in top15_kw else ""
+        
+        # Сумма галочек (считаем количество "✅")
+        sum_checks = sum([1 for x in [in_corr, in_anova_prac, in_kw] if x == "✅"])
+        
+        table_rows.append({
+            'Практика': label,
+            'Корреляция (Spearman)': in_corr,
+            'ANOVA (частота)': in_anova_prac,
+            'Kruskal-Wallis': in_kw,
+            'Сумма': sum_checks
+        })
+
+    # Сортируем по убыванию суммы, затем по алфавиту
+    table_rows.sort(key=lambda x: (-x['Сумма'], x['Практика']))
+
+    # Вывод таблицы в Markdown
+    report_content += "| № | Практика | Корреляция (Spearman) | ANOVA (частота) | Kruskal-Wallis | Сумма |\n"
+    report_content += "| :---: | :--- | :---: | :---: | :---: | :---: |\n"
+    n = 0
+    for row in table_rows:
+        n = n + 1
+        report_content += f"| {n} | {row['Практика']} | {row['Корреляция (Spearman)']} | {row['ANOVA (частота)']} | {row['Kruskal-Wallis']} | {row['Сумма']} |\n"
+    report_content += "\n"
 
 
 
+
+
+    # --- Раздел 4: Анализ шкалы, составленной из практик, одобренных большинством методов ---
+    report_content += hm.get_header(1, "Анализ шкалы из практик, получивших наибольший консенсус") + "\n\n"
+    report_content += "В этом разделе мы отбираем практики, которые вошли в топ‑15 хотя бы трёх из четырёх использованных методов "
+    report_content += "(корреляционный анализ, ANOVA для частоты, ANOVA для внедрения, критерий Краскела‑Уоллиса). "
+    report_content += "Из этих практик формируется новая шкала, и проводится её детальный психометрический анализ.\n\n"
+
+    # Определяем, какие практики попали в топ‑15 по каждому методу (используем уже вычисленные списки)
+    top15_corr_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_corr]  # обратное сопоставление метки -> внутреннее имя
+    top15_anova_prac_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_anova_prac]
+    top15_kw_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_kw]
+
+    # Для каждой практики считаем количество попаданий
+    consensus_counts = {}
+    for feat, label in all_practice_labels:
+        count = 0
+        if feat in top15_corr_feats: count += 1
+        if feat in top15_anova_prac_feats: count += 1
+        if feat in top15_kw_feats: count += 1
+        consensus_counts[feat] = count
+
+    # Отбираем практики с количеством попаданий >= 3
+    selected_feats = [feat for feat, cnt in consensus_counts.items() if cnt >= 3]
+    selected_labels = [FEATURE_LABELS.get(feat, feat) for feat in selected_feats]
+
+    if len(selected_feats) < 2:
+        report_content += "Недостаточно практик для построения надёжной шкалы (требуется хотя бы две).\n\n"
+    else:
+        report_content += f"**Отобрано практик:** {len(selected_feats)}\n\n"
+        report_content += "Состав шкалы:\n"
+        n = 0
+        for label in selected_labels:
+            n = n + 1
+            report_content += f"{n}. {label}\n"
+        report_content += "\n"
+
+        # Создаём датафрейм только с этими практиками и удаляем строки с пропусками
+        scale_data = data_scales[selected_feats].dropna()
+        n_respondents = len(scale_data)
+        report_content += f"**Число респондентов для анализа:** {n_respondents}\n\n"
+
+        if n_respondents < 50:
+            report_content += "⚠️ **Предупреждение:** выборка меньше 50 человек, результаты могут быть неустойчивыми.\n\n"
+
+        # --- Надёжность всей шкалы ---
+        report_content += hm.get_header(2, "Надёжность общей шкалы") + "\n\n"
+        alpha = pg.cronbach_alpha(scale_data)[0]
+        omega = calculate_omega_from_data(scale_data)
+        report_content += f"- **Альфа Кронбаха:** {alpha:.3f}\n"
+        report_content += f"- **Омега МакДональда:** {omega:.3f}\n\n"
+
+        # --- Пригодность для факторного анализа ---
+        report_content += hm.get_header(2, "Пригодность для факторного анализа") + "\n\n"
+        kmo_all, kmo_model = calculate_kmo(scale_data)
+        chi_square, p_value = calculate_bartlett_sphericity(scale_data)
+        report_content += f"- **KMO (мера выборочной адекватности):** {kmo_model:.3f}\n"
+        report_content += f"- **Тест сферичности Бартлетта:** χ² = {chi_square:.2f}, p = {p_value:.4f}\n\n"
+
+        # --- Факторный анализ с oblimin вращением ---
+        report_content += hm.get_header(2, "Эксплораторный факторный анализ (вращение oblimin)") + "\n\n"
+
+        # Сначала определяем количество факторов (собственные числа > 1)
+        fa_temp = FactorAnalyzer(rotation=None)
+        fa_temp.fit(scale_data)
+        ev, _ = fa_temp.get_eigenvalues()
+        n_factors = sum(ev > 1)
+        report_content += f"**Собственные значения:**\n"
+        for i, val in enumerate(ev, 1):
+            report_content += f"  Фактор {i}: {val:.3f}\n"
+        report_content += f"\nФакторов с собственным значением > 1: **{n_factors}**\n\n"
+
+        if n_factors == 0:
+            n_factors = 1  # минимум один фактор
+
+        # Выполняем EFA с oblimin
+        fa = FactorAnalyzer(n_factors=n_factors, rotation='oblimin')
+        fa.fit(scale_data)
+
+        # Информация о дисперсии
+        var_info = fa.get_factor_variance()
+        report_content += "**Объяснённая дисперсия:**\n\n"
+        report_content += "| Фактор | Собственное значение | % дисперсии | Накопленный % |\n"
+        report_content += "| :--- | :---: | :---: | :---: |\n"
+        for i in range(n_factors):
+            report_content += f"| {i+1} | {var_info[0][i]:.3f} | {var_info[1][i]*100:.2f}% | {var_info[2][i]*100:.2f}% |\n"
+        report_content += "\n"
+
+        # Факторные нагрузки после вращения
+        loadings = fa.loadings_
+        report_content += "**Факторные нагрузки (после oblimin):**\n\n"
+        # Создаём заголовки столбцов
+        header = "| Практика | " + " | ".join([f"Фактор {i+1}" for i in range(n_factors)]) + " |\n"
+        separator = "| :--- |" + " :---: |" * n_factors + "\n"
+        report_content += header + separator
+        for j, feat in enumerate(selected_feats):
+            row = f"| {selected_labels[j]} |"
+            for i in range(n_factors):
+                row += f" {loadings[j, i]:.3f} |"
+            report_content += row + "\n"
+        report_content += "\n"
+
+        # Корреляции факторов (при косоугольном вращении)
+        if n_factors > 1 and hasattr(fa, 'phi_'):
+            corr_factors = fa.phi_
+            report_content += "**Корреляционная матрица факторов:**\n\n"
+            # Создаём матрицу в виде таблицы
+            corr_header = "| | " + " | ".join([f"Фактор {i+1}" for i in range(n_factors)]) + " |\n"
+            corr_sep = "| :--- |" + " :---: |" * n_factors + "\n"
+            report_content += corr_header + corr_sep
+            for i in range(n_factors):
+                row = f"| Фактор {i+1} |"
+                for j in range(n_factors):
+                    row += f" {corr_factors[i, j]:.3f} |"
+                report_content += row + "\n"
+            report_content += "\n"
+
+        # --- Формирование подшкал на основе факторной структуры ---
+        if n_factors > 1:
+            report_content += hm.get_header(2, "Анализ подшкал, соответствующих факторам") + "\n\n"
+            # Для каждого фактора определим практики с нагрузкой > 0.4 (или > 0.3, если слабые)
+            threshold = 0.4
+            subscales = []
+            for i in range(n_factors):
+                items = [selected_feats[j] for j in range(len(selected_feats)) if abs(loadings[j, i]) > threshold]
+                if len(items) >= 2:
+                    subscales.append({
+                        'factor': i+1,
+                        'items': items,
+                        'labels': [selected_labels[j] for j in range(len(selected_feats)) if abs(loadings[j, i]) > threshold]
+                    })
+                else:
+                    # Если ни одна практика не превышает порог, берём максимум (хотя бы одну)
+                    max_idx = np.argmax(np.abs(loadings[:, i]))
+                    items = [selected_feats[max_idx]]
+                    subscales.append({
+                        'factor': i+1,
+                        'items': items,
+                        'labels': [selected_labels[max_idx]]
+                    })
+
+            # Для каждой подшкалы вычисляем надёжность и корреляцию с целевой шкалой
+            for sub in subscales:
+                factor_num = sub['factor']
+                items = sub['items']
+                labels = sub['labels']
+                report_content += f"#### Подшкала фактора {factor_num}\n\n"
+                report_content += "Состав:\n"
+                for lbl in labels:
+                    report_content += f"- {lbl}\n"
+                report_content += "\n"
+
+                if len(items) >= 2:
+                    sub_data = scale_data[items]
+                    alpha_sub = pg.cronbach_alpha(sub_data)[0]
+                    omega_sub = calculate_omega_from_data(sub_data)
+                    report_content += f"- **Альфа Кронбаха:** {alpha_sub:.3f}\n"
+                    report_content += f"- **Омега МакДональда:** {omega_sub:.3f}\n"
+                else:
+                    report_content += "*Подшкала состоит из одной практики – надёжность не вычисляется.*\n"
+
+                # Корреляция подшкалы с целевой шкалой продуктивности
+                # Создаём суммарный балл подшкалы (среднее или сумма)
+                sub_score = scale_data[items].mean(axis=1)
+                target = data_scales.loc[scale_data.index, TARGET_SCALE + '_total']
+                rho, pval = spearmanr(sub_score, target)
+                report_content += f"- **Корреляция с целевой шкалой (Spearman ρ):** {rho:.3f}, p = {pval:.4f}\n\n"
+
+        # --- Корреляция суммарного балла всей шкалы с целевой шкалой ---
+        report_content += hm.get_header(2, "Валидность по отношению к целевой шкале") + "\n\n"
+        # Корреляция суммарного балла шкалы с целевой шкалой продуктивности
+        total_score = scale_data.mean(axis=1)  # или scale_data.sum(axis=1)
+        target = data_scales.loc[scale_data.index, TARGET_SCALE + '_total']
+        r_pearson, p_pearson = pearsonr(total_score, target)
+        r_spearman, p_spearman = spearmanr(total_score, target)
+        
+        report_content += f"- **Корреляция с {TARGET_SCALE} (Пирсон r):** {r_pearson:.3f}, p = {p_pearson:.4f}\n"
+        report_content += f"- **Корреляция с {TARGET_SCALE} (Спирмен ρ):** {r_spearman:.3f}, p = {p_spearman:.4f}\n\n"
 
 
 
