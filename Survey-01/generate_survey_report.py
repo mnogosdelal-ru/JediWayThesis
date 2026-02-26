@@ -8,12 +8,13 @@ import sklearn.utils.validation
 import factor_analyzer.factor_analyzer
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import spearmanr, f_oneway
+from scipy.stats import spearmanr, f_oneway, mannwhitneyu
+from statsmodels.stats.multitest import multipletests
 
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
 REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-REPORT_DIR = ''
+#REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
@@ -503,6 +504,158 @@ def generate_report():
         m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
         report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
     report_content += f"\n*Примечание: 0 — не применил(а), 3 — по максимуму. В ячейках указан средний балл по шкале {TARGET_SCALE}.*\n\n"
+
+
+    # --- Раздел 3.3: Сравнение трёх групп продуктивности (Kruskal-Wallis + Dunn) ---
+    report_content += hm.get_header(2, "Сравнение трёх групп продуктивности (Kruskal-Wallis)") + "\n\n"
+    report_content += "Респонденты разделены на три группы по терцилям (33-й и 66-й перцентили) суммарного балла продуктивности. "
+    report_content += "Низкая группа – наиболее продуктивные (низкие баллы MIJS), высокая группа – наименее продуктивные (высокие баллы). "
+    report_content += "Для каждой практики проверяется гипотеза о различиях распределений частоты использования между тремя группами с помощью критерия Краскела-Уоллиса. "
+    report_content += "В случае значимых различий (p < 0.05 после FDR‑коррекции) выполняются попарные пост‑хок тесты Данна.\n\n"
+
+    target_col = TARGET_SCALE + '_total'
+    target = data_scales[target_col].dropna()
+
+    # Определяем границы групп (терцили)
+    p33 = target.quantile(1/3)
+    p66 = target.quantile(2/3)
+
+    # Создаём переменную группы
+    data_scales['prod_group'] = pd.cut(data_scales[target_col], 
+                                        bins=[-np.inf, p33, p66, np.inf], 
+                                        labels=['низкая (продуктивные)', 'средняя', 'высокая (непродуктивные)'])
+
+    # Подсчёт числа респондентов в группах
+    group_counts = data_scales['prod_group'].value_counts().sort_index()
+    for label, count in group_counts.items():
+        report_content += f"- **Группа {label}:** {count} респондентов\n"
+    report_content += "\n"
+
+    # Список практик
+    all_practices = prac_cols + setup_cols
+
+    # Собираем результаты
+    kw_results = []
+    for feat in all_practices:
+        # Формируем списки значений по группам, удаляя пропуски
+        low_vals = data_scales.loc[data_scales['prod_group'] == 'низкая (продуктивные)', feat].dropna()
+        mid_vals = data_scales.loc[data_scales['prod_group'] == 'средняя', feat].dropna()
+        high_vals = data_scales.loc[data_scales['prod_group'] == 'высокая (непродуктивные)', feat].dropna()
+        
+        # Проверяем, что в каждой группе есть данные
+        if len(low_vals) < 2 or len(mid_vals) < 2 or len(high_vals) < 2:
+            continue
+        
+        # Вычисляем средние значения
+        mean_low = low_vals.mean()
+        mean_mid = mid_vals.mean()
+        mean_high = high_vals.mean()
+        
+        from scipy.stats import kruskal
+        h_stat, p_val = kruskal(low_vals, mid_vals, high_vals)
+        kw_results.append({
+            'label': FEATURE_LABELS.get(feat, feat),
+            'feat': feat,
+            'mean_low': mean_low,
+            'mean_mid': mean_mid,
+            'mean_high': mean_high,
+            'h': h_stat,
+            'p_val': p_val
+        })
+
+    # Коррекция p-значений (FDR)
+    if kw_results:
+        p_vals = [r['p_val'] for r in kw_results]
+        from statsmodels.stats.multitest import multipletests
+        reject, p_adj, _, _ = multipletests(p_vals, method='fdr_bh')
+        for i, r in enumerate(kw_results):
+            r['p_adj'] = p_adj[i]
+            r['reject'] = reject[i]
+        kw_results.sort(key=lambda x: x['p_adj'])
+
+        # Таблица результатов Краскела-Уоллиса со средними
+        report_content += "| № | Практика | Ср. низкая | Ср. средняя | Ср. высокая | H-статистика | p (исх.) | p (скорр.) | Значима |\n"
+        report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+        for i, r in enumerate(kw_results, 1):
+            sig_marker = "Да" if r['reject'] else "Нет"
+            report_content += f"| {i} | {r['label']} | {r['mean_low']:.2f} | {r['mean_mid']:.2f} | {r['mean_high']:.2f} | {r['h']:.2f} | {r['p_val']:.4f} | {r['p_adj']:.4f} | {sig_marker} |\n"
+
+        # Выделим значимые
+        sig_kw = [r for r in kw_results if r['reject']]
+        report_content += f"\n**Значимых различий после коррекции (p<sub>adj</sub> < 0.05): {len(sig_kw)}**\n\n"
+
+        # Для значимых практик проводим post-hoc тест Данна и строим ящичные диаграммы
+        if sig_kw:
+            # Ограничим число практик для детального анализа (например, первые 15)
+            top_sig = sig_kw[:15]
+            for r in top_sig:
+                feat = r['feat']
+                report_content += f"#### {r['label']}\n\n"
+                # Собираем данные по группам
+                groups = ['низкая (продуктивные)', 'средняя', 'высокая (непродуктивные)']
+                data_groups = [data_scales.loc[data_scales['prod_group'] == g, feat].dropna() for g in groups]
+                
+                # Post-hoc тест Данна (пакет scikit-posthocs)
+                try:
+                    import scikit_posthocs as sp
+                    # Собираем данные для теста, избегая дублирования индексов
+                    all_values = pd.concat(data_groups, ignore_index=True)
+                    all_groups = pd.concat([pd.Series([g]*len(dg)) for g, dg in zip(groups, data_groups)], ignore_index=True)
+                    dunn_df = pd.DataFrame({'values': all_values, 'group': all_groups})
+                    
+                    dunn_results = sp.posthoc_dunn(dunn_df, val_col='values', group_col='group', p_adjust='fdr_bh')
+                    
+                    # Переупорядочиваем для наглядности
+                    order = ['высокая (непродуктивные)', 'средняя', 'низкая (продуктивные)']
+                    if all(name in dunn_results.index for name in order):
+                        dunn_results = dunn_results.loc[order, order]
+                    
+                    report_content += "**Попарные сравнения (p-скорр.):**\n\n"
+                    # Используем to_markdown для красивого вывода (требуется tabulate)
+                    try:
+                        from tabulate import tabulate
+                        report_content += dunn_results.round(4).to_markdown(floatfmt=".4f") + "\n\n"
+                    except ImportError:
+                        # Fallback на HTML
+                        report_content += dunn_results.round(4).to_html(classes='table table-striped') + "\n\n"
+                except ImportError:
+                    report_content += "*Для post-hoc анализа требуется установить `scikit-posthocs`.*\n\n"                
+
+                # Ящичная диаграмма
+                plt.figure(figsize=(8, 5))
+                data_to_plot = [data_scales.loc[data_scales['prod_group'] == g, feat].dropna() for g in groups]
+                bp = plt.boxplot(data_to_plot, tick_labels=groups, patch_artist=True,
+                                boxprops=dict(facecolor='lightblue'),
+                                medianprops=dict(color='red'))
+                plt.ylabel('Частота использования')
+                plt.title(f'Распределение частоты: {r["label"]}')
+                plt.xticks(rotation=15)
+
+                # Добавляем средние значения в виде зелёных треугольников
+                for j, group_data in enumerate(data_to_plot, start=1):
+                    mean_val = group_data.mean()
+                    plt.plot(j, mean_val, 'g^', markersize=16, label='Среднее' if j == 1 else "")
+
+                # Добавляем легенду (только один элемент для среднего)
+                if any(len(g) > 0 for g in data_to_plot):
+                    plt.legend(loc='upper right')
+
+                plt.tight_layout()
+                plot_filename = f"kruskal_box_{feat}.png"
+                save_plot(plot_filename)
+                report_content += f"![Boxplot](images/{plot_filename})\n\n"
+        else:
+            report_content += "*Значимых различий не обнаружено.*\n\n"
+    else:
+        report_content += "*Недостаточно данных для анализа.*\n\n"
+
+
+
+
+
+
+
+
 
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(report_content)
