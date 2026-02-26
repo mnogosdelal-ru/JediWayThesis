@@ -14,7 +14,7 @@ from statsmodels.stats.multitest import multipletests
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
 REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-#REPORT_DIR = ''
+REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
@@ -523,7 +523,7 @@ def generate_report():
     # Создаём переменную группы
     data_scales['prod_group'] = pd.cut(data_scales[target_col], 
                                         bins=[-np.inf, p33, p66, np.inf], 
-                                        labels=['низкая (продуктивные)', 'средняя', 'высокая (непродуктивные)'])
+                                        labels=['Продуктивные', 'Средняки', 'Непродуктивные'])
 
     # Подсчёт числа респондентов в группах
     group_counts = data_scales['prod_group'].value_counts().sort_index()
@@ -538,9 +538,9 @@ def generate_report():
     kw_results = []
     for feat in all_practices:
         # Формируем списки значений по группам, удаляя пропуски
-        low_vals = data_scales.loc[data_scales['prod_group'] == 'низкая (продуктивные)', feat].dropna()
-        mid_vals = data_scales.loc[data_scales['prod_group'] == 'средняя', feat].dropna()
-        high_vals = data_scales.loc[data_scales['prod_group'] == 'высокая (непродуктивные)', feat].dropna()
+        low_vals = data_scales.loc[data_scales['prod_group'] == 'Продуктивные', feat].dropna()
+        mid_vals = data_scales.loc[data_scales['prod_group'] == 'Средняки', feat].dropna()
+        high_vals = data_scales.loc[data_scales['prod_group'] == 'Непродуктивные', feat].dropna()
         
         # Проверяем, что в каждой группе есть данные
         if len(low_vals) < 2 or len(mid_vals) < 2 or len(high_vals) < 2:
@@ -574,7 +574,7 @@ def generate_report():
         kw_results.sort(key=lambda x: x['p_adj'])
 
         # Таблица результатов Краскела-Уоллиса со средними
-        report_content += "| № | Практика | Ср. низкая | Ср. средняя | Ср. высокая | H-статистика | p (исх.) | p (скорр.) | Значима |\n"
+        report_content += "| № | Практика | Ср. Продуктивные | Ср. Средняки | Ср. Непродуктивные | H-статистика | p (исх.) | p (скорр.) | Значима |\n"
         report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
         for i, r in enumerate(kw_results, 1):
             sig_marker = "Да" if r['reject'] else "Нет"
@@ -592,7 +592,7 @@ def generate_report():
                 feat = r['feat']
                 report_content += f"#### {r['label']}\n\n"
                 # Собираем данные по группам
-                groups = ['низкая (продуктивные)', 'средняя', 'высокая (непродуктивные)']
+                groups = ['Продуктивные', 'Средняки', 'Непродуктивные']
                 data_groups = [data_scales.loc[data_scales['prod_group'] == g, feat].dropna() for g in groups]
                 
                 # Post-hoc тест Данна (пакет scikit-posthocs)
@@ -606,7 +606,7 @@ def generate_report():
                     dunn_results = sp.posthoc_dunn(dunn_df, val_col='values', group_col='group', p_adjust='fdr_bh')
                     
                     # Переупорядочиваем для наглядности
-                    order = ['высокая (непродуктивные)', 'средняя', 'низкая (продуктивные)']
+                    order = ['Непродуктивные', 'Средняки', 'Продуктивные']
                     if all(name in dunn_results.index for name in order):
                         dunn_results = dunn_results.loc[order, order]
                     
@@ -634,7 +634,11 @@ def generate_report():
                 # Добавляем средние значения в виде зелёных треугольников
                 for j, group_data in enumerate(data_to_plot, start=1):
                     mean_val = group_data.mean()
-                    plt.plot(j, mean_val, 'g^', markersize=16, label='Среднее' if j == 1 else "")
+                    # Рисуем большую точку
+                    plt.plot(j, mean_val, 'o', markersize=16, color='green', label='Среднее' if j == 1 else "")
+                    # Добавляем текстовую подпись справа от точки с небольшим смещением
+                    plt.text(j-0.1, mean_val + 0.2, f'{mean_val:.2f}', 
+                             verticalalignment='center', fontsize=12, color='darkgreen')
 
                 # Добавляем легенду (только один элемент для среднего)
                 if any(len(g) > 0 for g in data_to_plot):
