@@ -22,7 +22,7 @@ ROBUSTNESS_REPORT = os.path.join(REPORT_DIR, 'robustness_report.md')
 TARGET_SCALE = 'single_item'
 
 # Настройки симуляции
-N_ITERATIONS = 10 # Установлено 10 для отладки
+N_ITERATIONS = 1000 # Установлено 10 для отладки
 SAMPLE_SIZE = 180  # Уменьшено пользователем для большей жесткости отбора
 TOP_K = 15         
 CORE_THRESHOLD = 75 # Порог для включения в "Ядро"
