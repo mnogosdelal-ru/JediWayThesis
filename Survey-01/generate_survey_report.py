@@ -719,7 +719,7 @@ def generate_report():
     # --- Раздел 4: Анализ шкалы, составленной из практик, одобренных большинством методов ---
     report_content += hm.get_header(1, "Анализ шкалы из практик, получивших наибольший консенсус") + "\n\n"
     report_content += "В этом разделе мы отбираем практики, которые вошли в топ‑15 хотя бы трёх из четырёх использованных методов "
-    report_content += "(корреляционный анализ, ANOVA для частоты, ANOVA для внедрения, критерий Краскела‑Уоллиса). "
+    report_content += "(корреляционный анализ, ANOVA для частоты, критерий Краскела‑Уоллиса). "
     report_content += "Из этих практик формируется новая шкала, и проводится её детальный психометрический анализ.\n\n"
 
     # Определяем, какие практики попали в топ‑15 по каждому методу (используем уже вычисленные списки)
@@ -736,8 +736,8 @@ def generate_report():
         if feat in top15_kw_feats: count += 1
         consensus_counts[feat] = count
 
-    # Отбираем практики с количеством попаданий >= 3
-    selected_feats = [feat for feat, cnt in consensus_counts.items() if cnt >= 3]
+    # Отбираем практики с количеством попаданий >= 2
+    selected_feats = [feat for feat, cnt in consensus_counts.items() if cnt >= 2]
     selected_labels = [FEATURE_LABELS.get(feat, feat) for feat in selected_feats]
 
     if len(selected_feats) < 2:
@@ -765,6 +765,24 @@ def generate_report():
         omega = calculate_omega_from_data(scale_data)
         report_content += f"- **Альфа Кронбаха:** {alpha:.3f}\n"
         report_content += f"- **Омега МакДональда:** {omega:.3f}\n\n"
+
+
+        report_content += "#### Коэффициенты при исключении пункта:\n\n"
+        report_content += "| Исключенный пункт | Альфа (if deleted) | Омега (if deleted) |\n"
+        report_content += "| :--- | :---: | :---: |\n"
+
+        for feat in selected_feats:
+            rem = [x for x in selected_feats if x != feat]
+            if len(rem) > 1:
+                c_alpha = pg.cronbach_alpha(scale_data[rem])[0]
+                c_omega = calculate_omega_from_data(scale_data[rem])
+            else:
+                c_alpha = np.nan
+                c_omega = np.nan
+            label = FEATURE_LABELS.get(feat, feat)
+            report_content += f"| {label} | {c_alpha:.3f} | {c_omega:.3f} |\n"
+        report_content += "\n"
+
 
         # --- Корреляция суммарного балла всей шкалы с целевой шкалой ---
         report_content += hm.get_header(2, "Валидность по отношению к целевой шкале") + "\n\n"
@@ -812,10 +830,20 @@ def generate_report():
         fa_temp.fit(scale_data)
         ev, _ = fa_temp.get_eigenvalues()
         n_factors = sum(ev > 1)
-        report_content += f"**Собственные значения:**\n"
+
+        # Таблица объяснённой дисперсии до вращения
+        total_variance = ev.sum()  # общая дисперсия (равна числу переменных)
+        report_content += "**Объяснённая дисперсия (до вращения):**\n\n"
+        report_content += "| Фактор | Собственное значение | % дисперсии | Накопленный % |\n"
+        report_content += "| :--- | :---: | :---: | :---: |\n"
+        cumul = 0
         for i, val in enumerate(ev, 1):
-            report_content += f"  Фактор {i}: {val:.3f}\n"
-        report_content += f"\nФакторов с собственным значением > 1: **{n_factors}**\n\n"
+            percent = (val / total_variance) * 100
+            cumul += percent
+            report_content += f"| {i} | {val:.3f} | {percent:.2f}% | {cumul:.2f}% |\n"
+        report_content += "\n"
+
+        report_content += f"**Факторов с собственным значением > 1:** {n_factors}\n\n"
 
         if n_factors == 0:
             n_factors = 1  # минимум один фактор
@@ -824,16 +852,17 @@ def generate_report():
         fa = FactorAnalyzer(n_factors=n_factors, rotation='oblimin')
         fa.fit(scale_data)
 
-        # Информация о дисперсии
+        # Информация о дисперсии после вращения
         var_info = fa.get_factor_variance()
-        report_content += "**Объяснённая дисперсия:**\n\n"
-        report_content += "| Фактор | Собственное значение | % дисперсии | Накопленный % |\n"
+        report_content += "**Объяснённая дисперсия после вращения (суммы квадратов нагрузок):**\n\n"
+        report_content += "| Фактор | Дисперсия после вращения | % дисперсии | Накопленный % |\n"
         report_content += "| :--- | :---: | :---: | :---: |\n"
         for i in range(n_factors):
             report_content += f"| {i+1} | {var_info[0][i]:.3f} | {var_info[1][i]*100:.2f}% | {var_info[2][i]*100:.2f}% |\n"
         report_content += "\n"
 
         # Факторные нагрузки после вращения
+        threshold = 0.4
         loadings = fa.loadings_
         report_content += "**Факторные нагрузки (после oblimin):**\n\n"
         # Создаём заголовки столбцов
@@ -843,7 +872,10 @@ def generate_report():
         for j, feat in enumerate(selected_feats):
             row = f"| {selected_labels[j]} |"
             for i in range(n_factors):
-                row += f" {loadings[j, i]:.3f} |"
+                if loadings[j, i] >= threshold:
+                    row += f" 👉{loadings[j, i]:.3f} |"
+                else:
+                    row += f" {loadings[j, i]:.3f} |"
             report_content += row + "\n"
         report_content += "\n"
 
@@ -866,7 +898,6 @@ def generate_report():
         if n_factors > 1:
             report_content += hm.get_header(2, "Анализ подшкал, соответствующих факторам") + "\n\n"
             # Для каждого фактора определим практики с нагрузкой > 0.4 (или > 0.3, если слабые)
-            threshold = 0.4
             subscales = []
             for i in range(n_factors):
                 items = [selected_feats[j] for j in range(len(selected_feats)) if abs(loadings[j, i]) > threshold]
@@ -897,6 +928,7 @@ def generate_report():
                     report_content += f"- {lbl}\n"
                 report_content += "\n"
 
+                report_content += "**Надёжность подшкалы:**\n\n"
                 if len(items) >= 2:
                     sub_data = scale_data[items]
                     alpha_sub = pg.cronbach_alpha(sub_data)[0]
