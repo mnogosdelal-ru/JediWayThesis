@@ -10,6 +10,7 @@ import factor_analyzer.factor_analyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 from scipy.stats import spearmanr, f_oneway, kruskal, pearsonr
 from statsmodels.stats.multitest import multipletests
+import textwrap
 
 # --- Настройки (из основного скрипта) ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
@@ -21,7 +22,7 @@ ROBUSTNESS_REPORT = os.path.join(REPORT_DIR, 'robustness_report.md')
 TARGET_SCALE = 'single_item'
 
 # Настройки симуляции
-N_ITERATIONS = 1000 # Установлено 10 для отладки
+N_ITERATIONS = 10 # Установлено 10 для отладки
 SAMPLE_SIZE = 180  # Уменьшено пользователем для большей жесткости отбора
 TOP_K = 15         
 CORE_THRESHOLD = 75 # Порог для включения в "Ядро"
@@ -238,7 +239,8 @@ def run_stability_analysis():
         f.write("# Анализ устойчивости (Stability Selection)\n\n")
         f.write(f"Параметры: {N_ITERATIONS} итераций, подвыборка {SAMPLE_SIZE} человек (~80%).\n")
         f.write(f"Stability Score показывает, в каком проценте случаев практика попадала в 'Топ-15 консенсуса' в {CONSENSUS_THRESHOLD} из 3 алгоритмов при случайных изменениях в выборке.\n\n")
-        f.write("![[images/stability_selection.png|Stability Selection Graph]]\n\n")
+
+        f.write("![Stability Selection Graph](images/stability_selection.png)\n\n")
         
         f.write("| № | Практика | Stability Score (%) | Статус |\n")
         f.write("| :--- | :--- | :---: | :--- |\n")
@@ -247,9 +249,13 @@ def run_stability_analysis():
             f.write(f"| {i+1} | {row['Label']} | {row['Stability']:.1f}% | {status} |\n")
             
     # Визуализация
-    plt.figure(figsize=(10, 12))
+    plt.figure(figsize=(10, 14))
     df_plot = df_res[df_res['Stability'] > 5].copy() # Только те, кто хоть раз попал
-    sns.barplot(data=df_plot, x='Stability', y='Label', hue='Stability', palette='viridis', legend=False)
+    
+    # Перенос длинных подписей
+    df_plot['Label_Wrapped'] = df_plot['Label'].apply(lambda x: "\n".join(textwrap.wrap(x, width=40)))
+    
+    sns.barplot(data=df_plot, x='Stability', y='Label_Wrapped', hue='Stability', palette='viridis', legend=False)
     plt.axvline(CORE_THRESHOLD, color='red', linestyle='--', label=f'{CORE_THRESHOLD}% Threshold')
     plt.title(f"Stability Selection: Частота попадания в ТОП-15 ({TARGET_SCALE})")
     plt.xlabel("Stability Score (%)")
