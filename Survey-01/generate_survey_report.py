@@ -14,13 +14,14 @@ from statsmodels.stats.multitest import multipletests
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
 REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-#REPORT_DIR = ''
+REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
 # Целевая шкала для корреляционного анализа (можно менять)
 # TARGET_SCALE = 'MIJS-2+'
-TARGET_SCALE = 'MIJS-3+'
+#TARGET_SCALE = 'MIJS-3+'
+TARGET_SCALE = 'single_item'
 # TARGET_SCALE = 'MIJS-2'
 #TARGET_SCALE = 'MIJS'
 
@@ -273,7 +274,8 @@ def generate_report():
         "MIJS": ['mijs_q1', 'mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q5', 'mijs_q6'],
         "MIJS-2": ['mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q6'],
         "MIJS-2+": ['mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q6', 'jedi_inv'],
-        "MIJS-3+": ['mijs_q2', 'mijs_q4', 'mijs_q6', 'jedi_inv']
+        "MIJS-3+": ['mijs_q2', 'mijs_q4', 'mijs_q6', 'jedi_inv'],
+        "single_item": ['jedi_inv']
     }
 
     summary_rows = []
@@ -286,7 +288,7 @@ def generate_report():
         
         # График распределения баллов по шкале
         plt.figure(figsize=(8, 5))
-        sns.histplot(data_scales[scale_name + '_total'], bins=8, kde=True, color='indigo')
+        sns.histplot(data_scales[scale_name + '_total'], bins="auto", kde=True, color='indigo')
         plt.title(f"Распределение баллов по шкале {scale_name}")
         plt.xlabel("Суммарный балл")
         plt.ylabel("Количество")
@@ -298,6 +300,9 @@ def generate_report():
             txt = QUESTION_TEXTS.get(it, "Инвертированная Джедайская шкала")
             report_content += f"- {it}: {txt}\n"
         report_content += "\n"
+
+        if len(items) == 1:
+            continue
 
         # 2.x.1 Надежность
         report_content += hm.get_header(3, "Надежность (Reliability)") + "\n\n"
@@ -412,27 +417,35 @@ def generate_report():
         if valid_idx.sum() > 30: # Минимум 30 наблюдений
             rho, pval = spearmanr(data_scales.loc[valid_idx, feat], target_data[valid_idx])
             
-            sig = ""
-            if pval < 0.0001: sig = "****"
-            elif pval < 0.001: sig = "***"
-            elif pval < 0.01: sig = "**"
-            elif pval < 0.05: sig = "*"
-            
             corr_results.append({
                 'Label': FEATURE_LABELS.get(feat, feat),
                 'Rho': rho,
-                'PVal': pval,
-                'Sig': sig
+                'PVal': pval
             })
 
-    # Сортировка по p-value (по возрастанию) и затем по Rho (по возрастанию)
-    corr_results.sort(key=lambda x: (x['PVal'], x['Rho']))
+    # Коррекция p-значений (FDR) для корреляций
+    if corr_results:
+        p_vals = [r['PVal'] for r in corr_results]
+        reject, p_adj, _, _ = multipletests(p_vals, method='fdr_bh')
+        for i, r in enumerate(corr_results):
+            r['PVal_adj'] = p_adj[i]
+            
+            # Звездочки на основе скорректированного p-value
+            sig = ""
+            if p_adj[i] < 0.0001: sig = "****"
+            elif p_adj[i] < 0.001: sig = "***"
+            elif p_adj[i] < 0.01: sig = "**"
+            elif p_adj[i] < 0.05: sig = "*"
+            r['Sig'] = sig
 
-    report_content += "| № | Прием | ρ (Rho) | p-value | Знач. |\n"
-    report_content += "| :--- | :--- | :---: | :---: | :---: |\n"
+    # Сортировка по скорректированному p-value
+    corr_results.sort(key=lambda x: (x.get('PVal_adj', 1.0), -abs(x['Rho'])))
+
+    report_content += "| № | Прием | ρ (Rho) | p-value | p (adj) | Знач. |\n"
+    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: |\n"
     for i, res in enumerate(corr_results, 1):
-        report_content += f"| {i} | {res['Label']} | {res['Rho']:.3f} | {res['PVal']:.4f} | {res['Sig']} |\n"
-    report_content += "\n*Примечание: * p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале MIJS (меньше стресса/завала).* \n\n"
+        report_content += f"| {i} | {res['Label']} | {res['Rho']:.3f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
+    report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале {TARGET_SCALE} (меньше стресса/завала).* \n\n"
 
     # --- Раздел 3.2: Сравнение средних (ANOVA) ---
     report_content += hm.get_header(2, "Сравнение средних (ANOVA)") + "\n\n"
@@ -457,20 +470,28 @@ def generate_report():
         
         if len(groups) >= 2:
             f_stat, pval = f_oneway(*groups)
-            sig = "****" if pval < 0.0001 else "***" if pval < 0.001 else "**" if pval < 0.01 else "*" if pval < 0.05 else ""
             anova_results_prac.append({
                 'Label': FEATURE_LABELS.get(feat, feat),
                 'Means': [means.get(l, np.nan) for l in range(5)],
-                'F': f_stat, 'PVal': pval, 'Sig': sig
+                'F': f_stat, 'PVal': pval
             })
 
-    anova_results_prac.sort(key=lambda x: x['PVal'])
-    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | Ср. (4) | F | p-value | Знач. |\n"
-    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    # Коррекция p-значений (FDR) для ANOVA (частота)
+    if anova_results_prac:
+        p_vals = [r['PVal'] for r in anova_results_prac]
+        reject, p_adj, _, _ = multipletests(p_vals, method='fdr_bh')
+        for i, r in enumerate(anova_results_prac):
+            r['PVal_adj'] = p_adj[i]
+            sig = "****" if p_adj[i] < 0.0001 else "***" if p_adj[i] < 0.001 else "**" if p_adj[i] < 0.01 else "*" if p_adj[i] < 0.05 else ""
+            r['Sig'] = sig
+
+    anova_results_prac.sort(key=lambda x: x['PVal_adj'])
+    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | Ср. (4) | F | p-value | p (adj) | Знач. |\n"
+    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
     for i, res in enumerate(anova_results_prac, 1):
         m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
-        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
-    report_content += f"\n*Примечание: 0 — никогда/редко, 4 — всегда. В ячейках указан средний балл по шкале {TARGET_SCALE}. Чем ниже балл, тем выше продуктивность.* \n\n"
+        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
+    report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). 0 — никогда/редко, 4 — всегда. В ячейках указан средний балл по шкале {TARGET_SCALE}. Чем ниже балл, тем выше продуктивность.* \n\n"
 
     # --- 3.2.2. Уровень внедрения приемов ---
     report_content += hm.get_header(3, "Уровень внедрения приемов") + "\n\n"
@@ -490,26 +511,34 @@ def generate_report():
         
         if len(groups) >= 2:
             f_stat, pval = f_oneway(*groups)
-            sig = "***" if pval < 0.001 else "**" if pval < 0.01 else "*" if pval < 0.05 else ""
             anova_results_setup.append({
                 'Label': FEATURE_LABELS.get(feat, feat),
                 'Means': [means.get(l, np.nan) for l in range(4)],
-                'F': f_stat, 'PVal': pval, 'Sig': sig
+                'F': f_stat, 'PVal': pval
             })
 
-    anova_results_setup.sort(key=lambda x: x['PVal'])
-    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | F | p-value | Знач. |\n"
-    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    # Коррекция p-значений (FDR) для ANOVA (внедрение)
+    if anova_results_setup:
+        p_vals = [r['PVal'] for r in anova_results_setup]
+        reject, p_adj, _, _ = multipletests(p_vals, method='fdr_bh')
+        for i, r in enumerate(anova_results_setup):
+            r['PVal_adj'] = p_adj[i]
+            sig = "***" if p_adj[i] < 0.001 else "**" if p_adj[i] < 0.01 else "*" if p_adj[i] < 0.05 else ""
+            r['Sig'] = sig
+
+    anova_results_setup.sort(key=lambda x: x['PVal_adj'])
+    report_content += "| № | Прием | Ср. (0) | Ср. (1) | Ср. (2) | Ср. (3) | F | p-value | p (adj) | Знач. |\n"
+    report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
     for i, res in enumerate(anova_results_setup, 1):
         m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
-        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['Sig']} |\n"
-    report_content += f"\n*Примечание: 0 — не применил(а), 3 — по максимуму. В ячейках указан средний балл по шкале {TARGET_SCALE}.*\n\n"
+        report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
+    report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). 0 — не применил(а), 3 — по максимуму. В ячейках указан средний балл по шкале {TARGET_SCALE}.*\n\n"
 
 
     # --- Раздел 3.3: Сравнение трёх групп продуктивности (Kruskal-Wallis + Dunn) ---
     report_content += hm.get_header(2, "Сравнение трёх групп продуктивности (Kruskal-Wallis)") + "\n\n"
-    report_content += "Респонденты разделены на три группы по терцилям (33-й и 66-й перцентили) суммарного балла продуктивности. "
-    report_content += "Низкая группа – наиболее продуктивные (низкие баллы MIJS), высокая группа – наименее продуктивные (высокие баллы). "
+    report_content += "Респонденты разделены на три группы по терцилям (20-й и 80-й перцентили) суммарного балла продуктивности. "
+    report_content += f"Низкая группа – наиболее продуктивные (низкие баллы {TARGET_SCALE}), высокая группа – наименее продуктивные (высокие баллы {TARGET_SCALE}). "
     report_content += "Для каждой практики проверяется гипотеза о различиях распределений частоты использования между тремя группами с помощью критерия Краскела-Уоллиса. "
     report_content += "В случае значимых различий (p < 0.05 после FDR‑коррекции) выполняются попарные пост‑хок тесты Данна.\n\n"
 
@@ -517,12 +546,12 @@ def generate_report():
     target = data_scales[target_col].dropna()
 
     # Определяем границы групп (терцили)
-    p33 = target.quantile(1/3)
-    p66 = target.quantile(2/3)
+    p20 = target.quantile(0.15)
+    p80 = target.quantile(0.75)
 
     # Создаём переменную группы
     data_scales['prod_group'] = pd.cut(data_scales[target_col], 
-                                        bins=[-np.inf, p33, p66, np.inf], 
+                                        bins=[-np.inf, p20, p80, np.inf], 
                                         labels=['Продуктивные', 'Средняки', 'Непродуктивные'])
 
     # Подсчёт числа респондентов в группах
@@ -566,7 +595,6 @@ def generate_report():
     # Коррекция p-значений (FDR)
     if kw_results:
         p_vals = [r['p_val'] for r in kw_results]
-        from statsmodels.stats.multitest import multipletests
         reject, p_adj, _, _ = multipletests(p_vals, method='fdr_bh')
         for i, r in enumerate(kw_results):
             r['p_adj'] = p_adj[i]
@@ -577,7 +605,7 @@ def generate_report():
         report_content += "| № | Практика | Ср. Продуктивные | Ср. Средняки | Ср. Непродуктивные | H-статистика | p (исх.) | p (скорр.) | Значима |\n"
         report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
         for i, r in enumerate(kw_results, 1):
-            sig_marker = "Да" if r['reject'] else "Нет"
+            sig_marker = "✅" if r['reject'] else ""
             report_content += f"| {i} | {r['label']} | {r['mean_low']:.2f} | {r['mean_mid']:.2f} | {r['mean_high']:.2f} | {r['h']:.2f} | {r['p_val']:.4f} | {r['p_adj']:.4f} | {sig_marker} |\n"
 
         # Выделим значимые
@@ -779,6 +807,7 @@ def generate_report():
             else:
                 c_alpha = np.nan
                 c_omega = np.nan
+
             label = FEATURE_LABELS.get(feat, feat)
             report_content += f"| {label} | {c_alpha:.3f} | {c_omega:.3f} |\n"
         report_content += "\n"
