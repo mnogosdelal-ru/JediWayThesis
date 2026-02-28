@@ -49,7 +49,10 @@ warnings.filterwarnings("ignore")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(SCRIPT_DIR, 'Тест многопунктовой шкалы - RawResponses (1).csv')
 OUTPUT_MD = os.path.join(SCRIPT_DIR, 'mis_full_psychometric_report.md')
-#OUTPUT_MD = r'C:\Users\maxim\OneDrive\Obsidian\MyBrain\Мои исследования\Джедайская шкала\mis_full_psychometric_report.md'
+OUTPUT_MD = r'C:\Users\maxim\OneDrive\Obsidian\MyBrain\Мои исследования\Джедайская шкала\mis_full_psychometric_report.md'
+SHORT_SCALE_SIZE = 4
+MIS_CUSTOM_COLS = ['MIS_q_28', 'MIS_q_24', 'MIS_q_16', 'MIS_q_26', 'MIS_q_13']
+
 
 MIS_TEXTS = {
     1: "Каждый день появляются незапланированные срочные задачи, которые я не могу отложить",
@@ -140,6 +143,7 @@ class MISAnalyzer:
     def __init__(self, file_path):
         self.df = pd.read_csv(file_path)
         self.clean_data()
+        self.auto_select_mis_short()
         
     def clean_data(self):
         # Numeric conversion
@@ -155,11 +159,36 @@ class MISAnalyzer:
         
         self.df['MIS_Total'] = self.df[[f'MIS_q_{i}' for i in range(1, 31)]].sum(axis=1)
         
-        # MIS-5 Selection (Top loadings on F1)
-        self.mis_5_cols = ['MIS_q_28', 'MIS_q_24', 'MIS_q_16', 'MIS_q_26', 'MIS_q_15']
-        self.df['MIS_5'] = self.df[self.mis_5_cols].sum(axis=1)
-        
+        if 'MIS_CUSTOM_COLS' in globals() and MIS_CUSTOM_COLS:
+            self.df['MIS_custom'] = self.df[MIS_CUSTOM_COLS].sum(axis=1)
+            
         self.df = self.df.dropna(subset=['MIS_Total', 'single_item'])
+
+    def auto_select_mis_short(self, n=None):
+        if n is None:
+            n = SHORT_SCALE_SIZE
+        print(f"Automatically selecting top {n} items for MIS-short...")
+        cols = [f'MIS_q_{i}' for i in range(1, 31)]
+        data = self.df[cols]
+        
+        # Use FactorAnalyzer to get loadings on the first factor
+        try:
+            fa = FactorAnalyzer(n_factors=1, rotation=None)
+            fa.fit(data)
+            loadings = fa.loadings_[:, 0]
+        except Exception as e:
+            print(f"    Auto-selection EFA Error: {e}. Falling back to PCA.")
+            pca = PCA(n_components=1)
+            # Standardize before PCA
+            std_data = (data - data.mean()) / data.std()
+            pca.fit(std_data)
+            loadings = pca.components_[0]
+            
+        loadings_series = pd.Series(np.abs(loadings), index=cols)
+        self.mis_short_cols = loadings_series.sort_values(ascending=False).head(n).index.tolist()
+        
+        print(f"    Selected items: {self.mis_short_cols}")
+        self.df['MIS_short'] = self.df[self.mis_short_cols].sum(axis=1)
 
     def get_psychometrics(self, cols=None):
         if cols is None:
@@ -200,7 +229,7 @@ class MISAnalyzer:
             'n': len(self.df)
         }
 
-    def get_factor_structure(self, cols=None, n_factors=None):
+    def get_factor_structure(self, cols=None, n_factors=None, rotation='varimax'):
         if cols is None:
             cols = [f'MIS_q_{i}' for i in range(1, 31)]
         data = self.df[cols]
@@ -214,10 +243,14 @@ class MISAnalyzer:
         loadings = None
         efa_var = None
         if n_factors is None:
-            n_factors = 1 if len(cols) == 5 else 5
+            # If columns == 30, use 5 factors. For short scales (like MIS-4/5/6), use 1 factor.
+            n_factors = 5 if len(cols) == 30 else 1
+            
+        # Ensure n_factors doesn't exceed number of items
+        n_factors = min(n_factors, len(cols))
             
         try:
-            fa = FactorAnalyzer(n_factors=n_factors, rotation='varimax' if n_factors > 1 else None)
+            fa = FactorAnalyzer(n_factors=n_factors, rotation=rotation if n_factors > 1 else None)
             fa.fit(data)
             loadings = pd.DataFrame(fa.loadings_, index=cols, columns=[f'Factor {i+1}' for i in range(n_factors)])
             efa_var = fa.get_factor_variance()[1]
@@ -251,8 +284,19 @@ class MISAnalyzer:
             'bartlett_p': bartlett_p
         }
 
+    def get_inter_item_correlations(self, cols):
+        inter_corr = self.df[cols].corr()
+        # Average inter-item correlation (excluding diagonal)
+        mask = np.ones(inter_corr.shape, dtype=bool)
+        np.fill_diagonal(mask, 0)
+        avg_corr = inter_corr.where(mask).stack().mean()
+        return inter_corr, avg_corr
+
     def get_correlations(self):
-        mis_scales = list(MIS_BLOCKS.keys()) + ['MIS_Total', 'MIS_5']
+        mis_scales = list(MIS_BLOCKS.keys()) + ['MIS_Total', 'MIS_short']
+        if 'MIS_custom' in self.df.columns:
+            mis_scales.append('MIS_custom')
+            
         osd_scales = list(OSD_MAPPING.keys())
         criteria = osd_scales + ['single_item']
         
@@ -261,7 +305,7 @@ class MISAnalyzer:
         
         for m in mis_scales:
             for c in criteria:
-                if c in self.df.columns:
+                if c in self.df.columns and m in self.df.columns:
                     r, p = stats.pearsonr(self.df[m], self.df[c])
                     corr_matrix.loc[m, c] = r
                     p_matrix.loc[m, c] = p
@@ -314,14 +358,119 @@ def run_report():
     
     print("Computing metrics (Full Scale)...")
     psy_full = analyzer.get_psychometrics()
-    factors_full = analyzer.get_factor_structure()
-    
-    print("Computing metrics (MIS-5)...")
-    psy_5 = analyzer.get_psychometrics(analyzer.mis_5_cols)
-    factors_5 = analyzer.get_factor_structure(analyzer.mis_5_cols)
-    omega_5 = mcdonald_omega(factors_5['loadings'].iloc[:, 0])
+    factors_unrotated = analyzer.get_factor_structure(rotation=None)
+    factors_full = analyzer.get_factor_structure(rotation='varimax')
     
     corr_m, p_m = analyzer.get_correlations()
+    
+    def write_scale_analysis(f, analyzer, title, scale_id, cols):
+        print(f"Computing metrics for {title}...")
+        psy = analyzer.get_psychometrics(cols)
+        factors = analyzer.get_factor_structure(cols)
+        omega = mcdonald_omega(factors['loadings'].iloc[:, 0])
+        inter_corr_mtx, avg_inter_corr = analyzer.get_inter_item_correlations(cols)
+        
+        f.write(f"\n\n# {title}\n\n")
+        f.write(f"Размер шкалы: {len(cols)} пунктов.\n\n")
+        
+        if scale_id == 'short':
+             f.write("> [!TIP]\n")
+             f.write(f"> Для выбора пунктов использовалось **однофакторное невращаемое решение**. Порядок пунктов в таблице полной шкалы может отличаться, так как там применено вращение Varimax для 5 факторов, перераспределяющее нагрузку. Для краткой версии мы выбираем пункты, максимально нагруженные на общий 'General Factor'.\n\n")
+
+        f.write(f"## 1. Психометрические свойства {scale_id}\n\n")
+        f.write(f"- **Альфа Кронбаха: {psy['alpha']:.3f}**\n")
+        f.write(f"- **Омега Макдональда: {omega:.3f}**\n")
+        f.write(f"- **Средняя межпунктовая корреляция: {avg_inter_corr:.3f}**\n")
+        f.write(f"- **Доля дисперсии (PCA F1): {factors['var_explained_pca'][0]:.1%}**\n")
+        
+        if factors['kmo'] is not None:
+            f.write(f"- **Мера адекватности выборки KMO: {factors['kmo']:.3f}**\n")
+        if factors['bartlett_p'] is not None:
+            f.write(f"- **Критерий сферичности Барлетта: p {format_p(factors['bartlett_p'])}**\n")
+        
+        f.write(f"\n### Собственные числа ({scale_id}):\n")
+        evs = factors['eigenvalues']
+        f.write(", ".join([f"{v:.2f}" for v in evs]) + "\n\n")
+        
+        # Plots
+        try:
+            plt.figure(figsize=(10, 6))
+            sns.set_theme(style="whitegrid")
+            # Use columns sum from dataframe directly if possible
+            scale_sum_col = 'MIS_short' if scale_id == 'short' else 'MIS_custom'
+            ax = sns.histplot(analyzer.df[scale_sum_col], kde=False, color='royalblue', bins=min(len(cols)*5, 10))
+            plt.title(f'Распределение баллов по шкале {title}', fontsize=15)
+            plt.xlabel(f'Суммарный балл ({len(cols)}-{len(cols)*5})', fontsize=12)
+            plt.ylabel('Частота (N)', fontsize=12)
+            
+            img_name = f'mis_{scale_id}_distribution.png'
+            img_path = os.path.join(os.path.dirname(OUTPUT_MD), img_name)
+            plt.savefig(img_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            f.write("### Распределение баллов:\n\n")
+            f.write(f"![Распределение {scale_id}]({img_name})\n\n")
+            
+            # Regression
+            plt.figure(figsize=(10, 6))
+            r_val, _ = stats.pearsonr(analyzer.df['single_item'], analyzer.df[scale_sum_col])
+            r2 = r_val**2
+            
+            sns.regplot(x=analyzer.df['single_item'], y=analyzer.df[scale_sum_col], 
+                        scatter_kws={'alpha':0.5, 'color':'royalblue'}, 
+                        line_kws={'color':'darkorange'})
+            plt.title(f'Связь {title} с однопунктовым критерием', fontsize=15)
+            plt.xlabel('Оценка по single_item (1-10)', fontsize=12)
+            plt.ylabel(f'Суммарный балл {scale_id}', fontsize=12)
+            
+            plt.text(0.05, 0.95, f'$R^2 = {r2:.3f}$', transform=plt.gca().transAxes, 
+                     fontsize=12, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
+            
+            reg_img_name = f'mis_{scale_id}_vs_single.png'
+            reg_img_path = os.path.join(os.path.dirname(OUTPUT_MD), reg_img_name)
+            plt.savefig(reg_img_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            f.write("### Валидность (визуализация связи):\n\n")
+            f.write(f"![Связь {scale_id} с single_item]({reg_img_name})\n\n")
+            
+        except Exception as plot_err:
+            print(f"    Plotting error for {scale_id}: {plot_err}")
+
+        f.write(f"### Факторные нагрузки {scale_id} (EFA):\n\n")
+        loadings = factors['loadings']
+        f.write("| Пункт | Нагрузка (Factor 1) |\n|---|---|\n")
+        for idx, row in loadings.iterrows():
+            f.write(f"| {idx} | {row.iloc[0]:.3f} |\n")
+        f.write("\n")
+        
+        f.write(f"### Матрица межпунктовых корреляций {scale_id}:\n\n")
+        f.write("| | " + " | ".join(inter_corr_mtx.columns) + " |\n")
+        f.write("|---|" + "---|"*len(inter_corr_mtx.columns) + "\n")
+        for idx, row in inter_corr_mtx.iterrows():
+            f.write(f"| **{idx}** | " + " | ".join([f"{v:.3f}" for v in row]) + " |\n")
+        f.write("\n")
+        
+        f.write(f"### Пункты {scale_id} и их характеристики:\n\n")
+        f.write("| # | Текст пункта | Mean | SD | r-total | α-deleted |\n")
+        f.write("|---|---|---|---|---|---|\n")
+        for s in psy['item_stats']:
+            f.write(f"| {s['id']} | {s['text']} | {s['mean']:.2f} | {s['sd']:.2f} | {s['rit']:.3f} | {s['alpha_del']:.3f} |\n")
+        f.write("\n")
+        
+        f.write("## 2. Валидность и Сравнение\n\n")
+        f.write(f"Сравнение корреляций полной (MIS-30) и исследуемой ({scale_id}) версий с внешними критериями:\n\n")
+        f.write(f"| Критерий | MIS-Total (30) | {scale_id} | Сохранение связи |\n")
+        f.write("|---|---|---|---|\n")
+        
+        full_corrs = corr_m.loc['MIS_Total']
+        test_corrs = corr_m.loc[scale_sum_col]
+        
+        for c in corr_m.columns:
+            if c not in OSD_MAPPING and c != 'single_item': continue
+            r_f = full_corrs[c]
+            r_s = test_corrs[c]
+            ratio = (r_s / r_f * 100) if abs(r_f) > 0.01 else 0
+            label = OSD_MAPPING.get(c, c)
+            f.write(f"| {label} | {r_f:.3f} | {r_s:.3f} | {ratio:.1f}% |\n")
     
     with open(OUTPUT_MD, 'w', encoding='utf-8') as f:
         f.write("# Психометрический отчет по шкале MIS (30 пунктов)\n\n")
@@ -340,13 +489,29 @@ def run_report():
         evs = factors_full['eigenvalues'][:10]
         f.write(", ".join([f"{v:.2f}" for v in evs]) + " ...\n\n")
         
-        f.write("### Дисперсия (PCA):\n\n")
+        f.write("### Накопленная дисперсия (PCA):\n\n")
         var_exp = factors_full['var_explained_pca']
         f.write("| Показатель | F1 | F2 | F3 | F4 | F5 |\n|---|---|---|---|---|---|\n")
         f.write("| Доля дисперсии | " + " | ".join([f"{v:.1%}" for v in var_exp[:5]]) + " |\n")
         f.write("| Накопленная дисп. | " + " | ".join([f"{np.sum(var_exp[:i+1]):.1%}" for i in range(5)]) + " |\n\n")
         
-        f.write("### Нагрузки факторов (PCA):\n\n")
+        f.write("### Нагрузки факторов (без вращения):\n\n")
+        f.write("> [!NOTE]\n")
+        f.write("> В этой таблице представлены нагрузки на первые 5 факторов до применения вращения. ")
+        f.write(f"Первый фактор (F1) здесь отражает общее ядро шкалы (General Factor), по которому отбирались пункты для MIS-{SHORT_SCALE_SIZE}.\n\n")
+        
+        loadings_unrot = factors_unrotated['loadings']
+        loadings_unrot_sorted = loadings_unrot.sort_values(by='Factor 1', ascending=False)
+        
+        f.write("| Пункт | F1 | F2 | F3 | F4 | F5 |\n|---|---|---|---|---|---|\n")
+        for idx, row in loadings_unrot_sorted.iterrows():
+            f.write(f"| {idx} | " + " | ".join([f"{v:.3f}" for v in row]) + " |\n")
+        f.write("\n")
+
+        f.write("### Нагрузки факторов (EFA Varimax):\n\n")
+        f.write("> [!NOTE]\n")
+        f.write("> Использовано вращение **Varimax** для лучшей интерпретируемости пятифакторной структуры. ")
+        f.write("Нагрузки перераспределены для выделения независимых субшкал (блоков).\n\n")
         loadings_full = factors_full['loadings']
         # Sort by Factor 1 descending
         loadings_full_sorted = loadings_full.sort_values(by='Factor 1', ascending=False)
@@ -357,95 +522,18 @@ def run_report():
         f.write("\n")
         
         f.write("---")
-        f.write("\n\n# Краткая версия шкалы (MIS-5)\n\n")
-        f.write("На основе анализа факторных нагрузок и unidimensional-структуры была выделена краткая версия шкалы из 5 пунктов.\n\n")
         
-        f.write("## 1. Психометрические свойства MIS-5\n\n")
-        f.write(f"- **Альфа Кронбаха (MIS-5): {psy_5['alpha']:.3f}**\n")
-        f.write(f"- **Омега Макдональда (MIS-5): {omega_5:.3f}**\n")
-        f.write(f"- **Доля дисперсии (PCA F1): {factors_5['var_explained_pca'][0]:.1%}**\n")
+        # Section for Short Scale
+        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE})", "short", analyzer.mis_short_cols)
         
-        if factors_5['kmo'] is not None:
-            f.write(f"- **Мера адекватности выборки KMO: {factors_5['kmo']:.3f}**\n")
-        if factors_5['bartlett_p'] is not None:
-            f.write(f"- **Критерий сферичности Барлетта: p {format_p(factors_5['bartlett_p'])}**\n")
+        f.write("\n---\n")
         
-        f.write("\n### Собственные числа (MIS-5):\n")
-        evs_5 = factors_5['eigenvalues']
-        f.write(", ".join([f"{v:.2f}" for v in evs_5]) + "\n\n")
-        
-        # Generation of histogram
-        try:
-            plt.figure(figsize=(10, 6))
-            sns.set_theme(style="whitegrid")
-            ax = sns.histplot(analyzer.df['MIS_5'], kde=True, color='royalblue', bins=10)
-            plt.title('Распределение баллов по шкале MIS-5', fontsize=15)
-            plt.xlabel('Суммарный балл (5-25)', fontsize=12)
-            plt.ylabel('Частота (N)', fontsize=12)
-            
-            # Save plot to the same directory as OUTPUT_MD
-            img_path = os.path.join(os.path.dirname(OUTPUT_MD), 'mis_5_distribution.png')
-            plt.savefig(img_path, dpi=300, bbox_inches='tight')
-            plt.close()
-            f.write("### Распределение баллов:\n\n")
-            f.write(f"![Распределение MIS-5](mis_5_distribution.png)\n\n")
-            
-            # Regression plot: MIS-5 vs single_item
-            plt.figure(figsize=(10, 6))
-            r_val, _ = stats.pearsonr(analyzer.df['single_item'], analyzer.df['MIS_5'])
-            r2 = r_val**2
-            
-            sns.regplot(x=analyzer.df['single_item'], y=analyzer.df['MIS_5'], 
-                        scatter_kws={'alpha':0.5, 'color':'royalblue'}, 
-                        line_kws={'color':'darkorange'})
-            plt.title('Связь MIS-5 с однопунктовым критерием', fontsize=15)
-            plt.xlabel('Оценка по single_item (1-10)', fontsize=12)
-            plt.ylabel('Суммарный балл MIS-5', fontsize=12)
-            
-            # Add R^2 text
-            plt.text(0.05, 0.95, f'$R^2 = {r2:.3f}$', transform=plt.gca().transAxes, 
-                     fontsize=12, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
-            
-            reg_img_path = os.path.join(os.path.dirname(OUTPUT_MD), 'mis_5_vs_single.png')
-            plt.savefig(reg_img_path, dpi=300, bbox_inches='tight')
-            plt.close()
-            f.write("### Валидность (визуализация связи):\n\n")
-            f.write(f"![Связь MIS-5 с single_item](mis_5_vs_single.png)\n\n")
-            
-        except Exception as plot_err:
-            print(f"    Plotting error: {plot_err}")
+        # Section for Custom Scale
+        if hasattr(analyzer, 'mis_custom_cols') or ('MIS_CUSTOM_COLS' in globals() and MIS_CUSTOM_COLS):
+             custom_cols = MIS_CUSTOM_COLS
+             write_scale_analysis(f, analyzer, "Произвольная версия шкалы (MIS_CUSTOM)", "custom", custom_cols)
 
-        f.write("### Факторные нагрузки MIS-5 (EFA):\n\n")
-        loadings_5 = factors_5['loadings']
-        f.write("| Пункт | Нагрузка (Factor 1) |\n|---|---|\n")
-        for idx, row in loadings_5.iterrows():
-            f.write(f"| {idx} | {row.iloc[0]:.3f} |\n")
-        f.write("\n")
-        
-        f.write("### Пункты MIS-5 и их характеристики:\n\n")
-        f.write("| # | Текст пункта | Mean | SD | r-total | α-deleted |\n")
-        f.write("|---|---|---|---|---|---|\n")
-        for s in psy_5['item_stats']:
-            f.write(f"| {s['id']} | {s['text']} | {s['mean']:.2f} | {s['sd']:.2f} | {s['rit']:.3f} | {s['alpha_del']:.3f} |\n")
-        f.write("\n")
-        
-        f.write("## 2. Валидность и Сравнение\n\n")
-        f.write("Сравнение корреляций полной (MIS-30) и краткой (MIS-5) версий с внешними критериями:\n\n")
-        
-        f.write("| Критерий | MIS-Total (30) | MIS-5 (Краткая) | Сохранение связи |\n")
-        f.write("|---|---|---|---|\n")
-        
-        full_corrs = corr_m.loc['MIS_Total']
-        short_corrs = corr_m.loc['MIS_5']
-        
-        for c in corr_m.columns:
-            r_f = full_corrs[c]
-            r_s = short_corrs[c]
-            ratio = (r_s / r_f * 100) if abs(r_f) > 0.01 else 0
-            label = OSD_MAPPING.get(c, c)
-            f.write(f"| {label} | {r_f:.3f} | {r_s:.3f} | {ratio:.1f}% |\n")
-        
-        f.write("\n\n## 3. Таблица всех корреляций\n\n")
+        f.write("\n\n## 3. Таблица всех корреляций (Все версии)\n\n")
         f.write("| Шкала MIS | " + " | ".join([OSD_MAPPING.get(c, c) for c in corr_m.columns]) + " |\n")
         f.write("|---|" + "---|"*len(corr_m.columns) + "\n")
         for m_idx, m_row in corr_m.iterrows():
