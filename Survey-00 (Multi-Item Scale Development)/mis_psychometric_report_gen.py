@@ -49,8 +49,8 @@ warnings.filterwarnings("ignore")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(SCRIPT_DIR, 'Тест многопунктовой шкалы - RawResponses (1).csv')
 OUTPUT_MD = os.path.join(SCRIPT_DIR, 'mis_full_psychometric_report.md')
-OUTPUT_MD = r'C:\Users\maxim\OneDrive\Obsidian\MyBrain\Мои исследования\Джедайская шкала\mis_full_psychometric_report.md'
-SHORT_SCALE_SIZE = 4
+#OUTPUT_MD = r'C:\Users\maxim\OneDrive\Obsidian\MyBrain\Мои исследования\Джедайская шкала\mis_full_psychometric_report.md'
+SHORT_SCALE_SIZE = 5
 MIS_CUSTOM_COLS = ['MIS_q_28', 'MIS_q_24', 'MIS_q_16', 'MIS_q_26', 'MIS_q_13']
 
 
@@ -292,6 +292,43 @@ class MISAnalyzer:
         avg_corr = inter_corr.where(mask).stack().mean()
         return inter_corr, avg_corr
 
+    def bootstrap_selection_stability(self, n_iterations=100, n_top=None):
+        if n_top is None:
+            n_top = SHORT_SCALE_SIZE
+            
+        print(f"Running Bootstrap Stability Analysis ({n_iterations} iterations)...")
+        cols = [f'MIS_q_{i}' for i in range(1, 31)]
+        selection_counts = {c: 0 for c in cols}
+        
+        for i in range(n_iterations):
+            if (i + 1) % 100 == 0:
+                print(f"    Iteration {i + 1}/{n_iterations}...")
+            
+            # Resample with replacement
+            sample = self.df[cols].sample(n=len(self.df), replace=True)
+            # sample = self.df[cols].sample(frac=0.8, replace=False) # Вариант большей жести
+            
+            try:
+                # FA 1-factor unrotated
+                fa = FactorAnalyzer(n_factors=1, rotation=None)
+                fa.fit(sample)
+                loadings = np.abs(fa.loadings_[:, 0])
+            except:
+                # Fallback to PCA if FA fails on a specific sample
+                pca = PCA(n_components=1)
+                std_sample = (sample - sample.mean()) / sample.std()
+                pca.fit(std_sample)
+                loadings = np.abs(pca.components_[0])
+                
+            loadings_series = pd.Series(loadings, index=cols)
+            top_items = loadings_series.sort_values(ascending=False).head(n_top).index
+            for item in top_items:
+                selection_counts[item] += 1
+                
+        # Convert to percentage
+        stability = pd.Series(selection_counts) / n_iterations
+        return stability.sort_values(ascending=False)
+
     def get_correlations(self):
         mis_scales = list(MIS_BLOCKS.keys()) + ['MIS_Total', 'MIS_short']
         if 'MIS_custom' in self.df.columns:
@@ -361,9 +398,12 @@ def run_report():
     factors_unrotated = analyzer.get_factor_structure(rotation=None)
     factors_full = analyzer.get_factor_structure(rotation='varimax')
     
+    # Bootstrap Stability Analysis
+    stability_data = analyzer.bootstrap_selection_stability(n_iterations=1000)
+    
     corr_m, p_m = analyzer.get_correlations()
     
-    def write_scale_analysis(f, analyzer, title, scale_id, cols):
+    def write_scale_analysis(f, analyzer, title, scale_id, cols, stability_series=None):
         print(f"Computing metrics for {title}...")
         psy = analyzer.get_psychometrics(cols)
         factors = analyzer.get_factor_structure(cols)
@@ -432,6 +472,46 @@ def run_report():
             f.write("### Валидность (визуализация связи):\n\n")
             f.write(f"![Связь {scale_id} с single_item]({reg_img_name})\n\n")
             
+            if scale_id == 'short' and stability_series is not None:
+                # Stability plot
+                plt.figure(figsize=(10, 6))
+                top_15_stability = stability_series.head(15)
+                # Ensure we represent IDs correctly for x-axis
+                x_labels = [str(int(idx.split('_')[-1])) for idx in top_15_stability.index]
+                
+                ax = sns.barplot(x=x_labels, y=top_15_stability.values, color='seagreen')
+
+                # Add text labels on top of bars
+                for p in ax.patches:
+                    ax.annotate(f'{p.get_height():.1%}', 
+                                (p.get_x() + p.get_width() / 2., p.get_height()), 
+                                ha = 'center', va = 'center', 
+                                xytext = (0, 9), 
+                                textcoords = 'offset points', 
+                                fontsize=9)
+
+                plt.title(f'Устойчивость выбора пунктов MIS-{SHORT_SCALE_SIZE} (Bootstrap)', fontsize=15)
+                plt.xlabel('ID пункта (MIS_q_x)', fontsize=12)
+                plt.ylabel(f'Частота попадания в ТОП-{SHORT_SCALE_SIZE}', fontsize=12)
+                plt.ylim(0, 1.1)
+                
+                stab_img_name = f'mis_{scale_id}_stability.png'
+                stab_img_path = os.path.join(os.path.dirname(OUTPUT_MD), stab_img_name)
+                plt.savefig(stab_img_path, dpi=300, bbox_inches='tight')
+                plt.close()
+                f.write("### Анализ устойчивости выбора (Bootstrap):\n\n")
+                f.write(f"![Устойчивость {scale_id}]({stab_img_name})\n\n")
+                
+                f.write("> [!NOTE]\n")
+                f.write("> График показывает, как часто каждый пункт попадал в ТОП при 500 повторных расчетах на случайных подвыборках. ")
+                f.write("Пункты с частотой выше 0.8-0.9 считаются абсолютно стабильными для этой шкалы.\n\n")
+                
+                f.write("| Пункт | Частота попадания в ТОП |\n|---|---|\n")
+                for idx, val in top_15_stability.items():
+                    bold = "**" if idx in cols else ""
+                    f.write(f"| {bold}{idx}{bold} | {val:.1%} |\n")
+                f.write("\n")
+                
         except Exception as plot_err:
             print(f"    Plotting error for {scale_id}: {plot_err}")
 
@@ -524,7 +604,7 @@ def run_report():
         f.write("---")
         
         # Section for Short Scale
-        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE})", "short", analyzer.mis_short_cols)
+        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE})", "short", analyzer.mis_short_cols, stability_data)
         
         f.write("\n---\n")
         
