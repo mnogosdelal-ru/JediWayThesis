@@ -38,8 +38,8 @@ import os
 
 # Setup encoding for Windows console
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
 
 warnings.filterwarnings("ignore")
 
@@ -50,7 +50,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(SCRIPT_DIR, 'Тест многопунктовой шкалы - RawResponses (1).csv')
 OUTPUT_MD = os.path.join(SCRIPT_DIR, 'mis_full_psychometric_report.md')
 #OUTPUT_MD = r'C:\Users\maxim\OneDrive\Obsidian\MyBrain\Мои исследования\Джедайская шкала\mis_full_psychometric_report.md'
-SHORT_SCALE_SIZE = 6
+SHORT_SCALE_SIZE = 5
 #MIS_CUSTOM_COLS = ['MIS_q_28', 'MIS_q_24', 'MIS_q_16', 'MIS_q_26', 'MIS_q_13']
 MIS_CUSTOM_COLS = ['MIS_q_15', 'MIS_q_16', 'MIS_q_24', 'MIS_q_26', 'MIS_q_28']
 MAX_ITTERATIONS = 1000
@@ -315,10 +315,10 @@ class MISAnalyzer:
         
         for i in range(n_iterations):
             if (i + 1) % 100 == 0:
-                print(f"    Iteration {i + 1}/{n_iterations}...")
+                print(f"    Iteration {i + 1}/{n_iterations}...", flush=True)
             
-            # Resample with 80% fraction as per user's modification
-            sample = self.df[cols + ([TARGET_FOR_R_SCALE] if method == 'criterion' else [])].sample(frac=0.8, replace=False)
+            # Resample with replacement (Bootstrap)
+            sample = self.df[cols + ([TARGET_FOR_R_SCALE] if method == 'criterion' else [])].sample(n=len(self.df), replace=True)
             
             if method == 'factor':
                 try:
@@ -326,7 +326,7 @@ class MISAnalyzer:
                     fa = FactorAnalyzer(n_factors=1, rotation=None)
                     fa.fit(sample[cols])
                     loadings = np.abs(fa.loadings_[:, 0])
-                except:
+                except Exception as e: # Catch specific exception or general for robustness
                     # Fallback to PCA
                     pca = PCA(n_components=1)
                     std_sample = (sample[cols] - sample[cols].mean()) / sample[cols].std()
@@ -407,6 +407,19 @@ class MISAnalyzer:
 # ============================================================
 # REPORT GENERATOR
 # ============================================================
+class ReportCounters:
+    def __init__(self):
+        self.table = 0
+        self.figure = 0
+    
+    def next_table(self):
+        self.table += 1
+        return f"###### Таблица {self.table}"
+        
+    def next_figure(self):
+        self.figure += 1
+        return f"###### Рисунок {self.figure}"
+
 def run_report():
     print("Loading analyzer...")
     analyzer = MISAnalyzer(FILE_PATH)
@@ -421,8 +434,9 @@ def run_report():
     stability_data_5r = analyzer.bootstrap_selection_stability(n_iterations=MAX_ITTERATIONS, method='criterion')
     
     corr_m, p_m = analyzer.get_correlations()
+    counters = ReportCounters()
     
-    def write_scale_analysis(f, analyzer, title, scale_id, cols, stability_series=None):
+    def write_scale_analysis(f, analyzer, title, scale_id, cols, stability_series=None, counters=None):
         print(f"Computing metrics for {title}...")
         psy = analyzer.get_psychometrics(cols)
         factors = analyzer.get_factor_structure(cols)
@@ -432,10 +446,6 @@ def run_report():
         f.write(f"\n\n# {title}\n\n")
         f.write(f"Размер шкалы: {len(cols)} пунктов.\n\n")
         
-        if scale_id == 'short':
-             f.write("> [!TIP]\n")
-             f.write(f"> Для выбора пунктов использовалось **однофакторное невращаемое решение**. Порядок пунктов в таблице полной шкалы может отличаться, так как там применено вращение Varimax для 5 факторов, перераспределяющее нагрузку. Для краткой версии мы выбираем пункты, максимально нагруженные на общий 'General Factor'.\n\n")
-
         f.write(f"## 1. Психометрические свойства {scale_id}\n\n")
         f.write(f"- **Альфа Кронбаха: {psy['alpha']:.3f}**\n")
         f.write(f"- **Омега Макдональда: {omega:.3f}**\n")
@@ -466,7 +476,7 @@ def run_report():
             img_path = os.path.join(os.path.dirname(OUTPUT_MD), img_name)
             plt.savefig(img_path, dpi=300, bbox_inches='tight')
             plt.close()
-            f.write("### Распределение баллов:\n\n")
+            f.write(f"{counters.next_figure()}. Распределение баллов\n")
             f.write(f"![Распределение {scale_id}]({img_name})\n\n")
             
             # Regression
@@ -488,7 +498,7 @@ def run_report():
             reg_img_path = os.path.join(os.path.dirname(OUTPUT_MD), reg_img_name)
             plt.savefig(reg_img_path, dpi=300, bbox_inches='tight')
             plt.close()
-            f.write("### Валидность (визуализация связи):\n\n")
+            f.write(f"{counters.next_figure()}. Валидность (визуализация связи)\n")
             f.write(f"![Связь {scale_id} с single_item]({reg_img_name})\n\n")
             
             if scale_id in ['short', '5r'] and stability_series is not None:
@@ -519,7 +529,7 @@ def run_report():
                 stab_img_path = os.path.join(os.path.dirname(OUTPUT_MD), stab_img_name)
                 plt.savefig(stab_img_path, dpi=300, bbox_inches='tight')
                 plt.close()
-                f.write("### Анализ устойчивости выбора (Bootstrap):\n\n")
+                f.write(f"{counters.next_figure()}. Анализ устойчивости выбора (Bootstrap)\n")
                 f.write(f"![Устойчивость {scale_id}]({stab_img_name})\n\n")
                 
                 f.write("> [!NOTE]\n")
@@ -529,6 +539,7 @@ def run_report():
                     f.write(f"> График показывает, как часто каждый пункт попадал в ТОП при {MAX_ITTERATIONS} повторных расчетах на случайных подвыборках (по корреляции с критерием {TARGET_FOR_R_SCALE}). ")
                 f.write("Пункты с частотой выше 0.8-0.9 считаются абсолютно стабильными для этой шкалы.\n\n")
                 
+                f.write(f"{counters.next_table()}. Частота попадания в ТОП\n")
                 f.write("| Пункт | Частота попадания в ТОП |\n|---|---|\n")
                 for idx, val in top_15_stability.items():
                     bold = "**" if idx in cols else ""
@@ -538,28 +549,28 @@ def run_report():
         except Exception as plot_err:
             print(f"    Plotting error for {scale_id}: {plot_err}")
 
-        f.write(f"### Факторные нагрузки {scale_id} (EFA):\n\n")
+        f.write(f"{counters.next_table()}. Факторные нагрузки {scale_id} (EFA)\n")
         loadings = factors['loadings']
         f.write("| Пункт | Нагрузка (Factor 1) |\n|---|---|\n")
         for idx, row in loadings.iterrows():
             f.write(f"| {idx} | {row.iloc[0]:.3f} |\n")
         f.write("\n")
         
-        f.write(f"### Матрица межпунктовых корреляций {scale_id}:\n\n")
+        f.write(f"{counters.next_table()}. Матрица межпунктовых корреляций {scale_id}\n")
         f.write("| | " + " | ".join(inter_corr_mtx.columns) + " |\n")
         f.write("|---|" + "---|"*len(inter_corr_mtx.columns) + "\n")
         for idx, row in inter_corr_mtx.iterrows():
             f.write(f"| **{idx}** | " + " | ".join([f"{v:.3f}" for v in row]) + " |\n")
         f.write("\n")
         
-        f.write(f"### Пункты {scale_id} и их характеристики:\n\n")
+        f.write(f"{counters.next_table()}. Пункты {scale_id} и их характеристики\n")
         f.write("| # | Текст пункта | Mean | SD | r-total | α-deleted |\n")
         f.write("|---|---|---|---|---|---|\n")
         for s in psy['item_stats']:
             f.write(f"| {s['id']} | {s['text']} | {s['mean']:.2f} | {s['sd']:.2f} | {s['rit']:.3f} | {s['alpha_del']:.3f} |\n")
         f.write("\n")
         
-        f.write("## 2. Валидность и Сравнение\n\n")
+        f.write(f"{counters.next_table()}. Валидность и Сравнение {scale_id}\n")
         f.write(f"Сравнение корреляций полной (MIS-30) и исследуемой ({scale_id}) версий с внешними критериями:\n\n")
         f.write(f"| Критерий | MIS-Total (30) | {scale_id} | Сохранение связи |\n")
         f.write("|---|---|---|---|\n")
@@ -581,27 +592,20 @@ def run_report():
         
         f.write("## 1. Надежность полной шкалы\n\n")
         f.write(f"- **Общая Альфа Кронбаха (MIS Total): {psy_full['alpha']:.3f}**\n")
-        f.write("\n### Надежность субшкал (блоков):\n\n")
+        f.write(f"{counters.next_table()}. Надежность субшкал (блоков)\n")
         f.write("| Субшкала | Альфа |\n|---|---|\n")
         for bname, alpha in psy_full['block_alphas'].items():
             f.write(f"| {BLOCK_NAMES_RU[bname]} | {alpha:.3f} |\n")
         f.write("\n")
         
         f.write("## 2. Факторная структура (PCA)\n\n")
-        f.write("### Собственные числа (Eigenvalues):\n")
-        evs = factors_full['eigenvalues'][:10]
-        f.write(", ".join([f"{v:.2f}" for v in evs]) + " ...\n\n")
-        
-        f.write("### Накопленная дисперсия (PCA):\n\n")
-        var_exp = factors_full['var_explained_pca']
-        f.write("| Показатель | F1 | F2 | F3 | F4 | F5 |\n|---|---|---|---|---|---|\n")
-        f.write("| Доля дисперсии | " + " | ".join([f"{v:.1%}" for v in var_exp[:5]]) + " |\n")
-        f.write("| Накопленная дисп. | " + " | ".join([f"{np.sum(var_exp[:i+1]):.1%}" for i in range(5)]) + " |\n\n")
-        
-        f.write("### Нагрузки факторов (без вращения):\n\n")
-        f.write("> [!NOTE]\n")
-        f.write("> В этой таблице представлены нагрузки на первые 5 факторов до применения вращения. ")
-        f.write(f"Первый фактор (F1) здесь отражает общее ядро шкалы (General Factor), по которому отбирались пункты для MIS-{SHORT_SCALE_SIZE}.\n\n")
+
+        f.write(f"{counters.next_table()}. Собственные числа\n")
+        f.write("| | Собств. число | Объясн. дисп. | Накоп. дисп. |\n|:---:|:---:|:---:|:---:|\n")
+        for n in range(1, min(len(factors_unrotated), 10)):
+            f.write(f"| F{n} | {factors_unrotated['eigenvalues'][n-1]:.2f} | {factors_unrotated['var_explained_pca'][n-1]:.1%} | {np.sum(factors_unrotated['var_explained_pca'][:n]):.1%} |\n")
+            
+        f.write(f"{counters.next_table()}. Нагрузки факторов (без вращения)\n")
         
         loadings_unrot = factors_unrotated['loadings']
         loadings_unrot_sorted = loadings_unrot.sort_values(by='Factor 1', ascending=False)
@@ -611,37 +615,25 @@ def run_report():
             f.write(f"| {idx} | " + " | ".join([f"{v:.3f}" for v in row]) + " |\n")
         f.write("\n")
 
-        f.write("### Нагрузки факторов (EFA Varimax):\n\n")
-        f.write("> [!NOTE]\n")
-        f.write("> Использовано вращение **Varimax** для лучшей интерпретируемости пятифакторной структуры. ")
-        f.write("Нагрузки перераспределены для выделения независимых субшкал (блоков).\n\n")
-        loadings_full = factors_full['loadings']
-        # Sort by Factor 1 descending
-        loadings_full_sorted = loadings_full.sort_values(by='Factor 1', ascending=False)
-        
-        f.write("| Пункт | F1 | F2 | F3 | F4 | F5 |\n|---|---|---|---|---|---|\n")
-        for idx, row in loadings_full_sorted.iterrows():
-            f.write(f"| {idx} | " + " | ".join([f"{v:.3f}" for v in row]) + " |\n")
-        f.write("\n")
-        
         f.write("---")
         
         # Section for Short Scale
-        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE})", "short", analyzer.mis_short_cols, stability_data_short)
+        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE})", "short", analyzer.mis_short_cols, stability_data_short, counters)
         
         f.write("\n---\n")
         
         # Section for MIS-5R
-        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE}R)", "5r", analyzer.mis_5r_cols, stability_data_5r)
+        write_scale_analysis(f, analyzer, f"Краткая версия шкалы (MIS-{SHORT_SCALE_SIZE}R)", "5r", analyzer.mis_5r_cols, stability_data_5r, counters)
 
         f.write("\n---\n")
         
         # Section for Custom Scale
         if hasattr(analyzer, 'mis_custom_cols') or ('MIS_CUSTOM_COLS' in globals() and MIS_CUSTOM_COLS):
              custom_cols = MIS_CUSTOM_COLS
-             write_scale_analysis(f, analyzer, "Произвольная версия шкалы (MIS_CUSTOM)", "custom", custom_cols)
+             write_scale_analysis(f, analyzer, "Произвольная версия шкалы (MIS_CUSTOM)", "custom", custom_cols, counters=counters)
 
-        f.write("\n\n## 3. Таблица всех корреляций (Все версии)\n\n")
+        f.write("## 3. Сравниваем все шкалы\n")
+        f.write(f"{counters.next_table()}. Корреляционная матрица всех версий\n")
         f.write("| Шкала MIS | " + " | ".join([OSD_MAPPING.get(c, c) for c in corr_m.columns]) + " |\n")
         f.write("|---|" + "---|"*len(corr_m.columns) + "\n")
         for m_idx, m_row in corr_m.iterrows():
