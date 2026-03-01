@@ -318,7 +318,8 @@ class MISAnalyzer:
                 print(f"    Iteration {i + 1}/{n_iterations}...", flush=True)
             
             # Resample with replacement (Bootstrap)
-            sample = self.df[cols + ([TARGET_FOR_R_SCALE] if method == 'criterion' else [])].sample(n=len(self.df), replace=True)
+            #sample = self.df[cols + ([TARGET_FOR_R_SCALE] if method == 'criterion' else [])].sample(n=len(self.df), replace=True)
+            sample = self.df[cols + ([TARGET_FOR_R_SCALE] if method == 'criterion' else [])].sample(frac=0.8, replace=False)
             
             if method == 'factor':
                 try:
@@ -602,7 +603,7 @@ def run_report():
 
         f.write(f"{counters.next_table()}. Собственные числа\n")
         f.write("| | Собств. число | Объясн. дисп. | Накоп. дисп. |\n|:---:|:---:|:---:|:---:|\n")
-        for n in range(1, min(len(factors_unrotated), 10)):
+        for n in range(1, min(len(factors_unrotated['eigenvalues']), 10) + 1):
             f.write(f"| F{n} | {factors_unrotated['eigenvalues'][n-1]:.2f} | {factors_unrotated['var_explained_pca'][n-1]:.1%} | {np.sum(factors_unrotated['var_explained_pca'][:n]):.1%} |\n")
             
         f.write(f"{counters.next_table()}. Нагрузки факторов (без вращения)\n")
