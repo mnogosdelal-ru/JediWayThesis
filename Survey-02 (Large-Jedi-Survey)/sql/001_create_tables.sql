@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS respondents (
 
     -- Страница 3: Работа
     work_urgent_important INT,            -- 0-5 (0 если не работает)
-    work_satisfaction INT,                -- 0-10
+    work_satisfaction INT,                -- 1-7
 
     -- Страница 4: MIJS
     mijs_items JSON,                      -- [1,2,3,4,5,3,4,2,3,4,3,4]

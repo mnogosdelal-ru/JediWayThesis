@@ -64,10 +64,10 @@
     
     <div class="form-group">
         <label for="work_satisfaction">На сколько вы удовлетворены своей работой?</label>
-        
+
         <div class="scale-group">
             <div class="scale-options">
-                <?php for ($i = 0; $i <= 10; $i++): ?>
+                <?php for ($i = 1; $i <= 7; $i++): ?>
                 <div class="scale-option">
                     <input type="radio" id="work_sat_<?= $i ?>" name="work_satisfaction" value="<?= $i ?>" required>
                     <label for="work_sat_<?= $i ?>"><?= $i ?></label>
@@ -75,8 +75,8 @@
                 <?php endfor; ?>
             </div>
             <div class="scale-labels">
-                <span>0 — Ненавижу эту "галеру"!</span>
-                <span>10 — Не могу представить лучшей работы</span>
+                <span>1 — Ненавижу эту галеру!</span>
+                <span>7 — Работа мечты!</span>
             </div>
         </div>
     </div>
