@@ -23,7 +23,7 @@
     
     <?php foreach ($swls_items as $i => $text): ?>
     <div class="form-group">
-        <label><?= $i ?>. <?= htmlspecialchars($text) ?></label>
+        <label><?= htmlspecialchars($text) ?></label>
         
         <div class="scale-group">
             <div class="scale-options">

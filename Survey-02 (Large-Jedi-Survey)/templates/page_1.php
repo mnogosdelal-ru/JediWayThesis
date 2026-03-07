@@ -5,12 +5,12 @@
     
     <!-- Демография -->
     <div class="form-group">
-        <label for="age">1. Возраст <span class="required">*</span></label>
+        <label for="age">Возраст <span class="required">*</span></label>
         <input type="number" id="age" name="age" min="18" max="100" required>
     </div>
-    
+
     <div class="form-group">
-        <label for="gender">2. Пол <span class="required">*</span></label>
+        <label for="gender">Пол <span class="required">*</span></label>
         <select id="gender" name="gender" required>
             <option value="">Выберите...</option>
             <option value="male">Мужской</option>
@@ -19,17 +19,17 @@
     </div>
     
     <div class="form-group">
-        <label for="children_count">3. Сколько у вас детей? <span class="required">*</span></label>
+        <label for="children_count">Сколько у вас детей? <span class="required">*</span></label>
         <input type="number" id="children_count" name="children_count" min="0" value="0" required>
     </div>
-    
+
     <div class="form-group">
-        <label for="work_experience_years">4. Сколько у вас лет рабочего стажа? <span class="required">*</span></label>
+        <label for="work_experience_years">Сколько у вас лет рабочего стажа? <span class="required">*</span></label>
         <input type="number" id="work_experience_years" name="work_experience_years" min="0" required>
     </div>
-    
+
     <div class="form-group">
-        <label for="position">5. Какова ваша текущая позиция? <span class="required">*</span></label>
+        <label for="position">Какова ваша текущая позиция? <span class="required">*</span></label>
         <select id="position" name="position" required>
             <option value="">Выберите...</option>
             <option value="owner">Владелец бизнеса</option>
@@ -46,7 +46,7 @@
     </div>
     
     <div class="form-group">
-        <label for="industry">6. В какой отрасли вы работаете? <span class="required">*</span></label>
+        <label for="industry">В какой отрасли вы работаете? <span class="required">*</span></label>
         <select id="industry" name="industry" required>
             <option value="">Выберите...</option>
             <option value="it">IT</option>
@@ -60,7 +60,7 @@
     </div>
     
     <div class="form-group">
-        <label for="remote_days">7. Сколько дней вы работаете на удалёнке? <span class="required">*</span></label>
+        <label for="remote_days">Сколько дней вы работаете на удалёнке? <span class="required">*</span></label>
         <select id="remote_days" name="remote_days" required>
             <option value="">Выберите...</option>
             <option value="office">Я работаю в офисе (удалённая работа - это исключение)</option>

@@ -43,7 +43,7 @@
     
     <?php foreach ($mbi_exhaustion as $i => $text): ?>
     <div class="form-group">
-        <label><?= $i ?>. <?= htmlspecialchars($text) ?></label>
+        <label><?= htmlspecialchars($text) ?></label>
         <div class="scale-group">
             <div class="scale-options">
                 <?php for ($v = 0; $v <= 6; $v++): ?>
@@ -61,7 +61,7 @@
     
     <?php foreach ($mbi_cynicism as $i => $text): ?>
     <div class="form-group">
-        <label><?= $i ?>. <?= htmlspecialchars($text) ?></label>
+        <label><?= htmlspecialchars($text) ?></label>
         <div class="scale-group">
             <div class="scale-options">
                 <?php for ($v = 0; $v <= 6; $v++): ?>
@@ -79,7 +79,7 @@
     
     <?php foreach ($mbi_efficacy as $i => $text): ?>
     <div class="form-group">
-        <label><?= $i ?>. <?= htmlspecialchars($text) ?></label>
+        <label><?= htmlspecialchars($text) ?></label>
         <div class="scale-group">
             <div class="scale-options">
                 <?php for ($v = 0; $v <= 6; $v++): ?>
