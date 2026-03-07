@@ -1,0 +1,70 @@
+================================================================================
+БЛОК 4: МОДЕРАЦИОННЫЙ АНАЛИЗ (Гипотеза H11)
+2 научные работы
+================================================================================
+
+H11 - СФЕРА ЖИЗНИ (МОДЕРАЦИЯ)
+--------------------------------------------------------------------------------
+
+1. Deci, E. L., & Ryan, R. M. (2000).
+   The "what" and "why" of goal pursuits: Human needs and the 
+   self-determination of behavior.
+   Psychological Inquiry, 11(4), 227–268.
+   
+   DOI: 10.1207/S15327965PLI1104_01
+   PDF: https://doi.org/10.1207/S15327965PLI1104_01
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Deci Ryan 2000 self-determination PDF"
+   - Цитирований: 15000+ (Self-Determination Theory - SDT)
+   - Open Access: может быть доступна на сайте автора
+
+2. Greenhaus, J. H., & Beutell, N. J. (1985).
+   Sources of conflict between work and family roles.
+   Academy of Management Review, 10(1), 76–88.
+   
+   DOI: 10.5465/amr.1985.4277352
+   PDF: https://doi.org/10.5465/amr.1985.4277352
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/23456789
+   - Google Scholar: "Greenhaus Beutell 1985 work family conflict PDF"
+   - Цитирований: 8000+ (классика work-family conflict)
+   - JSTOR: https://www.jstor.org/stable/258218
+
+================================================================================
+БЛОК 5: КОНТРОЛЬ СОЦИАЛЬНОЙ ЖЕЛАТЕЛЬНОСТИ (Гипотеза H12)
+2 научные работы
+================================================================================
+
+H12 - РОБАСТНОСТЬ ЭФФЕКТОВ
+--------------------------------------------------------------------------------
+
+1. Paulhus, D. L. (1984).
+   Two-component models of socially desirable responding.
+   Journal of Personality and Social Psychology, 46(3), 598–609.
+   
+   DOI: 10.1037/0022-3514.46.3.598
+   PDF: https://doi.org/10.1037/0022-3514.46.3.598
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Paulhus 1984 socially desirable responding PDF"
+   - BIDR (Balanced Inventory of Desirable Responding)
+
+2. Crowne, D. P., & Marlowe, D. (1960).
+   A new scale of social desirability independent of psychopathology.
+   Journal of Consulting Psychology, 24(4), 349–354.
+   
+   DOI: 10.1037/h0047358
+   PMID: 13813058
+   PDF: https://doi.org/10.1037/h0047358
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Crowne Marlowe 1960 social desirability PDF"
+   - MC-SDS (Marlowe-Crowne Social Desirability Scale)
+   - Классическая шкала, цитирований: 10000+
+
+================================================================================

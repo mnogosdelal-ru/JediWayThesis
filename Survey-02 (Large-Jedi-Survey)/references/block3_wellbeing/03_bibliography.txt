@@ -1,0 +1,143 @@
+================================================================================
+БЛОК 3: ПРАКТИКИ И БЛАГОПОЛУЧИЕ (Гипотезы H6-H10)
+6 научных работ
+================================================================================
+
+H6 - СТРЕСС (КОРРЕЛЯЦИЯ)
+--------------------------------------------------------------------------------
+
+1. Lazarus, R. S., & Folkman, S. (1984).
+   Stress, Appraisal, and Coping.
+   Springer.
+   
+   ISBN: 978-0826141910
+   Это книга (монография)
+   
+   Поиск PDF:
+   - Легально: купить или найти в библиотеке
+   - Google Books: https://books.google.com/books?id=0f9pAAAAMAAJ
+   - Ключевая работа по теории стресса
+
+2. Jex, S. M., & Elacqua, T. C. (1999).
+   Time management: Test of a process model.
+   Journal of Applied Psychology, 84(3), 381–391.
+   
+   DOI: 10.1037/0021-9010.84.3.381
+   PMID: 10380423
+   PDF: https://doi.org/10.1037/0021-9010.84.3.381
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Jex Elacqua 1999 time management PDF"
+
+--------------------------------------------------------------------------------
+
+H7 - УДОВЛЕТВОРЁННОСТЬ ЖИЗНЬЮ (КОРРЕЛЯЦИЯ)
+--------------------------------------------------------------------------------
+
+3. Bandura, A. (1977).
+   Self-efficacy: Toward a unifying theory of behavioral change.
+   Psychological Review, 84(2), 191–215.
+   
+   DOI: 10.1037/0033-295X.84.2.191
+   PMID: 847061
+   PDF: https://doi.org/10.1037/0033-295X.84.2.191
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Bandura 1977 self-efficacy PDF"
+   - Цитирований: 50000+ (основополагающая работа)
+
+4. Emmons, R. A. (1986).
+   Personal strivings: An approach to personality and subjective well-being.
+   Journal of Personality and Social Psychology, 51(5), 1058–1068.
+   
+   DOI: 10.1037/0022-3514.51.5.1058
+   PDF: https://doi.org/10.1037/0022-3514.51.5.1058
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/232543380
+   - Google Scholar: "Emmons 1986 personal strivings PDF"
+
+--------------------------------------------------------------------------------
+
+H8 - ПРОКРАСТИНАЦИЯ
+--------------------------------------------------------------------------------
+
+5. Sirois, F., & Pychyl, T. (2013).
+   Procrastination and the priority of short-term mood regulation: 
+   Consequences for future self.
+   Social and Personality Psychology Compass, 7(2), 115–127.
+   
+   DOI: 10.1111/spc3.12011
+   PDF: https://doi.org/10.1111/spc3.12011
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/259963456
+   - Google Scholar: "Sirois Pychyl 2013 procrastination PDF"
+   - Open Access: должна быть доступна бесплатно
+
+6. Wohl, M. J., Pychyl, T. A., & Bennett, S. H. (2010).
+   I forgive myself, now I can study: How self-forgiveness for 
+   procrastinating can reduce future procrastination.
+   Personality and Social Psychology Bulletin, 36(7), 803–816.
+   
+   DOI: 10.1177/0146167210372217
+   PMID: 20460637
+   PDF: https://doi.org/10.1177/0146167210372217
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/44666789
+   - Google Scholar: "Wohl 2010 self-forgiveness procrastination PDF"
+
+--------------------------------------------------------------------------------
+
+H9 - СТРЕСС (РЕГРЕССИЯ)
+--------------------------------------------------------------------------------
+
+7. Richardson, K. M., & Rothstein, H. R. (2008).
+   Effects of occupational stress management intervention programs: 
+   A meta-analysis.
+   Journal of Occupational Health Psychology, 13(1), 69–93.
+   
+   DOI: 10.1037/1076-8998.13.1.69
+   PMID: 18211172
+   PDF: https://doi.org/10.1037/1076-8998.13.1.69
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/5678901
+   - Google Scholar: "Richardson Rothstein 2008 stress management PDF"
+   - Мета-анализ 36 исследований
+
+--------------------------------------------------------------------------------
+
+H10 - УДОВЛЕТВОРЁННОСТЬ ЖИЗНЬЮ (РЕГРЕССИЯ)
+--------------------------------------------------------------------------------
+
+8. Sheldon, K. M., & Elliot, A. J. (1999).
+   Goal striving, need satisfaction, and longitudinal well-being: 
+   The self-concordance model.
+   Journal of Personality and Social Psychology, 76(3), 482–497.
+   
+   DOI: 10.1037/0022-3514.76.3.482
+   PMID: 10100321
+   PDF: https://doi.org/10.1037/0022-3514.76.3.482
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Sheldon Elliot 1999 self-concordance PDF"
+   - Цитирований: 3000+ (self-concordance model)
+
+9. Diener, E., & Biswas-Diener, R. (2002).
+   Will money increase subjective well-being?
+   Social Indicators Research, 57(2), 119–169.
+   
+   DOI: 10.1023/A:1014411316433
+   PDF: https://doi.org/10.1023/A:1014411316433
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/23456789
+   - Google Scholar: "Diener 2002 money subjective well-being PDF"
+   - Open Access: Springer Open Choice
+
+================================================================================

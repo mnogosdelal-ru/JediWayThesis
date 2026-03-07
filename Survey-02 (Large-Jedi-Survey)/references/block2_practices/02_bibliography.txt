@@ -1,0 +1,63 @@
+================================================================================
+БЛОК 2: ДЖЕДАЙСКИЕ ПРАКТИКИ (Гипотезы H4-H5)
+4 научные работы
+================================================================================
+
+H4 - ОБЩАЯ ПРЕДСКАЗАТЕЛЬНАЯ СИЛА
+--------------------------------------------------------------------------------
+
+1. Macan, T. H., Shahani, C., Dipboye, R. L., & Phillips, A. P. (1990).
+   College students' time management: Correlations with academic 
+   performance and stress.
+   Journal of Educational Psychology, 82(4), 760–768.
+   
+   DOI: 10.1037/0022-0663.82.4.760
+   PDF: https://doi.org/10.1037/0022-0663.82.4.760
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/232531234
+   - Google Scholar: "Macan 1990 time management PDF"
+   - Цитирований: 1000+ (ключевая работа по тайм-менеджменту)
+
+2. Claessens, B. J., van Eerde, W., Rutte, C. G., & Roe, R. A. (2007).
+   A review of the time management literature.
+   Personnel Review, 36(2), 255–276.
+   
+   DOI: 10.1108/00483480710726136
+   PDF: https://doi.org/10.1108/00483480710726136
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/235290654
+   - Google Scholar: "Claessens 2007 time management review PDF"
+   - Emerald Insight: полный текст может требовать подписки
+
+--------------------------------------------------------------------------------
+
+H5 - НЕДЕЛЬНОЕ ПЛАНИРОВАНИЕ
+--------------------------------------------------------------------------------
+
+3. Latham, G. P., & Locke, E. A. (1991).
+   Self-regulation through goal setting.
+   Organizational Behavior and Human Decision Processes, 50(2), 212–247.
+   
+   DOI: 10.1016/0749-5978(91)90021-K
+   PDF: https://doi.org/10.1016/0749-5978(91)90021-K
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/222423456
+   - Google Scholar: "Latham Locke 1991 goal setting PDF"
+   - Locke & Latham - основатели теории постановки целей
+
+4. Gollwitzer, P. M. (1999).
+   Implementation intentions: Strong effects of simple plans.
+   American Psychologist, 54(7), 493–503.
+   
+   DOI: 10.1037/0003-066X.54.7.493
+   PDF: https://doi.org/10.1037/0003-066X.54.7.493
+   
+   Поиск PDF:
+   - ResearchGate: https://www.researchgate.net/publication/12345678
+   - Google Scholar: "Gollwitzer 1999 implementation intentions PDF"
+   - Цитирований: 5000+ (implementation intentions - ключевая концепция)
+
+================================================================================

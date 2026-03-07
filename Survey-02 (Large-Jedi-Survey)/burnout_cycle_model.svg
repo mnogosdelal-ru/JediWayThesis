@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <!-- Градиенты для блоков -->
+    <linearGradient id="gradBurnout" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC3545;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C82333;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradPractices" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#28A745;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#218838;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradWork" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFC107;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E0A800;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradPersonal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#17A2B8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#138496;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Маркер стрелки -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+    
+    <!-- Тень -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Заголовок -->
+  <text x="400" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#333">
+    Циклическая модель выгорания и джедайских практик
+  </text>
+  
+  <!-- Блок 1: ВЫГОРАНИЕ (верх) -->
+  <rect x="250" y="60" width="300" height="80" rx="10" ry="10" 
+        fill="url(#gradBurnout)" stroke="#C82333" stroke-width="2"
+        filter="url(#shadow)"/>
+  <text x="400" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">
+    ВЫГОРАНИЕ (MBI-GS)
+  </text>
+  <text x="400" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">
+    Эмоциональное истощение
+  </text>
+  <text x="400" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">
+    Цинизм, сниженная эффективность
+  </text>
+  
+  <!-- Блок 2: ДЖЕДАЙСКИЕ ПРАКТИКИ (право) -->
+  <rect x="580" y="260" width="200" height="80" rx="10" ry="10" 
+        fill="url(#gradPractices)" stroke="#218838" stroke-width="2"
+        filter="url(#shadow)"/>
+  <text x="680" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">
+    ДЖЕДАЙСКИЕ
+  </text>
+  <text x="680" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">
+    ПРАКТИКИ
+  </text>
+  <text x="680" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white">
+    (снижение использования)
+  </text>
+  
+  <!-- Блок 3: СРОЧНОЕ/ВАЖНОЕ РАБОТА (низ) -->
+  <rect x="250" y="460" width="300" height="80" rx="10" ry="10" 
+        fill="url(#gradWork)" stroke="#E0A800" stroke-width="2"
+        filter="url(#shadow)"/>
+  <text x="400" y="490" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#333">
+    СРОЧНОЕ / ВАЖНОЕ
+  </text>
+  <text x="400" y="515" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#333">
+    РАБОТА
+  </text>
+  <text x="400" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#333">
+    (↑ доля срочных задач)
+  </text>
+  
+  <!-- Блок 4: СРОЧНОЕ/ВАЖНОЕ ЛИЧНАЯ ЖИЗНЬ (лево) -->
+  <rect x="20" y="260" width="200" height="80" rx="10" ry="10" 
+        fill="url(#gradPersonal)" stroke="#138496" stroke-width="2"
+        filter="url(#shadow)"/>
+  <text x="120" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">
+    СРОЧНОЕ / ВАЖНОЕ
+  </text>
+  <text x="120" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">
+    ЛИЧНАЯ ЖИЗНЬ
+  </text>
+  <text x="120" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white">
+    (↓ доля важных задач)
+  </text>
+  
+  <!-- Стрелка 1: Выгорание → Практики (H20) -->
+  <path d="M 550 100 L 580 100 L 580 260" 
+        fill="none" stroke="#DC3545" stroke-width="3" 
+        marker-end="url(#arrowhead)"/>
+  <text x="565" y="180" font-family="Arial, sans-serif" font-size="11" fill="#DC3545" font-weight="bold">
+    H20: r ≈ -0.30
+  </text>
+  <text x="565" y="195" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    ↓ практики
+  </text>
+  
+  <!-- Стрелка 2: Практики → Срочное/важное работа (H21) -->
+  <path d="M 680 340 L 680 420 L 550 420 L 550 460" 
+        fill="none" stroke="#28A745" stroke-width="3" 
+        marker-end="url(#arrowhead)"/>
+  <text x="590" y="410" font-family="Arial, sans-serif" font-size="11" fill="#28A745" font-weight="bold">
+    H21: r ≈ 0.25
+  </text>
+  <text x="590" y="425" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    ↑ срочное
+  </text>
+  
+  <!-- Стрелка 3: Работа → Личная жизнь (H22, Spillover) -->
+  <path d="M 250 500 L 220 500 L 220 340" 
+        fill="none" stroke="#FFC107" stroke-width="3" 
+        marker-end="url(#arrowhead)"/>
+  <text x="160" y="420" font-family="Arial, sans-serif" font-size="11" fill="#E0A800" font-weight="bold">
+    H22: r ≈ 0.30
+  </text>
+  <text x="145" y="435" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    Spillover эффект
+  </text>
+  <text x="160" y="450" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    ↓ важное
+  </text>
+  
+  <!-- Стрелка 4: Личная жизнь → Выгорание (H23) -->
+  <path d="M 120 260 L 120 180 L 250 180 L 250 140" 
+        fill="none" stroke="#17A2B8" stroke-width="3" 
+        marker-end="url(#arrowhead)"/>
+  <text x="160" y="170" font-family="Arial, sans-serif" font-size="11" fill="#17A2B8" font-weight="bold">
+    H23: r ≈ -0.35
+  </text>
+  <text x="145" y="185" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    Отсутствие
+  </text>
+  <text x="145" y="200" font-family="Arial, sans-serif" font-size="10" fill="#666">
+    восстановления
+  </text>
+  
+  <!-- Центральная надпись -->
+  <text x="400" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#666">
+    ПОРОЧНЫЙ КРУГ
+  </text>
+  <text x="400" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">
+    (циклическая модель)
+  </text>
+  
+  <!-- H24: Медикационная цепочка (пунктирная линия через центр) -->
+  <path d="M 400 140 L 400 460" 
+        fill="none" stroke="#666" stroke-width="2" stroke-dasharray="5,5" 
+        opacity="0.5"/>
+  <text x="420" y="300" font-family="Arial, sans-serif" font-size="10" fill="#666" transform="rotate(90, 420, 300)">
+    H24: Serial mediation (β ≈ -0.08)
+  </text>
+  
+  <!-- Легенда внизу -->
+  <rect x="50" y="570" width="15" height="15" fill="url(#gradBurnout)"/>
+  <text x="70" y="582" font-family="Arial, sans-serif" font-size="11" fill="#333">Выгорание</text>
+  
+  <rect x="180" y="570" width="15" height="15" fill="url(#gradPractices)"/>
+  <text x="200" y="582" font-family="Arial, sans-serif" font-size="11" fill="#333">Практики</text>
+  
+  <rect x="310" y="570" width="15" height="15" fill="url(#gradWork)"/>
+  <text x="330" y="582" font-family="Arial, sans-serif" font-size="11" fill="#333">Работа</text>
+  
+  <rect x="440" y="570" width="15" height="15" fill="url(#gradPersonal)"/>
+  <text x="460" y="582" font-family="Arial, sans-serif" font-size="11" fill="#333">Личная жизнь</text>
+  
+  <line x1="580" y1="580" x2="595" y2="580" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="600" y="582" font-family="Arial, sans-serif" font-size="11" fill="#666">Медикация (H24)</text>
+  
+  <!-- Методологическое примечание -->
+  <text x="400" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#999">
+    Примечание: В кросс-секционном дизайне проверяется статистическая модель, а не циклическая причинность
+  </text>
+</svg>
