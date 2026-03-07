@@ -61,6 +61,17 @@
         .form-group {
             margin-bottom: 20px;
         }
+
+        /* Чередование фона для вопросов (zebra striping) */
+        .form-group:nth-child(even) {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .form-group:nth-child(odd) {
+            background: transparent;
+        }
         
         label {
             display: block;
