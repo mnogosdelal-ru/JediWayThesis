@@ -7,11 +7,6 @@
         <p class="help-text">
             Вспомните, чем вы занимались на <strong>РАБОТЕ</strong> за последний месяц.
         </p>
-        
-        <p style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-            <strong>Что такое работа?</strong><br>
-            Работа — это ваша профессиональная деятельность: выполнение служебных обязанностей, работа по найму, собственный бизнес, фриланс, любая занятость, приносящая доход.
-        </p>
     </div>
     
     <div class="form-group">
@@ -22,46 +17,30 @@
             <strong>Важные задачи</strong> — приближают вас к долгосрочным целям, но при отсрочке не наносят немедленный вред.
         </p>
         
-        <div class="radio-group">
-            <div class="radio-option">
+        <div class="radio-group-vertical">
+            <?php for ($v = 1; $v <= 5; $v++): ?>
+            <div class="radio-option-vertical">
                 <label>
-                    <input type="radio" name="work_urgent_important" value="0" required>
-                    0 — Я сейчас не работаю
+                    <input type="radio" id="work_ui_<?= $v ?>" name="work_urgent_important" value="<?= $v ?>" required>
+                    <span><?= $v ?> — <?php
+                        if ($v == 1) echo 'Практически все задачи были срочными';
+                        elseif ($v == 2) echo 'Больше срочных, но были и важные';
+                        elseif ($v == 3) echo 'Примерно поровну срочных и важных';
+                        elseif ($v == 4) echo 'Больше важных, но были и срочные';
+                        elseif ($v == 5) echo 'Практически все задачи были важными';
+                    ?></span>
                 </label>
             </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="work_urgent_important" value="1">
-                    1 — Практически все задачи были срочными
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="work_urgent_important" value="2">
-                    2 — Больше срочных, но были и важные
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="work_urgent_important" value="3">
-                    3 — Примерно поровну срочных и важных
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="work_urgent_important" value="4">
-                    4 — Больше важных, но были и срочные
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="work_urgent_important" value="5">
-                    5 — Практически все задачи были важными
-                </label>
-            </div>
+            <?php endfor; ?>
         </div>
     </div>
-    
+
+    <div class="help-box">
+        <strong>Что такое работа?</strong><br>
+        Работа — это ваша профессиональная деятельность: выполнение служебных обязанностей, работа по найму, собственный бизнес, фриланс, любая занятость, приносящая доход.
+    </div>
+
+
     <div class="form-group">
         <label for="work_satisfaction">На сколько вы удовлетворены своей работой?</label>
 
@@ -71,12 +50,15 @@
                 <div class="scale-option">
                     <input type="radio" id="work_sat_<?= $i ?>" name="work_satisfaction" value="<?= $i ?>" required>
                     <label for="work_sat_<?= $i ?>"><?= $i ?></label>
+                    <?php if ($i == 1): ?>
+                    <span class="scale-caption">Ненавижу<br>эту работу</span>
+                    <?php elseif ($i == 4): ?>
+                    <span class="scale-caption">Нечто<br>среднее</span>
+                    <?php elseif ($i == 7): ?>
+                    <span class="scale-caption">Работа<br>мечты</span>
+                    <?php endif; ?>
                 </div>
                 <?php endfor; ?>
-            </div>
-            <div class="scale-labels">
-                <span>1 — Ненавижу эту галеру!</span>
-                <span>7 — Работа мечты!</span>
             </div>
         </div>
     </div>

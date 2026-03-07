@@ -129,6 +129,9 @@
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
+            // Не применяем логику footer на странице 10 (Спасибо)
+            if (CURRENT_PAGE >= 10) return;
+            
             const form = document.querySelector('#survey-form');
             if (!form) return;
             

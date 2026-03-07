@@ -20,28 +20,30 @@
         5 => 'Если бы мне пришлось жить еще раз, я бы оставил все как есть.'
     ];
     ?>
-    
+
     <?php foreach ($swls_items as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        
+
         <div class="scale-group">
             <div class="scale-options">
                 <?php for ($v = 1; $v <= 7; $v++): ?>
                 <div class="scale-option">
                     <input type="radio" id="swls_<?= $i ?>_<?= $v ?>" name="swls_<?= $i ?>" value="<?= $v ?>" required onchange="updateSwlsJson()">
                     <label for="swls_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
+                    <?php if ($v == 1): ?>
+                    <span class="scale-caption">Полностью<br>не согласен</span>
+                    <?php elseif ($v == 4): ?>
+                    <span class="scale-caption">Нечто<br>среднее</span>
+                    <?php elseif ($v == 7): ?>
+                    <span class="scale-caption">Полностью<br>согласен</span>
+                    <?php endif; ?>
                 </div>
                 <?php endfor; ?>
             </div>
         </div>
     </div>
     <?php endforeach; ?>
-    
-    <div class="scale-labels" style="margin-top: 20px;">
-        <span>1 — Полностью не согласен</span>
-        <span>7 — Полностью согласен</span>
-    </div>
     
     <div class="buttons">
         <a href="index.php?page=4" class="btn btn-secondary">← Назад</a>

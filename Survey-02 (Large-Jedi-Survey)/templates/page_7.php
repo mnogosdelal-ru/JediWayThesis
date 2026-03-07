@@ -6,10 +6,13 @@
     
     <div class="form-group">
         <p class="help-text">
-            Оцените, насколько каждое утверждение соответствует вашему поведению.
+            Для каждого утверждения определите, насколько оно характерно или нехарактерно для вас, используя 5-балльную шкалу.
+        </p>
+        <p class="help-text" style="font-style: italic;">
+            Обратите внимание, что 3 на шкале означает «нейтрально» — утверждение не является ни характерным, ни нехарактерным для вас.
         </p>
     </div>
-    
+
     <?php
     $procrastination_items = [
         1 => 'Я часто замечаю, что заранее выполняю задачи, которые я собирался сделать в будущем',
@@ -22,28 +25,30 @@
         8 => 'Я часто говорю: «Сделаю это завтра»'
     ];
     ?>
-    
+
     <?php foreach ($procrastination_items as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        
+
         <div class="scale-group">
             <div class="scale-options">
-                <?php for ($v = 1; $v <= 4; $v++): ?>
+                <?php for ($v = 1; $v <= 5; $v++): ?>
                 <div class="scale-option">
                     <input type="radio" id="proc_<?= $i ?>_<?= $v ?>" name="procrastination_<?= $i ?>" value="<?= $v ?>" required onchange="updateProcrastinationJson()">
                     <label for="proc_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
+                    <?php if ($v == 1): ?>
+                    <span class="scale-caption">Совсем<br>нехарактерно</span>
+                    <?php elseif ($v == 3): ?>
+                    <span class="scale-caption">Нейтрально</span>
+                    <?php elseif ($v == 5): ?>
+                    <span class="scale-caption">Крайне<br>характерно</span>
+                    <?php endif; ?>
                 </div>
                 <?php endfor; ?>
             </div>
         </div>
     </div>
     <?php endforeach; ?>
-    
-    <div class="scale-labels" style="margin-top: 20px;">
-        <span>1 — Совсем не соответствует</span>
-        <span>4 — Полностью соответствует</span>
-    </div>
     
     <div class="buttons">
         <a href="index.php?page=6" class="btn btn-secondary">← Назад</a>

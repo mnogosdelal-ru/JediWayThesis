@@ -37,20 +37,23 @@
     <?php foreach ($mijs_items as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        
+
         <div class="scale-group">
             <div class="scale-options">
                 <?php for ($v = 1; $v <= 5; $v++): ?>
                 <div class="scale-option">
                     <input type="radio" id="mijs_<?= $i ?>_<?= $v ?>" name="mijs_<?= $i ?>" value="<?= $v ?>" required onchange="updateMijsJson()">
                     <label for="mijs_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
+                    <?php if ($v == 1): ?>
+                    <span class="scale-caption">Совсем не<br>соответствует</span>
+                    <?php elseif ($v == 3): ?>
+                    <span class="scale-caption">Нечто<br>среднее</span>
+                    <?php elseif ($v == 5): ?>
+                    <span class="scale-caption">Полностью<br>соответствует</span>
+                    <?php endif; ?>
                 </div>
                 <?php endfor; ?>
             </div>
-        </div>
-        <div class="scale-labels">
-            <span>1 — Совсем не соответствует</span>
-            <span>5 — Полностью соответствует</span>
         </div>
     </div>
     <?php endforeach; ?>

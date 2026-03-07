@@ -93,8 +93,8 @@ class Calculator {
     }
     
     /**
-     * Прокрастинация: item 1 инвертируется
-     * 
+     * Прокрастинация: item 1 инвертируется (шкала 1-5)
+     *
      * @param array $items Ответы (8 items)
      * @return int
      */
@@ -102,11 +102,11 @@ class Calculator {
         if (count($items) < 8) {
             return 0;
         }
-        
-        // Item 1: инвертируется (1→4, 2→3, 3→2, 4→1)
-        $items[0] = 5 - $items[0];
-        
-        return array_sum(array_slice($items, 0, 8));
+
+        // Item 1: инвертируется (1→5, 2→4, 3→3, 4→2, 5→1)
+        $items[0] = 6 - $items[0];
+
+        return array_sum(array_slice($items, 0, 8));  // 8-40
     }
     
     /**

@@ -49,10 +49,23 @@ try {
             $answers['age'] = (int)($input['age'] ?? 0);
             $answers['gender'] = $input['gender'] ?? '';
             $answers['children_count'] = (int)($input['children_count'] ?? 0);
-            $answers['work_experience_years'] = (int)($input['work_experience_years'] ?? 0);
             $answers['position'] = $input['position'] ?? '';
-            $answers['industry'] = $input['industry'] ?? '';
-            $answers['remote_days'] = $input['remote_days'] ?? '';
+            
+            // Если работает - сохраняем данные о работе
+            $not_working = in_array($answers['position'], ['unemployed', 'pensioner'], true);
+            if (!$not_working) {
+                $answers['work_experience_years'] = (int)($input['work_experience_years'] ?? 0);
+                $answers['industry'] = $input['industry'] ?? '';
+                $answers['industry_other'] = $input['industry_other'] ?? '';
+                $answers['remote_days'] = $input['remote_days'] ?? '';
+            } else {
+                // Для неработающих ставим null
+                $answers['work_experience_years'] = null;
+                $answers['industry'] = null;
+                $answers['industry_other'] = null;
+                $answers['remote_days'] = null;
+            }
+            
             $answers['mindset_technical_humanitarian'] = (int)($input['mindset_technical_humanitarian'] ?? 0);
             $answers['tool_preference'] = (int)($input['tool_preference'] ?? 0);
             break;
@@ -125,12 +138,21 @@ try {
         case 10:
             $answers['open_most_useful_practice'] = $input['open_most_useful_practice'] ?? '';
             $answers['open_other_practices'] = $input['open_other_practices'] ?? '';
-            
-            // Attention check
-            $frequency = json_decode($input['practices_frequency'] ?? '{}', true);
-            $practice_20 = $frequency['20'] ?? 0;
-            $answers['attention_check_passed'] = ($practice_20 == 5) ? 1 : 0;
-            $answers['attention_check_answer'] = $practice_20;
+
+            // Attention check (практика 16) - данные уже сохранены на странице 8
+            // Здесь только помечаем респондента как завершившего
+            $respondent = Survey::getRespondent($input['respondent_id'] ?? '');
+            if ($respondent) {
+                $frequency = json_decode($respondent['practices_frequency'] ?? '{}', true);
+                $quality = json_decode($respondent['practices_quality'] ?? '{}', true);
+                
+                $practice_16_freq = $frequency['16'] ?? 0;
+                $practice_16_quality = $quality['16'] ?? 0;
+                
+                $answers['attention_check_passed'] = ($practice_16_freq == 6 && $practice_16_quality == 4) ? 1 : 0;
+                $answers['attention_check_freq_answer'] = $practice_16_freq;
+                $answers['attention_check_quality_answer'] = $practice_16_quality;
+            }
             break;
     }
     

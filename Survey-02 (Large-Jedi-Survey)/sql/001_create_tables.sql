@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS respondents (
                   'student', 'pensioner', 'unemployed'),
     industry ENUM('it', 'science', 'education', 'finance', 'production',
                   'other', 'unemployed'),
-    remote_days ENUM('office', '1', '2', '3', '4', 'full_remote', 'unemployed'),
+    industry_other TEXT,                -- Название отрасли если выбрано "Другое"
+    remote_days ENUM('office', '1', '2', '3', '4', 'full_remote'),
     mindset_technical_humanitarian INT,   -- 1-5
     tool_preference INT,                  -- 1-5
 
@@ -83,8 +84,9 @@ CREATE TABLE IF NOT EXISTS respondents (
     open_other_practices TEXT,
 
     -- Контроль качества
-    attention_check_passed BOOLEAN DEFAULT TRUE,  -- TRUE если ответил "Постоянно" на практику 20
-    attention_check_answer INT,                   -- ответ на практику 20 (должен быть 5)
+    attention_check_passed BOOLEAN DEFAULT TRUE,  -- TRUE если ответил правильно на практику 16
+    attention_check_freq_answer INT,              -- ответ на практику 16: частота (должен быть 6)
+    attention_check_quality_answer INT,           -- ответ на практику 16: качество (должен быть 4)
 
     -- Технические метаданные
     ip_address VARCHAR(45),

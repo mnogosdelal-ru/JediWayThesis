@@ -122,14 +122,15 @@ class Survey {
     
     /**
      * Проверить, прошёл ли респондент attention check
-     * 
+     *
      * @param array $answers Ответы
      * @return bool
      */
     public static function checkAttention(array $answers): bool {
-        // Практика 20 должна быть "Постоянно" (5)
-        $practice_20 = $answers['practices_frequency']['20'] ?? 0;
-        return $practice_20 == 5;
+        // Практика 16: частота = 6 (Ежедневно), качество = 4 (Совсем не так)
+        $practice_16_freq = $answers['practices_frequency']['16'] ?? 0;
+        $practice_16_quality = $answers['practices_quality']['16'] ?? 0;
+        return ($practice_16_freq == 6 && $practice_16_quality == 4);
     }
     
     /**

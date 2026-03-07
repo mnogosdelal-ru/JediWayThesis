@@ -17,44 +17,28 @@
             <strong>Важные задачи</strong> — приближают вас к долгосрочным целям, но при отсрочке не наносят немедленный вред.
         </p>
         
-        <div class="radio-group">
-            <div class="radio-option">
+        <div class="radio-group-vertical">
+            <?php for ($v = 1; $v <= 5; $v++): ?>
+            <div class="radio-option-vertical">
                 <label>
-                    <input type="radio" name="personal_urgent_important" value="1" required>
-                    1 — Практически все задачи были срочными
+                    <input type="radio" id="personal_<?= $v ?>" name="personal_urgent_important" value="<?= $v ?>" required>
+                    <span><?= $v ?> — <?php
+                        if ($v == 1) echo 'Практически все задачи были срочными';
+                        elseif ($v == 2) echo 'Больше срочных, но были и важные';
+                        elseif ($v == 3) echo 'Примерно поровну срочных и важных';
+                        elseif ($v == 4) echo 'Больше важных, но были и срочные';
+                        elseif ($v == 5) echo 'Практически все задачи были важными';
+                    ?></span>
                 </label>
             </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="personal_urgent_important" value="2">
-                    2 — Больше срочных, но были и важные
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="personal_urgent_important" value="3">
-                    3 — Примерно поровну срочных и важных
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="personal_urgent_important" value="4">
-                    4 — Больше важных, но были и срочные
-                </label>
-            </div>
-            <div class="radio-option">
-                <label>
-                    <input type="radio" name="personal_urgent_important" value="5">
-                    5 — Практически все задачи были важными
-                </label>
-            </div>
+            <?php endfor; ?>
         </div>
     </div>
-    
-    <p style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+
+    <div class="help-box">
         <strong>Что такое личная жизнь?</strong><br>
         Личная жизнь — это всё, что не связано с вашей работой: семья, отношения, отдых, хобби, домашние обязанности, забота о себе.
-    </p>
+    </div>
 
     <div class="buttons">
         <a href="index.php?page=1" class="btn btn-secondary">← Назад</a>

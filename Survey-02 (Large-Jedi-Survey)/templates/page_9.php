@@ -44,11 +44,11 @@
     ?>
     
     <?php foreach ($vaccines as $i => $vaccine): ?>
-    <div class="form-group" style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-        <label style="font-size: 16px; font-weight: 600;"><?= htmlspecialchars($vaccine['name']) ?></label>
-        <p class="help-text"><?= htmlspecialchars($vaccine['desc']) ?></p>
-        
-        <div class="radio-group" style="margin-top: 15px;">
+    <div class="vaccine-item">
+        <label class="vaccine-label"><?= htmlspecialchars($vaccine['name']) ?></label>
+        <p class="help-text vaccine-desc"><?= htmlspecialchars($vaccine['desc']) ?></p>
+
+        <div class="radio-group">
             <?php foreach ($vaccine_labels as $v => $label): ?>
             <div class="radio-option">
                 <label>

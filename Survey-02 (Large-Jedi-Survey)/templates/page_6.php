@@ -39,18 +39,30 @@
     ];
     ?>
 
+    <?php
+    $mbi_labels = [
+        0 => 'Никогда',
+        1 => 'Очень редко',
+        2 => 'Редко',
+        3 => 'Иногда',
+        4 => 'Часто',
+        5 => 'Очень часто',
+        6 => 'Каждый день'
+    ];
+    ?>
+
     <?php foreach ($mbi_exhaustion as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        <div class="scale-group">
-            <div class="scale-options">
-                <?php for ($v = 0; $v <= 6; $v++): ?>
-                <div class="scale-option">
-                    <input type="radio" id="exh_<?= $i ?>_<?= $v ?>" name="mbi_exhaustion_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()">
-                    <label for="exh_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
-                </div>
-                <?php endfor; ?>
+        <div class="radio-group-vertical" style="margin-top: 10px;">
+            <?php foreach ($mbi_labels as $v => $label): ?>
+            <div class="radio-option-vertical" style="margin-bottom: 8px;">
+                <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
+                    <input type="radio" id="exh_<?= $i ?>_<?= $v ?>" name="mbi_exhaustion_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()" style="margin-right: 10px; width: 18px; height: 18px;">
+                    <span><?= $label ?></span>
+                </label>
             </div>
+            <?php endforeach; ?>
         </div>
     </div>
     <?php endforeach; ?>
@@ -58,15 +70,15 @@
     <?php foreach ($mbi_cynicism as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        <div class="scale-group">
-            <div class="scale-options">
-                <?php for ($v = 0; $v <= 6; $v++): ?>
-                <div class="scale-option">
-                    <input type="radio" id="cyn_<?= $i ?>_<?= $v ?>" name="mbi_cynicism_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()">
-                    <label for="cyn_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
-                </div>
-                <?php endfor; ?>
+        <div class="radio-group-vertical" style="margin-top: 10px;">
+            <?php foreach ($mbi_labels as $v => $label): ?>
+            <div class="radio-option-vertical" style="margin-bottom: 8px;">
+                <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
+                    <input type="radio" id="cyn_<?= $i ?>_<?= $v ?>" name="mbi_cynicism_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()" style="margin-right: 10px; width: 18px; height: 18px;">
+                    <span><?= $label ?></span>
+                </label>
             </div>
+            <?php endforeach; ?>
         </div>
     </div>
     <?php endforeach; ?>
@@ -74,23 +86,18 @@
     <?php foreach ($mbi_efficacy as $i => $text): ?>
     <div class="form-group">
         <label><?= htmlspecialchars($text) ?></label>
-        <div class="scale-group">
-            <div class="scale-options">
-                <?php for ($v = 0; $v <= 6; $v++): ?>
-                <div class="scale-option">
-                    <input type="radio" id="eff_<?= $i ?>_<?= $v ?>" name="mbi_efficacy_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()">
-                    <label for="eff_<?= $i ?>_<?= $v ?>"><?= $v ?></label>
-                </div>
-                <?php endfor; ?>
+        <div class="radio-group-vertical" style="margin-top: 10px;">
+            <?php foreach ($mbi_labels as $v => $label): ?>
+            <div class="radio-option-vertical" style="margin-bottom: 8px;">
+                <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
+                    <input type="radio" id="eff_<?= $i ?>_<?= $v ?>" name="mbi_efficacy_<?= $i ?>" value="<?= $v ?>" required onchange="updateMbiJson()" style="margin-right: 10px; width: 18px; height: 18px;">
+                    <span><?= $label ?></span>
+                </label>
             </div>
+            <?php endforeach; ?>
         </div>
     </div>
     <?php endforeach; ?>
-    
-    <div class="scale-labels" style="margin-top: 20px;">
-        <span>0 — Никогда</span>
-        <span>6 — Каждый день</span>
-    </div>
     
     <div class="buttons">
         <a href="index.php?page=5" class="btn btn-secondary">← Назад</a>

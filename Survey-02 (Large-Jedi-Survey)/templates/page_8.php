@@ -75,7 +75,7 @@
         ],
         16 => [
             'name' => 'Выполнить регулярную практику',
-            'desc' => '⚠️ Внимание! Это вопрос на проверку внимания. Ответьте «Постоянно», чтобы подтвердить, что вы читаете описания.'
+            'desc' => 'Есть много разных практик, которые стоило бы делать для достижения целей, но эта практика на самом деле и не практика. Это просто вопрос на проверку внимания, поэтому просто ответьте, что делаете это ежедневно и совсем не так как описано, это будет мне сигналом, что вы читаете описания.'
         ],
         17 => [
             'name' => 'Выполнить «зелёную» задачу',
@@ -104,39 +104,39 @@
     $quality_labels = ['Ровно как написано', 'Почти как в описании', 'Не совсем так, но примерно', 'Совсем не так'];
     ?>
     
-    <?php foreach ($practices as $i => $practice): 
+    <?php foreach ($practices as $i => $practice):
         $is_weekly = in_array($i, [9, 10, 11]);
         $freq_options = $is_weekly ? $freq_labels_weekly : $freq_labels_daily;
     ?>
-    <div class="form-group" style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-        <label style="font-size: 16px; font-weight: 600;"><?= $i ?>. <?= htmlspecialchars($practice['name']) ?></label>
-        <p class="help-text"><?= htmlspecialchars($practice['desc']) ?></p>
-        
-        <div style="margin-top: 15px;">
-            <label style="font-size: 14px;">Как часто вы это делаете?</label>
-            <div class="scale-group">
-                <div class="scale-options">
-                    <?php foreach ($freq_options as $v => $label): ?>
-                    <div class="scale-option" style="min-width: 50px;">
+    <div class="practice-item">
+        <label class="practice-label"><?= htmlspecialchars($practice['name']) ?></label>
+        <p class="help-text practice-desc"><?= htmlspecialchars($practice['desc']) ?></p>
+
+        <div>
+            <label class="practice-section-label">Как часто вы это делаете?</label>
+            <div class="radio-group-vertical">
+                <?php foreach ($freq_options as $v => $label): ?>
+                <div class="radio-option-vertical">
+                    <label>
                         <input type="radio" id="freq_<?= $i ?>_<?= $v+1 ?>" name="practices_frequency_<?= $i ?>" value="<?= $v+1 ?>" required onchange="updatePracticesJson()">
-                        <label for="freq_<?= $i ?>_<?= $v+1 ?>" style="font-size: 11px;"><?= $v+1 ?></label>
-                    </div>
-                    <?php endforeach; ?>
+                        <span><?= $label ?></span>
+                    </label>
                 </div>
+                <?php endforeach; ?>
             </div>
         </div>
-        
-        <div style="margin-top: 15px;" id="quality_container_<?= $i ?>" style="display: none;">
-            <label style="font-size: 14px;">Как вы это делаете?</label>
-            <div class="scale-group">
-                <div class="scale-options">
-                    <?php foreach ($quality_labels as $v => $label): ?>
-                    <div class="scale-option">
+
+        <div class="practice-quality-section" id="quality_container_<?= $i ?>" style="display: none;">
+            <label class="practice-section-label">Как вы это делаете?</label>
+            <div class="radio-group-vertical">
+                <?php foreach ($quality_labels as $v => $label): ?>
+                <div class="radio-option-vertical">
+                    <label>
                         <input type="radio" id="qual_<?= $i ?>_<?= $v+1 ?>" name="practices_quality_<?= $i ?>" value="<?= $v+1 ?>" onchange="updatePracticesJson()">
-                        <label for="qual_<?= $i ?>_<?= $v+1 ?>" style="font-size: 11px;"><?= $label ?></label>
-                    </div>
-                    <?php endforeach; ?>
+                        <span><?= $label ?></span>
+                    </label>
                 </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
