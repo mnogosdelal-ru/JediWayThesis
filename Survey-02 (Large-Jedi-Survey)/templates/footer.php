@@ -3,16 +3,7 @@
     <script>
         const RESPONDENT_ID = '<?= htmlspecialchars($respondent_id ?? '') ?>';
         const CURRENT_PAGE = <?= $page ?? 0 ?>;
-        
-        // Показать индикатор сохранения
-        function showSaveIndicator() {
-            const indicator = document.getElementById('save-indicator');
-            indicator.classList.add('visible');
-            setTimeout(() => {
-                indicator.classList.remove('visible');
-            }, 2000);
-        }
-        
+
         // Показать уведомление о восстановлении
         function showRestoreNotice() {
             const notice = document.getElementById('restore-notice');
@@ -26,7 +17,6 @@
         function saveToLocalStorage(page, formData) {
             const key = `survey_page_${page}`;
             localStorage.setItem(key, JSON.stringify(formData));
-            showSaveIndicator();
         }
         
         // Восстановление данных из localStorage

@@ -187,36 +187,17 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .error {
             color: #e74c3c;
             margin-top: 5px;
             font-size: 14px;
         }
-        
+
         .required {
             color: #e74c3c;
         }
-        
-        /* Индикатор сохранения */
-        .save-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: #27ae60;
-            color: white;
-            border-radius: 4px;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-        
-        .save-indicator.visible {
-            opacity: 1;
-        }
-        
+
         /* Индикатор восстановленных данных */
         .restore-notice {
             background: #fff3cd;
@@ -234,8 +215,6 @@
     </style>
 </head>
 <body>
-    <div class="save-indicator" id="save-indicator">✓ Сохранено</div>
-    
     <div class="container">
         <?php if ($page < 10): ?>
         <div class="progress-container">
