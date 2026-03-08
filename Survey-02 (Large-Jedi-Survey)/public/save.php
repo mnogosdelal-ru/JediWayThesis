@@ -1,9 +1,12 @@
 <?php
 /**
  * AJAX обработчик сохранения ответов
- * 
+ *
  * Принимает POST запрос с ответами и сохраняет в БД
  */
+
+// Старт сессии
+session_start();
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/Database.php';
@@ -34,6 +37,17 @@ $next_page = (int)($input['next_page'] ?? $page + 1);
 if (!$respondent_id) {
     echo json_encode(['success' => false, 'error' => 'No respondent ID']);
     exit;
+}
+
+// Проверяем существование респондента
+$respondent = Survey::getRespondent($respondent_id);
+log_event("Save page $page: respondent_id=$respondent_id, found=" . ($respondent ? 'yes' : 'no'));
+
+// Если не найден - создаём нового (БД могла быть очищена)
+if (!$respondent) {
+    $respondent_id = Survey::createRespondent();
+    $_SESSION['respondent_id'] = $respondent_id;
+    log_event("Created new respondent after DB loss: $respondent_id");
 }
 
 try {
@@ -140,11 +154,11 @@ try {
             $answers['open_other_practices'] = $input['open_other_practices'] ?? '';
 
             // Attention check (практика 16) - данные уже сохранены на странице 8
-            // Здесь только помечаем респондента как завершившего
+            // Получаем их из БД
             $respondent = Survey::getRespondent($input['respondent_id'] ?? '');
-            if ($respondent) {
-                $frequency = json_decode($respondent['practices_frequency'] ?? '{}', true);
-                $quality = json_decode($respondent['practices_quality'] ?? '{}', true);
+            if ($respondent && !empty($respondent['practices_frequency'])) {
+                $frequency = json_decode($respondent['practices_frequency'], true);
+                $quality = json_decode($respondent['practices_quality'], true);
                 
                 $practice_16_freq = $frequency['16'] ?? 0;
                 $practice_16_quality = $quality['16'] ?? 0;
@@ -162,22 +176,25 @@ try {
     
     // Сохраняем ответы
     $success = Survey::savePage($respondent_id, $page, $answers);
-    
+
     if ($success) {
-        log_event("Page $page saved for respondent $respondent_id");
+        log_event("Page $page saved successfully for respondent $respondent_id");
         
         // Если завершил - обновляем агрегаты
         if ($page >= 10) {
+            log_event("Respondent $respondent_id completed survey (page $page), triggering aggregates recalculation");
+            
             $aggregates = new Aggregates();
             $aggregates->getStats(); // Триггер обновления если нужно
-            
+
             log_event("Respondent $respondent_id completed survey");
         }
-        
+
         // Возвращаем URL следующей страницы
         echo json_encode([
             'success' => true,
-            'redirect' => "index.php?page=$next_page"
+            'redirect' => "index.php?page=$next_page",
+            'respondent_id' => $respondent_id
         ]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to save']);

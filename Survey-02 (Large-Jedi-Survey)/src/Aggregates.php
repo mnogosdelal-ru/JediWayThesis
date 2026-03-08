@@ -41,13 +41,18 @@ class Aggregates {
     
     /**
      * Проверить необходимость обновления
-     * 
+     *
      * @param array $cached Текущий кэш
      * @return bool
      */
     private function needsRefresh(array $cached): bool {
         $total = $this->getTotalCompleted();
-        return ($total - ($cached['total_respondents'] ?? 0)) >= AGGREGATES_REFRESH_THRESHOLD;
+        $threshold = AGGREGATES_REFRESH_THRESHOLD;
+        $diff = $total - ($cached['total_respondents'] ?? 0);
+        
+        log_event("Aggregates check: total=$total, cached=" . ($cached['total_respondents'] ?? 0) . ", diff=$diff, threshold=$threshold");
+        
+        return $diff >= $threshold;
     }
     
     /**
@@ -96,7 +101,15 @@ class Aggregates {
             // Практики
             $values = $this->getColumnValues('practices_freq_total');
             $stats['practices'] = $this->calculateStats($values);
-            
+
+            // Прокрастинация
+            $values = $this->getColumnValues('procrastination_total');
+            $stats['procrastination'] = $this->calculateStats($values);
+
+            // Вакцины
+            $values = $this->getColumnValues('vaccines_total');
+            $stats['vaccines'] = $this->calculateStats($values);
+
             // Сохранить
             $stats['total_respondents'] = $this->getTotalCompleted();
             $stats['calculated_at'] = date('Y-m-d H:i:s');
@@ -181,7 +194,7 @@ class Aggregates {
     
     /**
      * Пустая статистика
-     * 
+     *
      * @return array
      */
     private function getEmptyStats(): array {
@@ -190,6 +203,8 @@ class Aggregates {
             'mbi' => $this->getEmptyScaleStats(),
             'swls' => $this->getEmptyScaleStats(),
             'practices' => $this->getEmptyScaleStats(),
+            'procrastination' => $this->getEmptyScaleStats(),
+            'vaccines' => $this->getEmptyScaleStats(),
             'total_respondents' => 0,
             'calculated_at' => null
         ];
@@ -275,7 +290,37 @@ class Aggregates {
             'practices_min' => $stats['practices']['min'],
             'practices_max' => $stats['practices']['max'],
             'practices_n' => $stats['practices']['n'],
-            
+
+            'procrastination_mean' => $stats['procrastination']['mean'],
+            'procrastination_sd' => $stats['procrastination']['sd'],
+            'procrastination_p10' => $stats['procrastination']['p10'],
+            'procrastination_p20' => $stats['procrastination']['p20'],
+            'procrastination_p30' => $stats['procrastination']['p30'],
+            'procrastination_p40' => $stats['procrastination']['p40'],
+            'procrastination_p50' => $stats['procrastination']['p50'],
+            'procrastination_p60' => $stats['procrastination']['p60'],
+            'procrastination_p70' => $stats['procrastination']['p70'],
+            'procrastination_p80' => $stats['procrastination']['p80'],
+            'procrastination_p90' => $stats['procrastination']['p90'],
+            'procrastination_min' => $stats['procrastination']['min'],
+            'procrastination_max' => $stats['procrastination']['max'],
+            'procrastination_n' => $stats['procrastination']['n'],
+
+            'vaccines_mean' => $stats['vaccines']['mean'],
+            'vaccines_sd' => $stats['vaccines']['sd'],
+            'vaccines_p10' => $stats['vaccines']['p10'],
+            'vaccines_p20' => $stats['vaccines']['p20'],
+            'vaccines_p30' => $stats['vaccines']['p30'],
+            'vaccines_p40' => $stats['vaccines']['p40'],
+            'vaccines_p50' => $stats['vaccines']['p50'],
+            'vaccines_p60' => $stats['vaccines']['p60'],
+            'vaccines_p70' => $stats['vaccines']['p70'],
+            'vaccines_p80' => $stats['vaccines']['p80'],
+            'vaccines_p90' => $stats['vaccines']['p90'],
+            'vaccines_min' => $stats['vaccines']['min'],
+            'vaccines_max' => $stats['vaccines']['max'],
+            'vaccines_n' => $stats['vaccines']['n'],
+
             'total_respondents' => $stats['total_respondents'],
             'last_respondent_at' => date('Y-m-d H:i:s')
         ];

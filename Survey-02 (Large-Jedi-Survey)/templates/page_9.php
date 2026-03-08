@@ -48,12 +48,12 @@
         <label class="vaccine-label"><?= htmlspecialchars($vaccine['name']) ?></label>
         <p class="help-text vaccine-desc"><?= htmlspecialchars($vaccine['desc']) ?></p>
 
-        <div class="radio-group">
+        <div class="radio-group-vertical">
             <?php foreach ($vaccine_labels as $v => $label): ?>
-            <div class="radio-option">
+            <div class="radio-option-vertical">
                 <label>
                     <input type="radio" name="vaccines_<?= $i ?>" value="<?= $v ?>" required onchange="updateVaccinesJson()">
-                    <?= $label ?>
+                    <span><?= $label ?></span>
                 </label>
             </div>
             <?php endforeach; ?>

@@ -98,23 +98,26 @@ class Database {
     
     /**
      * Выполнить UPDATE запрос
-     * 
+     *
      * @param string $table Имя таблицы
      * @param string $id ID записи
      * @param array $data Данные для обновления
-     * @return bool Успешность выполнения
+     * @return int|bool Количество затронутых строк или false при ошибке
      */
-    public static function update(string $table, string $id, array $data): bool {
+    public static function update(string $table, string $id, array $data) {
         try {
             $set = implode(' = ?, ', array_keys($data)) . ' = ?';
-            
+
             $sql = "UPDATE $table SET $set WHERE id = ?";
             $stmt = self::getInstance()->prepare($sql);
-            
+
             $params = array_values($data);
             $params[] = $id;
+
+            $result = $stmt->execute($params);
             
-            return $stmt->execute($params);
+            // Возвращаем количество затронутых строк
+            return $result ? $stmt->rowCount() : false;
         } catch (PDOException $e) {
             log_event("UPDATE failed: " . $e->getMessage(), 'ERROR');
             throw $e;

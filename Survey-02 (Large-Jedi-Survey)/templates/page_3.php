@@ -22,7 +22,7 @@
             <div class="radio-option-vertical">
                 <label>
                     <input type="radio" id="work_ui_<?= $v ?>" name="work_urgent_important" value="<?= $v ?>" required>
-                    <span><?= $v ?> — <?php
+                    <span><?php
                         if ($v == 1) echo 'Практически все задачи были срочными';
                         elseif ($v == 2) echo 'Больше срочных, но были и важные';
                         elseif ($v == 3) echo 'Примерно поровну срочных и важных';

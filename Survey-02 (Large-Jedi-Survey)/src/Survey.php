@@ -9,28 +9,26 @@ class Survey {
     
     /**
      * Создать нового респондента
-     * 
+     *
      * @return string ID респондента
      */
     public static function createRespondent(): string {
         $id = md5(uniqid() . time() . rand());
         $code = self::generateCode();
-        $session_id = session_id();
-        
+
         $data = [
             'id' => $id,
             'code' => $code,
-            'session_id' => $session_id,
             'status' => 'in_progress',
             'current_page' => 0,
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
         ];
-        
+
         Database::insert('respondents', $data);
-        
+
         log_event("New respondent created: $id (code: $code)");
-        
+
         return $id;
     }
     
@@ -66,7 +64,7 @@ class Survey {
     
     /**
      * Сохранить ответы на странице
-     * 
+     *
      * @param string $respondent_id ID респондента
      * @param int $page Номер страницы
      * @param array $answers Ответы
@@ -74,29 +72,40 @@ class Survey {
      */
     public static function savePage(string $respondent_id, int $page, array $answers): bool {
         $data = [];
-        
+
         // Маппинг ответов на поля БД
         foreach ($answers as $key => $value) {
             $data[$key] = $value;
         }
-        
+
         $data['updated_at'] = date('Y-m-d H:i:s');
-        
+
         // Обновляем текущую страницу
         $data['current_page'] = $page;
-        
+
         // Если последняя страница - помечаем как завершённый
         if ($page >= 10) {
             $data['status'] = 'completed';
             $data['completed_at'] = date('Y-m-d H:i:s');
         }
+
+        $result = Database::update('respondents', $respondent_id, $data);
         
-        return Database::update('respondents', $respondent_id, $data);
+        // Логируем результат
+        if ($result > 0) {
+            log_event("Page $page saved for respondent $respondent_id (rows affected: $result)");
+        } elseif ($result === 0) {
+            log_event("WARNING: Page $page save - no rows affected for respondent $respondent_id", 'WARNING');
+        } else {
+            log_event("ERROR: Page $page save failed for respondent $respondent_id", 'ERROR');
+        }
+        
+        return $result > 0;
     }
     
     /**
      * Получить данные респондента
-     * 
+     *
      * @param string $respondent_id ID респондента
      * @return array|null
      */

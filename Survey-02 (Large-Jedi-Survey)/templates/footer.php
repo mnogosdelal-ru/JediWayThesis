@@ -94,15 +94,22 @@
         function submitForm() {
             const form = document.querySelector('#survey-form');
             if (!form) return Promise.reject('Form not found');
-            
+
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.textContent = 'Сохранение...';
-            
+
             return new Promise((resolve, reject) => {
                 const formData = new FormData(form);
                 
+                // Логируем для отладки
+                console.log('Submitting form:', {
+                    respondent_id: formData.get('respondent_id'),
+                    page: formData.get('page'),
+                    session_respondent_id: window.RESPONDENT_ID
+                });
+
                 fetch('save.php', {
                     method: 'POST',
                     body: formData
@@ -110,6 +117,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.redirect) {
+                        // Если пришёл новый respondent_id - обновляем
+                        if (data.respondent_id) {
+                            window.RESPONDENT_ID = data.respondent_id;
+                        }
                         // Очистить localStorage для текущей страницы
                         localStorage.removeItem(`survey_page_${CURRENT_PAGE}`);
                         resolve(data);

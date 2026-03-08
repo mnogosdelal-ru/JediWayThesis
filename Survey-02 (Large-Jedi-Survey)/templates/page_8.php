@@ -128,15 +128,16 @@
 
         <div class="practice-quality-section" id="quality_container_<?= $i ?>" style="display: none;">
             <label class="practice-section-label">Как вы это делаете?</label>
-            <div class="radio-group-vertical">
-                <?php foreach ($quality_labels as $v => $label): ?>
-                <div class="radio-option-vertical">
-                    <label>
+            <div class="scale-group">
+                <div class="scale-options">
+                    <?php foreach ($quality_labels as $v => $label): ?>
+                    <div class="scale-option">
                         <input type="radio" id="qual_<?= $i ?>_<?= $v+1 ?>" name="practices_quality_<?= $i ?>" value="<?= $v+1 ?>" onchange="updatePracticesJson()">
-                        <span><?= $label ?></span>
-                    </label>
+                        <label for="qual_<?= $i ?>_<?= $v+1 ?>" style="font-size: 10px; display: block; margin-top: 5px; line-height: 1.1;"><?= $v+1 ?></label>
+                        <span class="scale-caption"><?= $label ?></span>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
         </div>
     </div>

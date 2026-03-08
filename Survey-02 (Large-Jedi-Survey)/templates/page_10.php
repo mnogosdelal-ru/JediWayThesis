@@ -1,18 +1,13 @@
 <?php
-// Сохраняем ответы если они есть
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../src/Survey.php';
-    
-    $answers = [
-        'open_most_useful_practice' => $_POST['open_most_useful_practice'] ?? '',
-        'open_other_practices' => $_POST['open_other_practices'] ?? ''
-    ];
-    
-    Survey::savePage($respondent_id, 10, $answers);
+// Start session если ещё не начата
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 ?>
 
-<form method="post" action="page_10.php" id="thanks-form">
+<form method="post" action="index.php?page=10" id="thanks-form">
+    <input type="hidden" name="respondent_id" value="<?= htmlspecialchars($respondent_id) ?>">
+    
     <div style="text-align: center; padding: 40px 0;">
         <div style="font-size: 72px; margin-bottom: 20px;">🎉</div>
 
@@ -74,26 +69,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Показываем результаты после отправки формы
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('thanks-form');
-    const resultsContainer = document.getElementById('results-container');
-    
+
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
             
-            fetch('page_10.php', {
+            // Блокируем кнопку на время отправки
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+
+            fetch('index.php?page=10', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
             .then(response => {
-                // После сохранения показываем результаты
-                form.style.display = 'none';
-                resultsContainer.style.display = 'block';
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // После сохранения перенаправляем на страницу результатов
+                    const code = '<?= htmlspecialchars($respondent['code'] ?? '') ?>';
+                    window.location.href = 'results.php?code=' + encodeURIComponent(code);
+                } else {
+                    const errorMsg = data.error || 'Неизвестная ошибка';
+                    alert('Ошибка при сохранении ответов: ' + errorMsg);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Ошибка при сохранении ответов');
+                alert('Ошибка при сохранении ответов: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             });
         });
     }

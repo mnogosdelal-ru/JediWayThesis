@@ -98,6 +98,7 @@ label {
 .help-text {
     font-size: 14px;
     color: #666;
+    margin-top: 10px;
     margin-bottom: 10px;
 }
 
@@ -151,8 +152,13 @@ textarea {
 input[type="radio"],
 input[type="checkbox"] {
     margin-right: 10px;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    flex-shrink: 0;
 }
 
 /* Вертикальная группа radio buttons */
@@ -173,8 +179,13 @@ input[type="checkbox"] {
 
 .radio-option-vertical input[type="radio"] {
     margin-right: 10px;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    flex-shrink: 0;
 }
 
 /* ============================================================================
@@ -202,8 +213,8 @@ input[type="checkbox"] {
 .scale-option input[type="radio"] {
     display: block;
     margin: 3px auto;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
 }
 
 .scale-option label {
@@ -212,6 +223,7 @@ input[type="checkbox"] {
     hyphens: auto;
     font-size: 14px;
     line-height: 1.1;
+    margin-top: 6px;
 }
 
 .scale-labels {
@@ -227,7 +239,7 @@ input[type="checkbox"] {
     font-size: 10px;
     color: #666;
     display: block;
-    margin-top: 3px;
+    margin-top: 1px;
     line-height: 1.1;
 }
 
@@ -360,8 +372,183 @@ button,
 }
 
 /* ============================================================================
-   АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ
+   СТРАНИЦА РЕЗУЛЬТАТОВ
    ============================================================================ */
+
+.results-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.result-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.result-card h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.score-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.score-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.score-level {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.level-low {
+    background: #27ae60;
+    color: white;
+}
+
+.level-medium {
+    background: #f39c12;
+    color: white;
+}
+
+.level-high {
+    background: #e74c3c;
+    color: white;
+}
+
+.interpretation {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.recommendation {
+    background: #e8f4fd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.top-practices {
+    list-style: none;
+    padding: 0;
+}
+
+.top-practices li {
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.practice-freq {
+    font-weight: 600;
+    color: #3498db;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #95a5a6;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.back-link:hover {
+    background: #7f8c8d;
+}
+
+/* Блок рекомендации по программе */
+.result-card.featured {
+    border: 2px solid #3498db;
+    background: #e8f4fd;
+}
+
+.result-card.featured h3 {
+    color: #3498db;
+    border-bottom-color: #2980b9;
+}
+
+.warning-box {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border-left: 4px solid #ffc107;
+}
+
+.program-title {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.program-description {
+    font-size: 16px;
+    color: #666;
+}
+
+.program-reason {
+    font-size: 14px;
+    color: #999;
+    margin-top: 10px;
+}
+
+.program-button {
+    font-size: 18px;
+    padding: 15px 30px;
+}
+
+/* Прогресс-бары и визуализация */
+.progress-container {
+    margin: 20px 0;
+}
+
+.progress-bar {
+    height: 24px;
+    background: #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #666;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.progress-labels span {
+    flex: 1;
+    min-width: 120px;
+}
 
 @media (max-width: 480px) {
     body {
@@ -377,12 +564,6 @@ button,
         padding: 0 1px;
     }
 
-    .scale-option input[type="radio"] {
-        width: 14px;
-        height: 14px;
-        margin: 2px auto;
-    }
-
     .scale-option label {
         font-size: 9px;
     }
@@ -392,7 +573,7 @@ button,
     }
 
     .scale-caption {
-        font-size: 9px;
+        font-size: 11px;
     }
 
     .btn {
@@ -402,10 +583,5 @@ button,
 
     h1 {
         font-size: 20px;
-    }
-
-    .radio-option-vertical input[type="radio"] {
-        width: 16px;
-        height: 16px;
     }
 }

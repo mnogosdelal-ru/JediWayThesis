@@ -6,11 +6,8 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Проверяем и добавляем поля если они не существуют
+-- Добавляем поля для открытых вопросов
 -- ----------------------------------------------------------------------------
--- Примечание: Эти поля уже должны быть в схеме 001_create_tables.sql
--- Эта миграция для обновления существующих баз данных
-
 ALTER TABLE respondents 
 ADD COLUMN IF NOT EXISTS open_most_useful_practice TEXT AFTER vaccines_total;
 
@@ -18,6 +15,15 @@ ALTER TABLE respondents
 ADD COLUMN IF NOT EXISTS open_other_practices TEXT AFTER open_most_useful_practice;
 
 -- ----------------------------------------------------------------------------
+-- Обновляем поля attention check (если не существуют)
+-- ----------------------------------------------------------------------------
+ALTER TABLE respondents 
+ADD COLUMN IF NOT EXISTS attention_check_freq_answer INT AFTER attention_check_passed;
+
+ALTER TABLE respondents 
+ADD COLUMN IF NOT EXISTS attention_check_quality_answer INT AFTER attention_check_freq_answer;
+
+-- ----------------------------------------------------------------------------
 -- Сообщение об успехе
 -- ----------------------------------------------------------------------------
-SELECT 'Миграция 004 выполнена успешно! Поля для открытых вопросов добавлены.' AS status;
+SELECT 'Миграция 004 выполнена успешно! Поля добавлены.' AS status;
