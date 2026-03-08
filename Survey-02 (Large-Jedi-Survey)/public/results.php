@@ -262,7 +262,7 @@ function getComparisonText($less, $equal, $greater, $total) {
     $equal_pct = round($equal / $total * 100);
     $greater_pct = round($greater / $total * 100);
     
-    return "Меньше: {$less_pct}% | Равно: {$equal_pct}% | Больше: {$greater_pct}%";
+    return "<td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$less_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$equal_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$greater_pct}%</td>";
 }
 
 /**
@@ -447,10 +447,15 @@ $page_title = 'Ваши результаты';
                     <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                         <thead>
                             <tr style="background: #3498db; color: white;">
-                                <th style="padding: 12px; text-align: left; border-radius: 4px 0 0 0;">Шкала</th>
-                                <th style="padding: 12px; text-align: center;">Ваш балл</th>
-                                <th style="padding: 12px; text-align: center;">Уровень</th>
-                                <th style="padding: 12px; text-align: center; border-radius: 0 4px 0 0;">Сравнение с другими</th>
+                                <th rowspan="2" style="padding: 12px; text-align: left; border-radius: 4px 0 0 0">Шкала</th>
+                                <th rowspan="2" style="padding: 12px; text-align: center;">Ваш балл</th>
+                                <th rowspan="2" style="padding: 12px; text-align: center;">Уровень</th>
+                                <th colspan="3" style="padding: 12px; text-align: center; border-radius: 0 4px 0 0">Сравнение с другими<br><span style="font-size: 10px;">(включая меня)</span></th>
+                            </tr>
+                            <tr style="background: #3498db; color: white;">
+                                <th style="padding: 12px; text-align: center;">Меньше</th>
+                                <th style="padding: 12px; text-align: center;">Равно</th>
+                                <th style="padding: 12px; text-align: center; border-radius: 0 0 4px 0">Больше</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -474,7 +479,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">📅 Срочное/важное (личная жизнь)</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['personal_urgent_important'] ?> / 5</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $pers_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $pers_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $pers_comparison ?></td>
+                                <?= $pers_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -498,7 +503,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">💼 Срочное/важное (работа)</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['work_urgent_important'] ?> / 5</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $work_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $work_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $work_comparison ?></td>
+                                <?= $work_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -522,7 +527,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">😊 Удовлетворённость работой</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['work_satisfaction'] ?> / 7</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $ws_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $ws_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $ws_comparison ?></td>
+                                <?= $ws_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -546,7 +551,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">⚖️ MIJS (бремя срочности)</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['mijs']['total'] ?> / 60</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $mijs_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $mijs_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $mijs_comparison ?></td>
+                                <?= $mijs_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -570,7 +575,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">🔥 MBI: Эмоциональное истощение</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['exhaustion'] ?> / 63</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $mbi_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $mbi_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $mbi_comparison ?></td>
+                                <?= $mbi_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -594,7 +599,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">😒 MBI: Цинизм</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['cynicism'] ?> / 35</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $cyn_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $cyn_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $cyn_comparison ?></td>
+                                <?= $cyn_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -618,7 +623,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">💪 MBI: Профессиональная эффективность</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['efficacy'] ?> / 56</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $eff_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $eff_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $eff_comparison ?></td>
+                                <?= $eff_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -642,7 +647,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">😊 SWLS (удовлетворённость жизнью)</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['swls'] ?> / 35</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $swls_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $swls_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $swls_comparison ?></td>
+                                <?= $swls_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -666,7 +671,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">⏰ Прокрастинация</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['procrastination'] ?> / 40</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $proc_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $proc_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $proc_comparison ?></td>
+                                <?= $proc_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -690,7 +695,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">🧘 Джедайские практики</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['practices_freq'] ?> / 120</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $prac_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $prac_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $prac_comparison ?></td>
+                                <?= $prac_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -714,7 +719,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">💉 Джедайские вакцины</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['vaccines'] ?> / 15</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $vacc_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $vacc_level ?></span></td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $vacc_comparison ?></td>
+                                <?= $vacc_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -731,7 +736,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">🎂 Возраст</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['age'] ?> лет</strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $age_comparison ?></td>
+                                <?= $age_comparison ?>
                             </tr>
                             <?php endif; ?>
 
@@ -748,7 +753,7 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px;">👶 Количество детей</td>
                                 <td style="padding: 12px; text-align: center;"><strong><?= $scores['children_count'] ?></strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $child_comparison ?></td>
+                                <?= $child_comparison ?>
                             </tr>
                             <?php endif; ?>
 
