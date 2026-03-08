@@ -13,7 +13,6 @@ require_once __DIR__ . '/../config/variable_keys.php';
 require_once __DIR__ . '/../src/Database.php';
 require_once __DIR__ . '/../src/Survey.php';
 require_once __DIR__ . '/../src/Calculator.php';
-require_once __DIR__ . '/../src/Aggregates.php';
 
 header('Content-Type: application/json');
 
@@ -300,14 +299,9 @@ try {
 
     if ($success) {
         log_event("Page $page saved successfully for respondent $respondent_id");
-        
-        // Если завершил - обновляем агрегаты
-        if ($page >= 10) {
-            log_event("Respondent $respondent_id completed survey (page $page), triggering aggregates recalculation");
-            
-            $aggregates = new Aggregates();
-            $aggregates->getStats(); // Триггер обновления если нужно
 
+        // Если завершил - логируем
+        if ($page >= 10) {
             log_event("Respondent $respondent_id completed survey");
         }
 

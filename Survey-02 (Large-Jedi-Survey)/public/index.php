@@ -81,7 +81,6 @@ if ($is_save_request) {
     
     try {
         require_once __DIR__ . '/../src/Survey.php';
-        require_once __DIR__ . '/../src/Aggregates.php';
 
         // Проверяем respondent_id
         if (empty($respondent_id)) {
@@ -96,17 +95,8 @@ if ($is_save_request) {
         $success = Survey::savePage($respondent_id, 10, $answers);
         log_event("Page 10 saved for respondent $respondent_id: " . ($success ? 'success' : 'failed'));
 
-        // Обновляем агрегаты - форсируем пересчёт
-        if ($success) {
-            try {
-                $aggregates = new Aggregates();
-                $aggregates->recalculate(); // Принудительный пересчёт
-                log_event("Aggregates recalculated after respondent $respondent_id completed survey");
-            } catch (Exception $aggException) {
-                log_event("Aggregates recalculate error: " . $aggException->getMessage(), 'ERROR');
-                // Не прерываем выполнение, просто логируем ошибку
-            }
-        }
+        // Агрегаты больше не используются - процентили считаются в реальном времени
+        log_event("Respondent $respondent_id completed survey (aggregates disabled)");
 
         // Возвращаем JSON - header ДО echo!
         header('Content-Type: application/json');

@@ -2,15 +2,16 @@
 -- Большое исследование джедайских практик
 -- Полный SQL-скрипт для создания базы данных с нуля
 -- ============================================================================
--- Версия: 2026-03-08
--- Включает миграции: 001-008
+-- Версия: 2026-03-08 (без агрегатов)
+-- Включает миграции: 001-007, 009-011
+-- НЕ включает: 008 (MBI субшкалы), 010 (удаление aggregates)
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
 -- Создание базы данных
 -- ----------------------------------------------------------------------------
-CREATE DATABASE IF NOT EXISTS jedi_survey 
-CHARACTER SET utf8mb4 
+CREATE DATABASE IF NOT EXISTS jedi_survey
+CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 USE jedi_survey;
@@ -79,7 +80,7 @@ CREATE TABLE IF NOT EXISTS respondents (
     procrastination_items JSON,
     procrastination_total INT,
 
-    -- Страница 8: Практики
+    -- Страница 8: Практики (20 практик)
     practices_frequency JSON,
     practices_quality JSON,
     practices_freq_total INT,
@@ -102,11 +103,11 @@ CREATE TABLE IF NOT EXISTS respondents (
     ip_address VARCHAR(45),
     user_agent TEXT,
     time_spent_seconds INT,
-    
+
     -- JSON поле для детализированных ответов с ключами
     responses_detailed JSON,
 
-    -- Индексы
+    -- Индексы для производительности
     INDEX idx_status (status),
     INDEX idx_completed_at (completed_at),
     INDEX idx_code (code),
@@ -114,159 +115,35 @@ CREATE TABLE IF NOT EXISTS respondents (
     INDEX idx_mbi_exhaustion (mbi_exhaustion_score),
     INDEX idx_mbi_cynicism (mbi_cynicism_score),
     INDEX idx_mbi_efficacy (mbi_efficacy_score),
-    INDEX idx_practices_total (practices_freq_total)
+    INDEX idx_swls_total (swls_total),
+    INDEX idx_procrastination (procrastination_total),
+    INDEX idx_practices_freq (practices_freq_total),
+    INDEX idx_practices_quality (practices_quality_total),
+    INDEX idx_vaccines (vaccines_total),
+    INDEX idx_personal_urgent (personal_urgent_important),
+    INDEX idx_work_urgent (work_urgent_important),
+    INDEX idx_work_satisfaction (work_satisfaction),
+    INDEX idx_age (age),
+    INDEX idx_children_count (children_count),
+    INDEX idx_remote_days (remote_days),
+    INDEX idx_status_completed (status, completed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- ТАБЛИЦА: aggregates (кэш статистики)
+-- Примечание: Таблица aggregates НЕ создаётся
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS aggregates (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- MIJS
-    mijs_mean DECIMAL(5,2),
-    mijs_sd DECIMAL(5,2),
-    mijs_p10 INT, mijs_p20 INT, mijs_p30 INT, mijs_p40 INT, mijs_p50 INT,
-    mijs_p60 INT, mijs_p70 INT, mijs_p80 INT, mijs_p90 INT,
-    mijs_min INT, mijs_max INT, mijs_n INT,
-
-    -- MBI (общий балл)
-    mbi_mean DECIMAL(5,2),
-    mbi_sd DECIMAL(5,2),
-    mbi_p10 INT, mbi_p20 INT, mbi_p30 INT, mbi_p40 INT, mbi_p50 INT,
-    mbi_p60 INT, mbi_p70 INT, mbi_p80 INT, mbi_p90 INT,
-    mbi_min INT, mbi_max INT, mbi_n INT,
-
-    -- MBI Цинизм
-    mbi_cynicism_mean DECIMAL(5,2),
-    mbi_cynicism_sd DECIMAL(5,2),
-    mbi_cynicism_p10 INT, mbi_cynicism_p20 INT, mbi_cynicism_p30 INT, mbi_cynicism_p40 INT, mbi_cynicism_p50 INT,
-    mbi_cynicism_p60 INT, mbi_cynicism_p70 INT, mbi_cynicism_p80 INT, mbi_cynicism_p90 INT,
-    mbi_cynicism_min INT, mbi_cynicism_max INT, mbi_cynicism_n INT,
-
-    -- MBI Эффективность
-    mbi_efficacy_mean DECIMAL(5,2),
-    mbi_efficacy_sd DECIMAL(5,2),
-    mbi_efficacy_p10 INT, mbi_efficacy_p20 INT, mbi_efficacy_p30 INT, mbi_efficacy_p40 INT, mbi_efficacy_p50 INT,
-    mbi_efficacy_p60 INT, mbi_efficacy_p70 INT, mbi_efficacy_p80 INT, mbi_efficacy_p90 INT,
-    mbi_efficacy_min INT, mbi_efficacy_max INT, mbi_efficacy_n INT,
-
-    -- SWLS
-    swls_mean DECIMAL(5,2),
-    swls_sd DECIMAL(5,2),
-    swls_p10 INT, swls_p20 INT, swls_p30 INT, swls_p40 INT, swls_p50 INT,
-    swls_p60 INT, swls_p70 INT, swls_p80 INT, swls_p90 INT,
-    swls_min INT, swls_max INT, swls_n INT,
-
-    -- Практики
-    practices_mean DECIMAL(5,2),
-    practices_sd DECIMAL(5,2),
-    practices_p10 INT, practices_p20 INT, practices_p30 INT, practices_p40 INT, practices_p50 INT,
-    practices_p60 INT, practices_p70 INT, practices_p80 INT, practices_p90 INT,
-    practices_min INT, practices_max INT, practices_n INT,
-
-    -- Прокрастинация
-    procrastination_mean DECIMAL(5,2),
-    procrastination_sd DECIMAL(5,2),
-    procrastination_p10 INT, procrastination_p20 INT, procrastination_p30 INT, procrastination_p40 INT, procrastination_p50 INT,
-    procrastination_p60 INT, procrastination_p70 INT, procrastination_p80 INT, procrastination_p90 INT,
-    procrastination_min INT, procrastination_max INT, procrastination_n INT,
-
-    -- Вакцины
-    vaccines_mean DECIMAL(5,2),
-    vaccines_sd DECIMAL(5,2),
-    vaccines_p10 INT, vaccines_p20 INT, vaccines_p30 INT, vaccines_p40 INT, vaccines_p50 INT,
-    vaccines_p60 INT, vaccines_p70 INT, vaccines_p80 INT, vaccines_p90 INT,
-    vaccines_min INT, vaccines_max INT, vaccines_n INT,
-
-    -- Срочное/важное (личная жизнь)
-    personal_urgent_important_mean DECIMAL(5,2),
-    personal_urgent_important_sd DECIMAL(5,2),
-    personal_urgent_important_p10 INT, personal_urgent_important_p20 INT, personal_urgent_important_p30 INT,
-    personal_urgent_important_p40 INT, personal_urgent_important_p50 INT, personal_urgent_important_p60 INT,
-    personal_urgent_important_p70 INT, personal_urgent_important_p80 INT, personal_urgent_important_p90 INT,
-    personal_urgent_important_min INT, personal_urgent_important_max INT, personal_urgent_important_n INT,
-
-    -- Срочное/важное (работа)
-    work_urgent_important_mean DECIMAL(5,2),
-    work_urgent_important_sd DECIMAL(5,2),
-    work_urgent_important_p10 INT, work_urgent_important_p20 INT, work_urgent_important_p30 INT,
-    work_urgent_important_p40 INT, work_urgent_important_p50 INT, work_urgent_important_p60 INT,
-    work_urgent_important_p70 INT, work_urgent_important_p80 INT, work_urgent_important_p90 INT,
-    work_urgent_important_min INT, work_urgent_important_max INT, work_urgent_important_n INT,
-
-    -- Удовлетворённость работой
-    work_satisfaction_mean DECIMAL(5,2),
-    work_satisfaction_sd DECIMAL(5,2),
-    work_satisfaction_p10 INT, work_satisfaction_p20 INT, work_satisfaction_p30 INT,
-    work_satisfaction_p40 INT, work_satisfaction_p50 INT, work_satisfaction_p60 INT,
-    work_satisfaction_p70 INT, work_satisfaction_p80 INT, work_satisfaction_p90 INT,
-    work_satisfaction_min INT, work_satisfaction_max INT, work_satisfaction_n INT,
-
-    -- Демография: Возраст
-    age_mean DECIMAL(5,2),
-    age_sd DECIMAL(5,2),
-    age_p10 INT, age_p20 INT, age_p30 INT, age_p40 INT, age_p50 INT,
-    age_p60 INT, age_p70 INT, age_p80 INT, age_p90 INT,
-    age_min INT, age_max INT, age_n INT,
-
-    -- Демография: Дети
-    children_count_mean DECIMAL(5,2),
-    children_count_sd DECIMAL(5,2),
-    children_count_p10 INT, children_count_p20 INT, children_count_p30 INT,
-    children_count_p40 INT, children_count_p50 INT, children_count_p60 INT,
-    children_count_p70 INT, children_count_p80 INT, children_count_p90 INT,
-    children_count_min INT, children_count_max INT, children_count_n INT,
-
-    -- Демография: Удалёнка
-    remote_days_mean DECIMAL(5,2),
-    remote_days_sd DECIMAL(5,2),
-    remote_days_p10 INT, remote_days_p20 INT, remote_days_p30 INT,
-    remote_days_p40 INT, remote_days_p50 INT, remote_days_p60 INT,
-    remote_days_p70 INT, remote_days_p80 INT, remote_days_p90 INT,
-    remote_days_min INT, remote_days_max INT, remote_days_n INT,
-
-    -- Метаданные
-    total_respondents INT,
-    last_respondent_at TIMESTAMP NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Мы отказались от системы агрегатов в пользу прямых COUNT запросов.
+-- Процентили вычисляются в реальном времени при загрузке страницы результатов.
+--
+-- Преимущества:
+-- - Актуальные данные (не нужно пересчитывать)
+-- - Проще архитектура (нет таблицы aggregates)
+-- - Меньше кода (нет класса Aggregates.php)
+-- - Выше производительность (1 запрос вместо 10+)
+-- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Начальные данные: пустая запись aggregates
+-- Сообщение об успехе
 -- ----------------------------------------------------------------------------
-INSERT INTO aggregates (
-    mijs_mean, mijs_sd, mijs_n,
-    mbi_mean, mbi_sd, mbi_n,
-    mbi_cynicism_mean, mbi_cynicism_sd, mbi_cynicism_n,
-    mbi_efficacy_mean, mbi_efficacy_sd, mbi_efficacy_n,
-    swls_mean, swls_sd, swls_n,
-    practices_mean, practices_sd, practices_n,
-    procrastination_mean, procrastination_sd, procrastination_n,
-    vaccines_mean, vaccines_sd, vaccines_n,
-    personal_urgent_important_mean, personal_urgent_important_sd, personal_urgent_important_n,
-    work_urgent_important_mean, work_urgent_important_sd, work_urgent_important_n,
-    work_satisfaction_mean, work_satisfaction_sd, work_satisfaction_n,
-    age_mean, age_sd, age_n,
-    children_count_mean, children_count_sd, children_count_n,
-    remote_days_mean, remote_days_sd, remote_days_n,
-    total_respondents, last_respondent_at
-) VALUES (
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    0, NULL
-);
-
-SELECT 'База данных jedi_survey успешно создана!' AS status;
+SELECT 'База данных jedi_survey успешно создана! Таблица respondents создана со всеми индексами.' AS status;
+SELECT 'Примечание: Таблица aggregates не создаётся (отказались от агрегатов)' AS note;

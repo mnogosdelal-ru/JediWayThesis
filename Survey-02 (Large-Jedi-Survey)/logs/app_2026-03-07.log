@@ -1,4 +1,0 @@
-[2026-03-07 22:08:33] [ERROR] Database connection failed: SQLSTATE[HY000] [1049] Unknown database 'jedi_survey'
-[2026-03-07 22:11:31] [INFO] New respondent created: 7cec08e7e860a00d82c3d550e3c8b2e7 (code: VTM239)
-[2026-03-07 22:11:46] [INFO] Page 0 saved for respondent 7cec08e7e860a00d82c3d550e3c8b2e7
-[2026-03-07 22:14:35] [INFO] Page 1 saved for respondent 7cec08e7e860a00d82c3d550e3c8b2e7
