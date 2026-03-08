@@ -243,7 +243,7 @@ $levels = [
     'mbi_efficacy' => getLevel($scores['mbi']['efficacy'] ?? 0, 8, 56),
     'swls' => getLevel($scores['swls'] ?? 0, 5, 35),
     'procrastination' => getLevel($scores['procrastination'] ?? 0, 8, 40),
-    'practices' => getLevel($scores['practices_freq'], 21, 126),
+    'practices' => getLevel($scores['practices_freq'], 20, 120),
     'vaccines' => getLevel($scores['vaccines'], 0, 15)
 ];
 

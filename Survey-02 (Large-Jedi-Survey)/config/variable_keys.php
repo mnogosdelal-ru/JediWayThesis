@@ -110,19 +110,18 @@ $PRACTICES_KEYS = [
     17 => 'prac_q17_vypolnit_zelenuyu_zadachu',
     18 => 'prac_q18_zelenaya_zadacha_do_chatov',
     19 => 'prac_q19_inkubator_idey',
-    20 => 'prac_q20_15_minut_naedine_s_myslyami',
-    21 => 'prac_q21_zelenaya_zadacha_do_proverki_chatov'
+    20 => 'prac_q20_15_minut_naedine_s_myslyami'
 ];
 
 // ============================================================================
 // Джедайские вакцины - 5 items
 // ============================================================================
 $VACCINES_KEYS = [
-    1 => 'vacc_q1_peregulirovka_slozhnykh_zadach',
-    2 => 'vacc_q2_vneshnyaya_pamyat_dlya_idey',
-    3 => 'vacc_q3_pravilo_2_minut',
-    4 => 'vacc_q4_zelenye_zadachi_po_utram',
-    5 => 'vacc_q5_voskresnoe_planirovanie'
+    1 => 'vacc_q1_udalit_prilozheniya_sotsialnykh_setey', // «Удалить приложения социальных сетей со своего смартфона»
+    2 => 'vacc_q2_otklyuchit_krasnye_kruzhochki_na_ikonkakh', // «Отключить красные кружочки на иконках приложений»
+    3 => 'vacc_q3_otklyuchit_opoveshcheniya_o_novykh_soobshcheniyakh_v_chatakh', // «Отключить оповещения о новых сообщениях в чатах»
+    4 => 'vacc_q4_otklyuchit_opoveshcheniya_o_novykh_soobshcheniyakh_v_pochte', // «Отключить оповещения о новых сообщениях в почте»
+    5 => 'vacc_q5_otklyuchit_push_opoveshcheniya_ot_prilozheniy' // «Отключить push-оповещения от приложений (соцсети, магазины, заправки)»
 ];
 
 // ============================================================================

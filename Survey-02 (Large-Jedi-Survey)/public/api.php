@@ -77,22 +77,11 @@ try {
             'practices_freq_total' => $respondent['practices_freq_total'],
             'practices_quality_total' => $respondent['practices_quality_total'],
             'vaccines_total' => $respondent['vaccines_total'],
-            'tool_preference' => $respondent['tool_preference'],
             'work_urgent_important' => $respondent['work_urgent_important'],
             'personal_urgent_important' => $respondent['personal_urgent_important'],
             'work_satisfaction' => $respondent['work_satisfaction']
         ],
         'answers' => [
-            'mindset_technical_humanitarian' => $respondent['mindset_technical_humanitarian'],
-            'mijs_items' => json_decode($respondent['mijs_items'], true),
-            'swls_items' => json_decode($respondent['swls_items'], true),
-            'mbi_exhaustion_items' => json_decode($respondent['mbi_exhaustion_items'], true),
-            'mbi_cynicism_items' => json_decode($respondent['mbi_cynicism_items'], true),
-            'mbi_efficacy_items' => json_decode($respondent['mbi_efficacy_items'], true),
-            'procrastination_items' => json_decode($respondent['procrastination_items'], true),
-            'practices_frequency' => json_decode($respondent['practices_frequency'], true),
-            'practices_quality' => json_decode($respondent['practices_quality'], true),
-            'vaccines' => json_decode($respondent['vaccines'], true),
             'open_most_useful_practice' => $respondent['open_most_useful_practice'],
             'open_other_practices' => $respondent['open_other_practices']
         ],

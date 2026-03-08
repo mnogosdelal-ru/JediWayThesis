@@ -242,6 +242,10 @@ try {
         case 10:
             $answers['open_most_useful_practice'] = $input['open_most_useful_practice'] ?? '';
             $answers['open_other_practices'] = $input['open_other_practices'] ?? '';
+            
+            // Добавляем открытые ответы в detailed responses для бэкапа
+            $detailed_responses['open_most_useful_practice'] = $answers['open_most_useful_practice'];
+            $detailed_responses['open_other_practices'] = $answers['open_other_practices'];
 
             // Attention check (практика 16) - данные уже сохранены на странице 8
             // Получаем их из БД
@@ -262,11 +266,35 @@ try {
     
     // Сохраняем detailed responses в JSON поле
     $answers['responses_detailed'] = json_encode($detailed_responses);
-    
+
     // Рассчитываем время прохождения
     $time_spent = Survey::calculateTimeSpent($respondent_id);
     $answers['time_spent_seconds'] = $time_spent;
+
+    // ========================================================================
+    // ЛОГИРОВАНИЕ ОТВЕТОВ ДЛЯ ВОССТАНОВЛЕНИЯ БАЗЫ
+    // Логируем каждую страницу для полного резервного копирования
+    // ========================================================================
+    $logData = [
+        'respondent_id' => $respondent_id,
+        'page' => $page,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'answers' => $answers,
+        'detailed_responses' => $detailed_responses,
+        'input_raw' => $input
+    ];
     
+    // Для страницы 10 добавляем открытые ответы в отдельное поле для удобства
+    if ($page == 10) {
+        $logData['open_answers'] = [
+            'open_most_useful_practice' => $answers['open_most_useful_practice'] ?? '',
+            'open_other_practices' => $answers['open_other_practices'] ?? ''
+        ];
+    }
+    
+    log_event("BACKUP: " . json_encode($logData, JSON_UNESCAPED_UNICODE), 'BACKUP');
+    // ========================================================================
+
     // Сохраняем ответы
     $success = Survey::savePage($respondent_id, $page, $answers);
 
