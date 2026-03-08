@@ -43,8 +43,9 @@ if (!$respondent_id) {
 $respondent = Survey::getRespondent($respondent_id);
 log_event("Save page $page: respondent_id=$respondent_id, found=" . ($respondent ? 'yes' : 'no'));
 
-// Если не найден - создаём нового (БД могла быть очищена)
+// Если не найден - создаём нового (БД могла быть очищена, сессия истекла)
 if (!$respondent) {
+    log_event("WARNING: Respondent $respondent_id not found in DB, creating new one", 'WARNING');
     $respondent_id = Survey::createRespondent();
     $_SESSION['respondent_id'] = $respondent_id;
     log_event("Created new respondent after DB loss: $respondent_id");
@@ -200,7 +201,7 @@ try {
         echo json_encode(['success' => false, 'error' => 'Failed to save']);
     }
     
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     log_event("Save error: " . $e->getMessage(), 'ERROR');
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

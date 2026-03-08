@@ -105,7 +105,7 @@
     ?>
     
     <?php foreach ($practices as $i => $practice):
-        $is_weekly = in_array($i, [9, 10, 11]);
+        $is_weekly = in_array($i, [9, 11]);  // Только "Составить план на неделю" и "Подвести итоги недели"
         $freq_options = $is_weekly ? $freq_labels_weekly : $freq_labels_daily;
     ?>
     <div class="practice-item">

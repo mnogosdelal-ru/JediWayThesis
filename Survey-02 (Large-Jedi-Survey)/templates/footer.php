@@ -1,8 +1,9 @@
     </div>
     
     <script>
-        const RESPONDENT_ID = '<?= htmlspecialchars($respondent_id ?? '') ?>';
-        const CURRENT_PAGE = <?= $page ?? 0 ?>;
+        // var (не const) чтобы window.RESPONDENT_ID было доступно глобально
+        var RESPONDENT_ID = '<?= htmlspecialchars($respondent_id ?? '') ?>';
+        var CURRENT_PAGE = <?= $page ?? 0 ?>;
 
         // Показать уведомление о восстановлении
         function showRestoreNotice() {
@@ -49,8 +50,10 @@
             let hasData = false;
             
             for (const [key, value] of Object.entries(data)) {
-                // Пропускаем скрытые поля
+                // Пропускаем поля управляемые сервером (они должны приходить из сессии,
+                // а не из localStorage — иначе старый respondent_id перезапишет актуальный)
                 if (key.startsWith('_')) continue;
+                if (key === 'respondent_id' || key === 'page' || key === 'next_page') continue;
                 
                 const input = document.querySelector(`[name="${key}"]`);
                 if (!input) continue;
@@ -102,6 +105,14 @@
 
             return new Promise((resolve, reject) => {
                 const formData = new FormData(form);
+                
+                // Всегда используем актуальный respondent_id из JS-переменной,
+                // а не устаревшее значение из hidden-поля формы (которое рендерится
+                // PHP один раз при загрузке страницы и может стать невалидным
+                // если save.php создал нового респондента на предыдущем шаге)
+                if (window.RESPONDENT_ID) {
+                    formData.set('respondent_id', window.RESPONDENT_ID);
+                }
                 
                 // Логируем для отладки
                 console.log('Submitting form:', {
