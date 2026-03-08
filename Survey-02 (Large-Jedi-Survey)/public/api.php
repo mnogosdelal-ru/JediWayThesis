@@ -1,11 +1,12 @@
 <?php
 /**
  * API для получения результатов респондента по коду
- * 
+ *
  * GET /api.php?code=ABC123
  */
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/variable_keys.php';
 require_once __DIR__ . '/../src/Database.php';
 require_once __DIR__ . '/../src/Survey.php';
 
@@ -26,7 +27,7 @@ if (!$code) {
 try {
     // Ищем респондента по коду
     $respondent = Survey::getRespondentByCode($code);
-    
+
     if (!$respondent) {
         http_response_code(404);
         echo json_encode([
@@ -35,7 +36,12 @@ try {
         ]);
         exit;
     }
-    
+
+    // Получаем детализированные ответы
+    $detailed_responses = !empty($respondent['responses_detailed']) 
+        ? json_decode($respondent['responses_detailed'], true) 
+        : null;
+
     // Формируем ответ
     $response = [
         'success' => true,
@@ -53,7 +59,10 @@ try {
             'work_experience_years' => $respondent['work_experience_years'],
             'position' => $respondent['position'],
             'industry' => $respondent['industry'],
-            'remote_days' => $respondent['remote_days']
+            'industry_other' => $respondent['industry_other'] ?? null,
+            'remote_days' => $respondent['remote_days'],
+            'mindset_technical_humanitarian' => $respondent['mindset_technical_humanitarian'],
+            'tool_preference' => $respondent['tool_preference']
         ],
         'scores' => [
             'mijs_total' => $respondent['mijs_total'],
@@ -86,11 +95,12 @@ try {
             'vaccines' => json_decode($respondent['vaccines'], true),
             'open_most_useful_practice' => $respondent['open_most_useful_practice'],
             'open_other_practices' => $respondent['open_other_practices']
-        ]
+        ],
+        'detailed_responses' => $detailed_responses
     ];
-    
+
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
-    
+
 } catch (Exception $e) {
     log_event("API error: " . $e->getMessage(), 'ERROR');
     http_response_code(500);

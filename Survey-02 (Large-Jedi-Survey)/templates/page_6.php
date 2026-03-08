@@ -118,32 +118,33 @@
 
 <script>
 function updateMbiJson() {
-    const exhaustion = [];
-    const cynicism = [];
-    const efficacy = [];
+    const exhaustion = {};
+    const cynicism = {};
+    const efficacy = {};
 
-    // Собираем ответы по порядку items
+    // Собираем ответы с оригинальными номерами вопросов
     const exhaustion_order = [1, 2, 3, 6, 8, 13, 14, 16, 20];
     const cynicism_order = [5, 10, 11, 15, 22];
     const efficacy_order = [4, 7, 9, 12, 17, 18, 19, 21];
 
     exhaustion_order.forEach(i => {
         const exh = document.querySelector(`input[name="mbi_exhaustion_${i}"]:checked`);
-        exhaustion.push(exh ? parseInt(exh.value) : 0);
+        exhaustion[i] = exh ? parseInt(exh.value) : 0;
     });
 
     cynicism_order.forEach(i => {
         const cyn = document.querySelector(`input[name="mbi_cynicism_${i}"]:checked`);
-        cynicism.push(cyn ? parseInt(cyn.value) : 0);
+        cynicism[i] = cyn ? parseInt(cyn.value) : 0;
     });
 
     efficacy_order.forEach(i => {
         const eff = document.querySelector(`input[name="mbi_efficacy_${i}"]:checked`);
-        efficacy.push(eff ? parseInt(eff.value) : 0);
+        efficacy[i] = eff ? parseInt(eff.value) : 0;
     });
 
-    document.getElementById('mbi_exhaustion_items').value = JSON.stringify(exhaustion);
-    document.getElementById('mbi_cynicism_items').value = JSON.stringify(cynicism);
-    document.getElementById('mbi_efficacy_items').value = JSON.stringify(efficacy);
+    // Сохраняем как массивы для совместимости со старым кодом расчёта баллов
+    document.getElementById('mbi_exhaustion_items').value = JSON.stringify(Object.values(exhaustion));
+    document.getElementById('mbi_cynicism_items').value = JSON.stringify(Object.values(cynicism));
+    document.getElementById('mbi_efficacy_items').value = JSON.stringify(Object.values(efficacy));
 }
 </script>

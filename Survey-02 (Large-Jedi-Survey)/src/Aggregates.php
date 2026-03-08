@@ -89,11 +89,19 @@ class Aggregates {
             // MIJS
             $values = $this->getColumnValues('mijs_total');
             $stats['mijs'] = $this->calculateStats($values);
-            
-            // MBI
+
+            // MBI - Эмоциональное истощение
             $values = $this->getColumnValues('mbi_exhaustion_score');
-            $stats['mbi'] = $this->calculateStats($values);
-            
+            $stats['mbi_exhaustion'] = $this->calculateStats($values);
+
+            // MBI - Цинизм
+            $values = $this->getColumnValues('mbi_cynicism_score');
+            $stats['mbi_cynicism'] = $this->calculateStats($values);
+
+            // MBI - Эффективность
+            $values = $this->getColumnValues('mbi_efficacy_score');
+            $stats['mbi_efficacy'] = $this->calculateStats($values);
+
             // SWLS
             $values = $this->getColumnValues('swls_total');
             $stats['swls'] = $this->calculateStats($values);
@@ -191,13 +199,27 @@ class Aggregates {
 
     /**
      * Получить значения колонки из БД
-     * 
+     *
      * @param string $column Имя колонки
      * @return array
      */
     private function getColumnValues(string $column): array {
+        // Whitelist допустимых колонок для защиты от SQL injection
+        $allowedColumns = [
+            'mijs_total', 'mbi_exhaustion_score', 'mbi_cynicism_score', 
+            'mbi_efficacy_score', 'swls_total', 'practices_freq_total',
+            'practices_quality_total', 'procrastination_total', 'vaccines_total',
+            'personal_urgent_important', 'work_urgent_important', 'work_satisfaction',
+            'age', 'children_count', 'remote_days'
+        ];
+        
+        if (!in_array($column, $allowedColumns, true)) {
+            log_event("Invalid column name in getColumnValues: $column", 'ERROR');
+            return [];
+        }
+        
         $results = Database::select(
-            "SELECT $column FROM respondents WHERE status = 'completed' AND $column IS NOT NULL"
+            "SELECT `$column` FROM respondents WHERE status = 'completed' AND `$column` IS NOT NULL"
         );
         return array_column($results, $column);
     }
@@ -261,17 +283,19 @@ class Aggregates {
     private function getEmptyStats(): array {
         return [
             'mijs' => $this->getEmptyScaleStats(),
-            'mbi' => $this->getEmptyScaleStats(),
+            'mbi_exhaustion' => $this->getEmptyScaleStats(),
+            'mbi_cynicism' => $this->getEmptyScaleStats(),
+            'mbi_efficacy' => $this->getEmptyScaleStats(),
             'swls' => $this->getEmptyScaleStats(),
             'practices' => $this->getEmptyScaleStats(),
             'procrastination' => $this->getEmptyScaleStats(),
             'vaccines' => $this->getEmptyScaleStats(),
             'personal_urgent_important' => $this->getEmptyScaleStats(),
             'work_urgent_important' => $this->getEmptyScaleStats(),
+            'work_satisfaction' => $this->getEmptyScaleStats(),
             'age' => $this->getEmptyScaleStats(),
             'children_count' => $this->getEmptyScaleStats(),
             'remote_days' => ['counts' => [], 'total' => 0, 'mode' => null, 'n' => 0],
-            'work_satisfaction' => $this->getEmptyScaleStats(),
             'total_respondents' => 0,
             'calculated_at' => null
         ];
@@ -313,21 +337,53 @@ class Aggregates {
             'mijs_max' => $stats['mijs']['max'],
             'mijs_n' => $stats['mijs']['n'],
             
-            'mbi_mean' => $stats['mbi']['mean'],
-            'mbi_sd' => $stats['mbi']['sd'],
-            'mbi_p10' => $stats['mbi']['p10'],
-            'mbi_p20' => $stats['mbi']['p20'],
-            'mbi_p30' => $stats['mbi']['p30'],
-            'mbi_p40' => $stats['mbi']['p40'],
-            'mbi_p50' => $stats['mbi']['p50'],
-            'mbi_p60' => $stats['mbi']['p60'],
-            'mbi_p70' => $stats['mbi']['p70'],
-            'mbi_p80' => $stats['mbi']['p80'],
-            'mbi_p90' => $stats['mbi']['p90'],
-            'mbi_min' => $stats['mbi']['min'],
-            'mbi_max' => $stats['mbi']['max'],
-            'mbi_n' => $stats['mbi']['n'],
-            
+            'mbi_mean' => $stats['mbi_exhaustion']['mean'],
+            'mbi_sd' => $stats['mbi_exhaustion']['sd'],
+            'mbi_p10' => $stats['mbi_exhaustion']['p10'],
+            'mbi_p20' => $stats['mbi_exhaustion']['p20'],
+            'mbi_p30' => $stats['mbi_exhaustion']['p30'],
+            'mbi_p40' => $stats['mbi_exhaustion']['p40'],
+            'mbi_p50' => $stats['mbi_exhaustion']['p50'],
+            'mbi_p60' => $stats['mbi_exhaustion']['p60'],
+            'mbi_p70' => $stats['mbi_exhaustion']['p70'],
+            'mbi_p80' => $stats['mbi_exhaustion']['p80'],
+            'mbi_p90' => $stats['mbi_exhaustion']['p90'],
+            'mbi_min' => $stats['mbi_exhaustion']['min'],
+            'mbi_max' => $stats['mbi_exhaustion']['max'],
+            'mbi_n' => $stats['mbi_exhaustion']['n'],
+
+            // MBI Цинизм
+            'mbi_cynicism_mean' => $stats['mbi_cynicism']['mean'],
+            'mbi_cynicism_sd' => $stats['mbi_cynicism']['sd'],
+            'mbi_cynicism_p10' => $stats['mbi_cynicism']['p10'],
+            'mbi_cynicism_p20' => $stats['mbi_cynicism']['p20'],
+            'mbi_cynicism_p30' => $stats['mbi_cynicism']['p30'],
+            'mbi_cynicism_p40' => $stats['mbi_cynicism']['p40'],
+            'mbi_cynicism_p50' => $stats['mbi_cynicism']['p50'],
+            'mbi_cynicism_p60' => $stats['mbi_cynicism']['p60'],
+            'mbi_cynicism_p70' => $stats['mbi_cynicism']['p70'],
+            'mbi_cynicism_p80' => $stats['mbi_cynicism']['p80'],
+            'mbi_cynicism_p90' => $stats['mbi_cynicism']['p90'],
+            'mbi_cynicism_min' => $stats['mbi_cynicism']['min'],
+            'mbi_cynicism_max' => $stats['mbi_cynicism']['max'],
+            'mbi_cynicism_n' => $stats['mbi_cynicism']['n'],
+
+            // MBI Эффективность
+            'mbi_efficacy_mean' => $stats['mbi_efficacy']['mean'],
+            'mbi_efficacy_sd' => $stats['mbi_efficacy']['sd'],
+            'mbi_efficacy_p10' => $stats['mbi_efficacy']['p10'],
+            'mbi_efficacy_p20' => $stats['mbi_efficacy']['p20'],
+            'mbi_efficacy_p30' => $stats['mbi_efficacy']['p30'],
+            'mbi_efficacy_p40' => $stats['mbi_efficacy']['p40'],
+            'mbi_efficacy_p50' => $stats['mbi_efficacy']['p50'],
+            'mbi_efficacy_p60' => $stats['mbi_efficacy']['p60'],
+            'mbi_efficacy_p70' => $stats['mbi_efficacy']['p70'],
+            'mbi_efficacy_p80' => $stats['mbi_efficacy']['p80'],
+            'mbi_efficacy_p90' => $stats['mbi_efficacy']['p90'],
+            'mbi_efficacy_min' => $stats['mbi_efficacy']['min'],
+            'mbi_efficacy_max' => $stats['mbi_efficacy']['max'],
+            'mbi_efficacy_n' => $stats['mbi_efficacy']['n'],
+
             'swls_mean' => $stats['swls']['mean'],
             'swls_sd' => $stats['swls']['sd'],
             'swls_p10' => $stats['swls']['p10'],

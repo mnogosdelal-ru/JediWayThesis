@@ -80,6 +80,14 @@ $scores['vaccines'] = (int)($respondent['vaccines_total'] ?? 0);
 $scores['personal_urgent_important'] = (int)($respondent['personal_urgent_important'] ?? 0);
 $scores['work_urgent_important'] = (int)($respondent['work_urgent_important'] ?? 0);
 
+// Удовлетворённость работой
+$scores['work_satisfaction'] = (int)($respondent['work_satisfaction'] ?? 0);
+
+// Демография
+$scores['age'] = (int)($respondent['age'] ?? 0);
+$scores['children_count'] = (int)($respondent['children_count'] ?? 0);
+$scores['remote_days'] = $respondent['remote_days'] ?? null;
+
 // Функция для определения уровня
 function getLevel($score, $min, $max) {
     $range = $max - $min;
@@ -446,6 +454,36 @@ $page_title = 'Ваши результаты';
                                 <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $mbi_comp ?></td>
                             </tr>
                             <?php endif; ?>
+
+                            <?php
+                            // MBI - Цинизм - меньше = лучше
+                            if (isset($scores['mbi']['cynicism'])):
+                                $cyn_comp = getComparisonText($scores['mbi']['cynicism'], $aggregates['mbi_cynicism_p10'] ?? 0, $aggregates['mbi_cynicism_p20'] ?? 0, $aggregates['mbi_cynicism_p30'] ?? 0, $aggregates['mbi_cynicism_p40'] ?? 0, $aggregates['mbi_cynicism_p50'] ?? 0, $aggregates['mbi_cynicism_p60'] ?? 0, $aggregates['mbi_cynicism_p70'] ?? 0, $aggregates['mbi_cynicism_p80'] ?? 0, $aggregates['mbi_cynicism_p90'] ?? 0, false);
+                                $cyn_level = getPercentileLevelText($scores['mbi']['cynicism'], $aggregates['mbi_cynicism_p10'] ?? 0, $aggregates['mbi_cynicism_p20'] ?? 0, $aggregates['mbi_cynicism_p30'] ?? 0, $aggregates['mbi_cynicism_p40'] ?? 0, $aggregates['mbi_cynicism_p50'] ?? 0, $aggregates['mbi_cynicism_p60'] ?? 0, $aggregates['mbi_cynicism_p70'] ?? 0, $aggregates['mbi_cynicism_p80'] ?? 0, $aggregates['mbi_cynicism_p90'] ?? 0, false);
+                                $cyn_color = getLevelColorByText($cyn_level);
+                            ?>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">😒 MBI: Цинизм</td>
+                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['cynicism'] ?> / 35</strong></td>
+                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $cyn_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $cyn_level ?></span></td>
+                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $cyn_comp ?></td>
+                            </tr>
+                            <?php endif; ?>
+
+                            <?php
+                            // MBI - Профессиональная эффективность - больше = лучше (инвертированная шкала)
+                            if (isset($scores['mbi']['efficacy'])):
+                                $eff_comp = getComparisonText($scores['mbi']['efficacy'], $aggregates['mbi_efficacy_p10'] ?? 0, $aggregates['mbi_efficacy_p20'] ?? 0, $aggregates['mbi_efficacy_p30'] ?? 0, $aggregates['mbi_efficacy_p40'] ?? 0, $aggregates['mbi_efficacy_p50'] ?? 0, $aggregates['mbi_efficacy_p60'] ?? 0, $aggregates['mbi_efficacy_p70'] ?? 0, $aggregates['mbi_efficacy_p80'] ?? 0, $aggregates['mbi_efficacy_p90'] ?? 0, true);
+                                $eff_level = getPercentileLevelText($scores['mbi']['efficacy'], $aggregates['mbi_efficacy_p10'] ?? 0, $aggregates['mbi_efficacy_p20'] ?? 0, $aggregates['mbi_efficacy_p30'] ?? 0, $aggregates['mbi_efficacy_p40'] ?? 0, $aggregates['mbi_efficacy_p50'] ?? 0, $aggregates['mbi_efficacy_p60'] ?? 0, $aggregates['mbi_efficacy_p70'] ?? 0, $aggregates['mbi_efficacy_p80'] ?? 0, $aggregates['mbi_efficacy_p90'] ?? 0, true);
+                                $eff_color = getLevelColorByText($eff_level);
+                            ?>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">💪 MBI: Профессиональная эффективность</td>
+                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['efficacy'] ?> / 56</strong></td>
+                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $eff_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $eff_level ?></span></td>
+                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $eff_comp ?></td>
+                            </tr>
+                            <?php endif; ?>
                             
                             <?php
                             // SWLS - больше = лучше
@@ -534,15 +572,37 @@ $page_title = 'Ваши результаты';
                             <?php endif; ?>
                             
                             <?php
-                            // Демография: Удалёнка (дни в неделю) - нейтральная шкала
-                            if (isset($scores['remote_days'])):
-                                $remote_comp = getComparisonText($scores['remote_days'], $aggregates['remote_days_p10'] ?? 0, $aggregates['remote_days_p20'] ?? 0, $aggregates['remote_days_p30'] ?? 0, $aggregates['remote_days_p40'] ?? 0, $aggregates['remote_days_p50'] ?? 0, $aggregates['remote_days_p60'] ?? 0, $aggregates['remote_days_p70'] ?? 0, $aggregates['remote_days_p80'] ?? 0, $aggregates['remote_days_p90'] ?? 0, false);
+                            // Демография: Удалёнка (категориальная переменная)
+                            if (isset($scores['remote_days']) && $scores['remote_days']):
+                                $remote_labels = [
+                                    'office' => 'В офисе',
+                                    '1' => '1 день',
+                                    '2' => '2 дня',
+                                    '3' => '3 дня',
+                                    '4' => '4 дня',
+                                    'full_remote' => 'Полная удалёнка'
+                                ];
+                                $remote_label = $remote_labels[$scores['remote_days']] ?? $scores['remote_days'];
+                                
+                                // Получаем распределение из агрегатов
+                                $remote_counts = [
+                                    'office' => $aggregates['remote_days_p10'] ?? 0,
+                                    '1' => $aggregates['remote_days_p20'] ?? 0,
+                                    '2' => $aggregates['remote_days_p30'] ?? 0,
+                                    '3' => $aggregates['remote_days_p40'] ?? 0,
+                                    '4' => $aggregates['remote_days_p50'] ?? 0,
+                                    'full_remote' => $aggregates['remote_days_p60'] ?? 0,
+                                ];
+                                $remote_total = array_sum($remote_counts);
+                                $remote_pct = $remote_total > 0 ? round(($remote_counts[$scores['remote_days']] ?? 0) / $remote_total * 100) : 0;
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">🏠 Удалёнка (дней в неделю)</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['remote_days'] ?></strong></td>
+                                <td style="padding: 12px;">🏠 Удалённая работа</td>
+                                <td style="padding: 12px; text-align: center;"><strong><?= $remote_label ?></strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;"><?= $remote_comp ?></td>
+                                <td style="padding: 12px; text-align: center; font-size: 13px;">
+                                    <?= $remote_pct ?>% респондентов так же
+                                </td>
                             </tr>
                             <?php endif; ?>
                         </tbody>

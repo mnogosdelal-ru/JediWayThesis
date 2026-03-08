@@ -118,13 +118,13 @@ class Survey {
     
     /**
      * Получить респондента по коду
-     * 
-     * @param string $code Код респондента
+     *
+     * @param string $code Код респондента (6 знаков: 3 буквы + 3 цифры)
      * @return array|null
      */
     public static function getRespondentByCode(string $code): ?array {
         return Database::selectOne(
-            "SELECT * FROM respondents WHERE code = ? AND status = 'completed'",
+            "SELECT * FROM respondents WHERE code = ?",
             [$code]
         );
     }
