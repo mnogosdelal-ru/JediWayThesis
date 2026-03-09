@@ -149,7 +149,7 @@ try {
             $mijs_assoc = itemsToAssocArray($mijs_items, $MIJS_KEYS);
             $answers['mijs_items'] = json_encode($mijs_assoc, JSON_UNESCAPED_UNICODE);
 
-            $calculated = Calculator::calculateMijs($mijs_items);
+            $calculated = Calculator::calculateMijs($mijs_assoc);
             $answers['mijs_urgency_score'] = $calculated['urgency'];
             $answers['mijs_agency_score'] = $calculated['agency'];
             $answers['mijs_total'] = $calculated['total'];
@@ -159,7 +159,7 @@ try {
             $swls_items = json_decode($input['swls_items'] ?? '[]', true);
             $swls_assoc = itemsToAssocArray($swls_items, $SWLS_KEYS);
             $answers['swls_items'] = json_encode($swls_assoc, JSON_UNESCAPED_UNICODE);
-            $answers['swls_total'] = Calculator::calculateSwls($swls_items);
+            $answers['swls_total'] = Calculator::calculateSwls($swls_assoc);
             break;
 
         case 6:
@@ -167,11 +167,15 @@ try {
             $mbi_cynicism = json_decode($input['mbi_cynicism_items'] ?? '[]', true);
             $mbi_efficacy = json_decode($input['mbi_efficacy_items'] ?? '[]', true);
 
-            $answers['mbi_exhaustion_items'] = json_encode(itemsToAssocArray($mbi_exhaustion, $MBI_EXHAUSTION_KEYS), JSON_UNESCAPED_UNICODE);
-            $answers['mbi_cynicism_items'] = json_encode(itemsToAssocArray($mbi_cynicism, $MBI_CYNICISM_KEYS), JSON_UNESCAPED_UNICODE);
-            $answers['mbi_efficacy_items'] = json_encode(itemsToAssocArray($mbi_efficacy, $MBI_EFFICACY_KEYS), JSON_UNESCAPED_UNICODE);
+            $exhaustion_assoc = itemsToAssocArray($mbi_exhaustion, $MBI_EXHAUSTION_KEYS);
+            $cynicism_assoc = itemsToAssocArray($mbi_cynicism, $MBI_CYNICISM_KEYS);
+            $efficacy_assoc = itemsToAssocArray($mbi_efficacy, $MBI_EFFICACY_KEYS);
 
-            $calculated = Calculator::calculateMbi($mbi_exhaustion, $mbi_cynicism, $mbi_efficacy);
+            $answers['mbi_exhaustion_items'] = json_encode($exhaustion_assoc, JSON_UNESCAPED_UNICODE);
+            $answers['mbi_cynicism_items'] = json_encode($cynicism_assoc, JSON_UNESCAPED_UNICODE);
+            $answers['mbi_efficacy_items'] = json_encode($efficacy_assoc, JSON_UNESCAPED_UNICODE);
+
+            $calculated = Calculator::calculateMbi($exhaustion_assoc, $cynicism_assoc, $efficacy_assoc);
             $answers['mbi_exhaustion_score'] = $calculated['exhaustion'];
             $answers['mbi_cynicism_score'] = $calculated['cynicism'];
             $answers['mbi_efficacy_score'] = $calculated['efficacy'];
@@ -182,7 +186,7 @@ try {
             $procrastination = json_decode($input['procrastination_items'] ?? '[]', true);
             $proc_assoc = itemsToAssocArray($procrastination, $PROCRASTINATION_KEYS);
             $answers['procrastination_items'] = json_encode($proc_assoc, JSON_UNESCAPED_UNICODE);
-            $answers['procrastination_total'] = Calculator::calculateProcrastination($procrastination);
+            $answers['procrastination_total'] = Calculator::calculateProcrastination($proc_assoc);
             break;
 
         case 8:
@@ -191,27 +195,31 @@ try {
 
             $freq_assoc = [];
             foreach ($frequency as $practiceNum => $value) {
-                $key = $PRACTICES_KEYS[$practiceNum] ?? "prac_q{$practiceNum}";
-                $freq_assoc[$key . '_freq'] = (int)$value;
+                $key = $PRACTICES_KEYS[$practiceNum] ?? null;
+                if ($key !== null) {
+                    $freq_assoc[$key . '_freq'] = (int)$value;
+                }
             }
             $answers['practices_frequency'] = json_encode($freq_assoc, JSON_UNESCAPED_UNICODE);
 
             $qual_assoc = [];
             foreach ($quality as $practiceNum => $value) {
-                $key = $PRACTICES_KEYS[$practiceNum] ?? "prac_q{$practiceNum}";
-                $qual_assoc[$key . '_qual'] = (int)$value;
+                $key = $PRACTICES_KEYS[$practiceNum] ?? null;
+                if ($key !== null) {
+                    $qual_assoc[$key . '_qual'] = (int)$value;
+                }
             }
             $answers['practices_quality'] = json_encode($qual_assoc, JSON_UNESCAPED_UNICODE);
 
-            $answers['practices_freq_total'] = Calculator::calculatePracticesFreq($frequency);
-            $answers['practices_quality_total'] = Calculator::calculatePracticesQuality($quality);
+            $answers['practices_freq_total'] = Calculator::calculatePracticesFreq($freq_assoc);
+            $answers['practices_quality_total'] = Calculator::calculatePracticesQuality($qual_assoc);
             break;
 
         case 9:
             $vaccines = json_decode($input['vaccines'] ?? '{}', true);
             $vacc_assoc = itemsToAssocArray($vaccines, $VACCINES_KEYS);
             $answers['vaccines'] = json_encode($vacc_assoc, JSON_UNESCAPED_UNICODE);
-            $answers['vaccines_total'] = Calculator::calculateVaccines($vaccines);
+            $answers['vaccines_total'] = Calculator::calculateVaccines($vacc_assoc);
             break;
 
         case 10:
