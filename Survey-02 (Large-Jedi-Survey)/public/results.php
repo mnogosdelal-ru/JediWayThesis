@@ -605,26 +605,26 @@ $page_title = 'Ваши результаты';
 <body>
     <div class="container">
         <div class="results-container">
-            <h1 style="text-align: center; margin-bottom: 30px;">📊 Ваши результаты</h1>
+            <h1>📊 Ваши результаты</h1>
 
             <!-- Код респондента -->
-            <div class="result-card" style="margin-bottom: 30px; background: #e8f4fd; border: 2px solid #3498db;">
-                <h3 style="text-align: center; margin-bottom: 15px;">🔑 Ваш код респондента</h3>
-                <p style="text-align: center; margin-bottom: 15px;">
-                    <a href="results.php?code=<?= htmlspecialchars($code) ?>" style="font-size: 32px; color: #3498db; font-family: monospace; text-decoration: none; border-bottom: 2px dashed #3498db; padding-bottom: 5px;">
+            <div class="result-card code-card">
+                <h3>🔑 Ваш код респондента</h3>
+                <p>
+                    <a href="results.php?code=<?= htmlspecialchars($code) ?>" class="code-link">
                         <?= htmlspecialchars($code) ?>
                     </a>
                 </p>
-                <p class="help-text" style="text-align: center; max-width: 600px; margin: 0 auto;">
+                <p class="help-text">
                     Сохраните эту ссылку или код. Вы можете вернуться на эту страницу в будущем,
                     когда в исследовании наберётся больше участников, и увидеть обновлённые результаты.
                 </p>
             </div>
 
             <!-- Обзорная таблица результатов -->
-            <div class="result-card" style="margin-bottom: 30px;">
-                <h3 style="text-align: center; margin-bottom: 10px;">📋 Сводная таблица результатов</h3>
-                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            <div class="result-card">
+                <h3>📋 Сводная таблица результатов</h3>
+                <p class="results-table-caption">
                     В исследовании участвует <strong><?= $total ?> человек</strong>
                 </p>
                 <div style="overflow-x: auto;">
@@ -634,7 +634,7 @@ $page_title = 'Ваши результаты';
                                 <th rowspan="2">Шкала</th>
                                 <th rowspan="2">Ваш балл</th>
                                 <th rowspan="2">Уровень</th>
-                                <th colspan="3">Сравнение с другими<br><span style="font-size: 10px;">(включая меня)</span></th>
+                                <th colspan="3">Сравнение с другими<br><span class="small-text">(включая меня)</span></th>
                             </tr>
                             <tr>
                                 <th>Меньше</th>
@@ -660,10 +660,10 @@ $page_title = 'Ваши результаты';
                             } elseif (isset($scores[$key])) {
                                 $score = $scores[$key];
                             }
-                            
+
                             // Пропускаем если нет данных
                             if ($score === null) continue;
-                            
+
                             // Пропускаем work_urgent_important и work_satisfaction если не работает
                             if (($key === 'work_urgent_important' || $key === 'work_satisfaction') && $score <= 0) continue;
 
@@ -676,17 +676,14 @@ $page_title = 'Ваши результаты';
                             // Определяем уровень на основе абсолютного значения балла
                             $level = getLevelByScore($score, $config['levels'], $config['higherIsBetter']);
                             $levelClass = getLevelClass($level, $config['higherIsBetter']);
-                            
+
                             // Получаем проценты для отображения
                             $pcts = getComparisonPercentages($less, $equal, $greater, $total);
-                            
-                            // Формируем диапазон
-                            $range = $config['min'] . '-' . $config['max'];
                             ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;"><?= $config['icon'] ?> <?= $config['label'] ?></td>
-                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $score ?> / <?= $config['max'] ?></strong></td>
-                                <td style="padding: 12px; text-align: center;"><span class="level-badge <?= $levelClass ?>"><?= $level ?></span></td>
+                            <tr>
+                                <td><?= $config['icon'] ?> <?= $config['label'] ?></td>
+                                <td><strong class="score-value"><?= $score ?> / <?= $config['max'] ?></strong></td>
+                                <td><span class="level-badge <?= $levelClass ?>"><?= $level ?></span></td>
                                 <td class="comparison-cell <?= $pcts['less'] === '—' ? 'zero' : '' ?>"><?= $pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $pcts['greater'] ?></td>
@@ -702,10 +699,10 @@ $page_title = 'Ваши результаты';
                                 $total
                             );
                             ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">🎂 Возраст</td>
-                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $scores['age'] ?> лет</strong></td>
-                                <td style="padding: 12px; text-align: center;">—</td>
+                            <tr>
+                                <td>🎂 Возраст</td>
+                                <td><strong class="score-value"><?= $scores['age'] ?> лет</strong></td>
+                                <td>—</td>
                                 <td class="comparison-cell <?= $age_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $age_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $age_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['greater'] ?></td>
@@ -721,10 +718,10 @@ $page_title = 'Ваши результаты';
                                 $total
                             );
                             ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">👶 Количество детей</td>
-                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $scores['children_count'] ?></strong></td>
-                                <td style="padding: 12px; text-align: center;">—</td>
+                            <tr>
+                                <td>👶 Количество детей</td>
+                                <td><strong class="score-value"><?= $scores['children_count'] ?></strong></td>
+                                <td>—</td>
                                 <td class="comparison-cell <?= $child_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $child_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $child_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['greater'] ?></td>
@@ -750,10 +747,10 @@ $page_title = 'Ваши результаты';
                                 $total
                             );
                             ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">🏠 Удалённая работа</td>
-                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $remote_label ?></strong></td>
-                                <td style="padding: 12px; text-align: center;">—</td>
+                            <tr>
+                                <td>🏠 Удалённая работа</td>
+                                <td><strong class="score-value"><?= $remote_label ?></strong></td>
+                                <td>—</td>
                                 <td class="comparison-cell <?= $remote_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $remote_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $remote_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['greater'] ?></td>
@@ -771,11 +768,11 @@ $page_title = 'Ваши результаты';
                     <?php if ($recommendation['warning']): ?>
                     <div class="warning-box">
                         <strong>⚠️ Важно:</strong>
-                        <p style="margin-top: 10px;"><?= htmlspecialchars($recommendation['warning_text']) ?></p>
+                        <p><?= htmlspecialchars($recommendation['warning_text']) ?></p>
                     </div>
                     <?php endif; ?>
 
-                    <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="program-section">
                         <h4 class="program-title">
                             <?= htmlspecialchars($recommendation['program']) ?>
                         </h4>
@@ -787,7 +784,7 @@ $page_title = 'Ваши результаты';
                         </p>
                     </div>
 
-                    <div style="text-align: center;">
+                    <div class="back-link-section">
                         <a href="<?= htmlspecialchars($recommendation['url']) ?>" class="btn btn-primary program-button" target="_blank">
                             🚀 Узнать больше о программе
                         </a>
@@ -795,7 +792,7 @@ $page_title = 'Ваши результаты';
                 <?php endif; ?>
             </div>
 
-            <div style="text-align: center; margin-top: 30px;">
+            <div class="back-link-section">
                 <a href="index.php?page=0" class="back-link">← Пройти опрос заново</a>
             </div>
         </div>
