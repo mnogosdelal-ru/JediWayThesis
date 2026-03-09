@@ -143,9 +143,10 @@ function updateMbiJson() {
         efficacy[i] = eff ? parseInt(eff.value) : 0;
     });
 
-    // Сохраняем как массивы для совместимости со старым кодом расчёта баллов
-    document.getElementById('mbi_exhaustion_items').value = JSON.stringify(Object.values(exhaustion));
-    document.getElementById('mbi_cynicism_items').value = JSON.stringify(Object.values(cynicism));
-    document.getElementById('mbi_efficacy_items').value = JSON.stringify(Object.values(efficacy));
+    // Сохраняем как ассоциативные массивы с номерами вопросов
+    // PHP функция itemsToAssocArray() правильно обработает эти ключи
+    document.getElementById('mbi_exhaustion_items').value = JSON.stringify(exhaustion);
+    document.getElementById('mbi_cynicism_items').value = JSON.stringify(cynicism);
+    document.getElementById('mbi_efficacy_items').value = JSON.stringify(efficacy);
 }
 </script>

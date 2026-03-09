@@ -38,17 +38,41 @@ function saveScaleWithKeys(&$answers, $items, $keysMap) {
 
 /**
  * Преобразовать массив ответов в объект с ключами
- * @param array $items Массив значений [1,2,3,...]
- * @param array $keysMap Ассоциативный массив ключей
+ * @param array $items Массив значений [1,2,3,...] или ассоциативный массив [5=>val, 10=>val, ...]
+ * @param array $keysMap Ассоциативный массив ключей (номер вопроса => ключ)
  * @return array Объект {key1: value1, key2: value2, ...}
  */
 function itemsToAssocArray($items, $keysMap) {
     $result = [];
-    foreach ($items as $index => $value) {
-        $questionNumber = $index + 1;
-        $key = $keysMap[$questionNumber] ?? "q{$questionNumber}";
-        $result[$key] = (int)$value;
+    
+    if (empty($items)) {
+        return $result;
     }
+    
+    // Проверяем, является ли массив ассоциативным (с ключами-номерами вопросов)
+    // Ключи в JSON из JavaScript всегда строки, поэтому проверяем по ключам $keysMap
+    $firstKey = array_keys($items)[0];
+    
+    // Если первый ключ есть в $keysMap - это ассоциативный массив с номерами вопросов
+    if (isset($keysMap[$firstKey])) {
+        // Это ассоциативный массив с ключами-номерами вопросов (например, [5=>val, 10=>val, ...])
+        foreach ($items as $questionNumber => $value) {
+            $key = $keysMap[$questionNumber] ?? null;
+            if ($key !== null) {
+                $result[$key] = (int)$value;
+            }
+        }
+    } else {
+        // Это обычный индексный массив [val1, val2, ...]
+        foreach ($items as $index => $value) {
+            $questionNumber = $index + 1;
+            $key = $keysMap[$questionNumber] ?? null;
+            if ($key !== null) {
+                $result[$key] = (int)$value;
+            }
+        }
+    }
+    
     return $result;
 }
 

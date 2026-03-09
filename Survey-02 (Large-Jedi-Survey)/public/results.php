@@ -8,7 +8,6 @@
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/Database.php';
-require_once __DIR__ . '/../src/Calculator.php';
 
 // Получаем код из запроса
 $code = $_GET['code'] ?? null;
@@ -37,79 +36,33 @@ if ($respondent['status'] !== 'completed') {
     $respondent['completed_at'] = date('Y-m-d H:i:s');
 }
 
-// Рассчитываем шкалы
+// Получаем готовые шкалы из БД
 $scores = [];
 
-// MIJS - читаем из БД (теперь там объект с ключами)
-$mijs_items = json_decode($respondent['mijs_items'] ?? '[]', true);
-// Если это объект с ключами, извлекаем значения
-if (is_array($mijs_items) && !empty($mijs_items) && array_keys($mijs_items) !== range(0, count($mijs_items) - 1)) {
-    $mijs_items = array_values($mijs_items);
-}
-if (count($mijs_items) >= 12) {
-    $scores['mijs'] = Calculator::calculateMijs($mijs_items);
-}
+// MIJS - берём готовое значение из БД
+$scores['mijs'] = [
+    'total' => (int)($respondent['mijs_total'] ?? 0)
+];
 
 // MBI - берём готовые значения из БД
-// Примечание: в БД теперь хранится объект с ключами, но нам нужны только значения
-$mbi_exhaustion = json_decode($respondent['mbi_exhaustion_items'] ?? '{}', true);
-$mbi_cynicism = json_decode($respondent['mbi_cynicism_items'] ?? '{}', true);
-$mbi_efficacy = json_decode($respondent['mbi_efficacy_items'] ?? '{}', true);
+$scores['mbi'] = [
+    'exhaustion' => (int)($respondent['mbi_exhaustion_score'] ?? 0),
+    'cynicism' => (int)($respondent['mbi_cynicism_score'] ?? 0),
+    'efficacy' => (int)($respondent['mbi_efficacy_score'] ?? 0),
+    'total' => (int)($respondent['mbi_total'] ?? 0)
+];
 
-// Если это объект с ключами, извлекаем значения
-if (is_array($mbi_exhaustion) && !empty($mbi_exhaustion)) {
-    $mbi_exhaustion = array_values($mbi_exhaustion);
-}
-if (is_array($mbi_cynicism) && !empty($mbi_cynicism)) {
-    $mbi_cynicism = array_values($mbi_cynicism);
-}
-if (is_array($mbi_efficacy) && !empty($mbi_efficacy)) {
-    $mbi_efficacy = array_values($mbi_efficacy);
-}
+// SWLS - берём готовое значение из БД
+$scores['swls'] = (int)($respondent['swls_total'] ?? 0);
 
-$scores['mbi'] = Calculator::calculateMbi($mbi_exhaustion, $mbi_cynicism, $mbi_efficacy);
+// Прокрастинация - берём готовое значение из БД
+$scores['procrastination'] = (int)($respondent['procrastination_total'] ?? 0);
 
-// SWLS - читаем из БД (теперь там объект с ключами)
-$swls_items = json_decode($respondent['swls_items'] ?? '[]', true);
-// Если это объект с ключами, извлекаем значения
-if (is_array($swls_items) && !empty($swls_items) && array_keys($swls_items) !== range(0, count($swls_items) - 1)) {
-    $swls_items = array_values($swls_items);
-}
-if (count($swls_items) >= 5) {
-    $scores['swls'] = Calculator::calculateSwls($swls_items);
-}
-
-// Прокрастинация - читаем из БД (теперь там объект с ключами)
-$procrastination_items = json_decode($respondent['procrastination_items'] ?? '[]', true);
-// Если это объект с ключами, извлекаем значения
-if (is_array($procrastination_items) && !empty($procrastination_items) && array_keys($procrastination_items) !== range(0, count($procrastination_items) - 1)) {
-    $procrastination_items = array_values($procrastination_items);
-}
-if (count($procrastination_items) >= 8) {
-    $scores['procrastination'] = Calculator::calculateProcrastination($procrastination_items);
-}
-
-// Практики - читаем из БД (теперь там объект с ключами)
-$practices_frequency = json_decode($respondent['practices_frequency'] ?? '{}', true);
-$practices_quality = json_decode($respondent['practices_quality'] ?? '{}', true);
-
-// Если это объекты с ключами, извлекаем значения
-if (is_array($practices_frequency) && !empty($practices_frequency)) {
-    $practices_frequency = array_values($practices_frequency);
-}
-if (is_array($practices_quality) && !empty($practices_quality)) {
-    $practices_quality = array_values($practices_quality);
-}
-
+// Практики - берём готовые значения из БД
 $scores['practices_freq'] = (int)($respondent['practices_freq_total'] ?? 0);
 $scores['practices_quality'] = (int)($respondent['practices_quality_total'] ?? 0);
 
-// Вакцины - читаем из БД (теперь там объект с ключами)
-$vaccines = json_decode($respondent['vaccines'] ?? '{}', true);
-// Если это объект с ключами, извлекаем значения
-if (is_array($vaccines) && !empty($vaccines) && array_keys($vaccines) !== range(0, count($vaccines) - 1)) {
-    $vaccines = array_values($vaccines);
-}
+// Вакцины - берём готовое значение из БД
 $scores['vaccines'] = (int)($respondent['vaccines_total'] ?? 0);
 
 // Срочное/важное
