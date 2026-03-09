@@ -403,7 +403,7 @@ button,
 }
 
 .score-value {
-    font-size: 32px;
+    font-size: 16px;
     font-weight: bold;
     color: #3498db;
 }
@@ -583,5 +583,101 @@ button,
 
     h1 {
         font-size: 20px;
+    }
+}
+
+/* ============================================================================
+   ТАБЛИЦА РЕЗУЛЬТАТОВ
+   ============================================================================ */
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+.results-table thead th {
+    padding: 12px;
+    text-align: center;
+    background: #3498db;
+    color: white;
+    font-weight: 600;
+}
+
+.results-table thead th:first-child {
+    text-align: left;
+    border-radius: 4px 0 0 0;
+}
+
+.results-table thead th:last-child {
+    border-radius: 0 4px 0 0;
+}
+
+.results-table tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+.results-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.results-table td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.results-table td:first-child {
+    text-align: left;
+}
+
+.results-table td:not(:first-child) {
+    text-align: center;
+}
+
+.results-table .score-value {
+    font-weight: bold;
+}
+
+.results-table .level-badge {
+    background: #f1c40f;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.results-table .level-low {
+    background: #e74c3c;
+}
+
+.results-table .level-medium {
+    background: #f1c40f;
+}
+
+.results-table .level-high {
+    background: #27ae60;
+}
+
+.results-table .comparison-cell {
+    font-size: 16px;
+    color: #666;
+}
+
+.results-table .comparison-cell.zero {
+    color: #ccc;
+}
+
+/* Адаптивность для таблицы */
+@media (max-width: 768px) {
+    .results-table {
+        font-size: 12px;
+    }
+    
+    .results-table th,
+    .results-table td {
+        padding: 8px 4px;
     }
 }

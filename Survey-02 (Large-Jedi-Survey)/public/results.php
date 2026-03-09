@@ -46,13 +46,12 @@ if (count($mijs_items) >= 12) {
     $scores['mijs'] = Calculator::calculateMijs($mijs_items);
 }
 
-// MBI
-$mbi_exhaustion = json_decode($respondent['mbi_exhaustion_items'] ?? '[]', true);
-$mbi_cynicism = json_decode($respondent['mbi_cynicism_items'] ?? '[]', true);
-$mbi_efficacy = json_decode($respondent['mbi_efficacy_items'] ?? '[]', true);
-if (count($mbi_exhaustion) >= 9) {
-    $scores['mbi'] = Calculator::calculateMbi($mbi_exhaustion, $mbi_cynicism, $mbi_efficacy);
-}
+// MBI - берём готовые значения из БД
+$scores['mbi'] = [
+    'exhaustion' => (int)($respondent['mbi_exhaustion_score'] ?? 0),
+    'cynicism' => (int)($respondent['mbi_cynicism_score'] ?? 0),
+    'efficacy' => (int)($respondent['mbi_efficacy_score'] ?? 0)
+];
 
 // SWLS
 $swls_items = json_decode($respondent['swls_items'] ?? '[]', true);
@@ -157,9 +156,35 @@ $percentilesQuery = "
         -- Дети
         SUM(CASE WHEN children_count < ? THEN 1 ELSE 0 END) AS child_less,
         SUM(CASE WHEN children_count = ? THEN 1 ELSE 0 END) AS child_equal,
-        SUM(CASE WHEN children_count > ? THEN 1 ELSE 0 END) AS child_greater
-        
-    FROM respondents 
+        SUM(CASE WHEN children_count > ? THEN 1 ELSE 0 END) AS child_greater,
+
+        -- Удалёнка (числовое представление: office=0, 1=1, 2=2, 3=3, 4=4, full_remote=5)
+        SUM(CASE WHEN 
+            (remote_days = 'office' AND 0 < ?) OR
+            (remote_days = '1' AND 1 < ?) OR
+            (remote_days = '2' AND 2 < ?) OR
+            (remote_days = '3' AND 3 < ?) OR
+            (remote_days = '4' AND 4 < ?) OR
+            (remote_days = 'full_remote' AND 5 < ?)
+        THEN 1 ELSE 0 END) AS remote_less,
+        SUM(CASE WHEN 
+            (remote_days = 'office' AND 0 = ?) OR
+            (remote_days = '1' AND 1 = ?) OR
+            (remote_days = '2' AND 2 = ?) OR
+            (remote_days = '3' AND 3 = ?) OR
+            (remote_days = '4' AND 4 = ?) OR
+            (remote_days = 'full_remote' AND 5 = ?)
+        THEN 1 ELSE 0 END) AS remote_equal,
+        SUM(CASE WHEN 
+            (remote_days = 'office' AND 0 > ?) OR
+            (remote_days = '1' AND 1 > ?) OR
+            (remote_days = '2' AND 2 > ?) OR
+            (remote_days = '3' AND 3 > ?) OR
+            (remote_days = '4' AND 4 > ?) OR
+            (remote_days = 'full_remote' AND 5 > ?)
+        THEN 1 ELSE 0 END) AS remote_greater
+
+    FROM respondents
     WHERE status = 'completed'
 ";
 
@@ -178,16 +203,23 @@ if (isset($scores['mbi']['exhaustion'])) {
     $params = array_merge($params, [
         $scores['mbi']['exhaustion'], $scores['mbi']['exhaustion'], $scores['mbi']['exhaustion']
     ]);
+} else {
+    // Добавляем заглушку чтобы не сбить порядок параметров
+    $params = array_merge($params, [0, 0, 0]);
 }
 if (isset($scores['mbi']['cynicism'])) {
     $params = array_merge($params, [
         $scores['mbi']['cynicism'], $scores['mbi']['cynicism'], $scores['mbi']['cynicism']
     ]);
+} else {
+    $params = array_merge($params, [0, 0, 0]);
 }
 if (isset($scores['mbi']['efficacy'])) {
     $params = array_merge($params, [
         $scores['mbi']['efficacy'], $scores['mbi']['efficacy'], $scores['mbi']['efficacy']
     ]);
+} else {
+    $params = array_merge($params, [0, 0, 0]);
 }
 
 // SWLS
@@ -239,6 +271,25 @@ $params = array_merge($params, [
     $scores['children_count'], $scores['children_count'], $scores['children_count']
 ]);
 
+// Удалёнка (числовое представление)
+$remote_numeric = [
+    'office' => 0,
+    '1' => 1,
+    '2' => 2,
+    '3' => 3,
+    '4' => 4,
+    'full_remote' => 5
+];
+$my_remote_num = isset($scores['remote_days']) ? ($remote_numeric[$scores['remote_days']] ?? 0) : 0;
+$params = array_merge($params, [
+    $my_remote_num, $my_remote_num, $my_remote_num,
+    $my_remote_num, $my_remote_num, $my_remote_num,
+    $my_remote_num, $my_remote_num, $my_remote_num,
+    $my_remote_num, $my_remote_num, $my_remote_num,
+    $my_remote_num, $my_remote_num, $my_remote_num,
+    $my_remote_num, $my_remote_num, $my_remote_num
+]);
+
 $percentiles = Database::selectOne($percentilesQuery, $params);
 
 // Если нет данных - используем заглушку
@@ -249,87 +300,220 @@ if (!$percentiles) {
 $total = $percentiles['total_count'] ?? 0;
 
 // ============================================================================
+// КОНФИГУРАЦИЯ ШКАЛ
+// ============================================================================
+// higherIsBetter: true если больше = лучше, false если меньше = лучше
+// min, max: диапазон баллов шкалы
+// label: отображаемое название
+// levels: пороговые значения для уровней [low, medium, high]
+//         low: score <= levels[0]
+//         medium: levels[0] < score <= levels[1]
+//         high: score > levels[1]
+// ============================================================================
+$SCALE_CONFIG = [
+    'personal_urgent_important' => [
+        'label' => 'Срочное/важное (личная жизнь)',
+        'icon' => '📅',
+        'min' => 1,
+        'max' => 5,
+        'higherIsBetter' => true,
+        'levels' => [2, 3],  // <=2: Низкий, 2-4: Средний, >4: Высокий
+        'db_key' => 'pers'
+    ],
+    'work_urgent_important' => [
+        'label' => 'Срочное/важное (работа)',
+        'icon' => '💼',
+        'min' => 1,
+        'max' => 5,
+        'higherIsBetter' => true,
+        'levels' => [2, 3],
+        'db_key' => 'work'
+    ],
+    'work_satisfaction' => [
+        'label' => 'Удовлетворённость работой',
+        'icon' => '😊',
+        'min' => 1,
+        'max' => 7,
+        'higherIsBetter' => true,
+        'levels' => [3, 5],  // <=3: Низкая, 3-5: Средняя, >5: Высокая
+        'db_key' => 'ws'
+    ],
+    'mijs' => [
+        'label' => 'MIJS (бремя срочности)',
+        'icon' => '⚖️',
+        'min' => 12,
+        'max' => 60,
+        'higherIsBetter' => false,  // Меньше = лучше
+        'levels' => [30, 45],  // <=30: Низкий (хорошо), 30-45: Средний, >45: Высокий (плохо)
+        'db_key' => 'mijs'
+    ],
+    'mbi_exhaustion' => [
+        'label' => 'MBI: Эмоциональное истощение',
+        'icon' => '🔥',
+        'min' => 0,
+        'max' => 54,
+        'higherIsBetter' => false,
+        'levels' => [18, 36],  // <=18: Низкий, 18-36: Средний, >36: Высокий
+        'db_key' => 'mbi_exh'
+    ],
+    'mbi_cynicism' => [
+        'label' => 'MBI: Цинизм',
+        'icon' => '😒',
+        'min' => 0,
+        'max' => 30,
+        'higherIsBetter' => false,
+        'levels' => [10, 20],  // <=10: Низкий, 10-20: Средний, >20: Высокий
+        'db_key' => 'mbi_cyn'
+    ],
+    'mbi_efficacy' => [
+        'label' => 'MBI: Профессиональная эффективность',
+        'icon' => '💪',
+        'min' => 0,
+        'max' => 48,
+        'higherIsBetter' => true,  // Больше = лучше
+        'levels' => [16, 32],  // <=16: Низкая, 16-32: Средняя, >32: Высокая
+        'db_key' => 'mbi_eff'
+    ],
+    'swls' => [
+        'label' => 'SWLS (удовлетворённость жизнью)',
+        'icon' => '😊',
+        'min' => 5,
+        'max' => 35,
+        'higherIsBetter' => true,
+        'levels' => [15, 25],  // <=15: Низкая, 15-25: Средняя, >25: Высокая
+        'db_key' => 'swls'
+    ],
+    'procrastination' => [
+        'label' => 'Прокрастинация',
+        'icon' => '⏰',
+        'min' => 8,
+        'max' => 40,
+        'higherIsBetter' => false,
+        'levels' => [20, 30],  // <=20: Низкая, 20-30: Средняя, >30: Высокая
+        'db_key' => 'proc'
+    ],
+    'practices' => [
+        'label' => 'Джедайские практики',
+        'icon' => '🧘',
+        'min' => 20,
+        'max' => 120,
+        'higherIsBetter' => true,
+        'levels' => [60, 90],  // <=60: Низкий, 60-90: Средний, >90: Высокий
+        'db_key' => 'prac'
+    ],
+    'vaccines' => [
+        'label' => 'Джедайские вакцины',
+        'icon' => '💉',
+        'min' => 0,
+        'max' => 15,
+        'higherIsBetter' => true,
+        'levels' => [5, 10],  // <=5: Низкий, 5-10: Средний, >10: Высокий
+        'db_key' => 'vacc'
+    ]
+];
+
+// ============================================================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================================
 
 /**
- * Получить текст сравнения
+ * Получить проценты для сравнения
+ * @return array Массив с процентами [less, equal, greater]
  */
-function getComparisonText($less, $equal, $greater, $total) {
-    if ($total == 0) return 'Нет данных';
-    
+function getComparisonPercentages($less, $equal, $greater, $total) {
+    if ($total == 0) return ['less' => '—', 'equal' => '—', 'greater' => '—'];
+
     $less_pct = round($less / $total * 100);
     $equal_pct = round($equal / $total * 100);
     $greater_pct = round($greater / $total * 100);
-    
-    return "<td style=\"padding: 12px; text-align: center; font-size: 14px;\">" . (($less_pct == 0) ? '—' : $less_pct . "%") . "</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$equal_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">" . (($greater_pct == 0) ? '—' : $greater_pct . "%") . "</td>";
+
+    return [
+        'less' => $less_pct > 0 ? $less_pct . '%' : '—',
+        'equal' => $equal_pct > 0 ? $equal_pct . '%' : '—',
+        'greater' => $greater_pct > 0 ? $greater_pct . '%' : '—'
+    ];
 }
 
 /**
- * Получить процент респондентов с таким же результатом
+ * Получить уровень (Низкий, Средний, Высокий) на основе абсолютных значений
+ * @param int $score Балл респондента
+ * @param array $levels Пороговые значения [low, high] из конфигурации
+ * @param bool $higherIsBetter true если больше = лучше
+ * @return string Уровень
  */
-function getEqualPercent($equal, $total) {
-    if ($total == 0) return 0;
-    return round($equal / $total * 100);
-}
-
-// Определяем уровни для цветов
-function getLevel($score, $min, $max) {
-    $range = $max - $min;
-    $low_third = $min + $range / 3;
-    $high_third = $max - $range / 3;
-
-    if ($score <= $low_third) return 'low';
-    if ($score >= $high_third) return 'high';
-    return 'medium';
-}
-
-function getLevelText($level) {
-    $levels = [
-        'low' => 'Низкий',
-        'medium' => 'Средний',
-        'high' => 'Высокий'
-    ];
-    return $levels[$level] ?? $level;
-}
-
-function getPercentileLevelText($less, $equal, $greater, $total) {
-    if ($total == 0) return 'Нет данных';
+function getLevelByScore($score, $levels, $higherIsBetter = true) {
+    if (!isset($levels[0], $levels[1])) return 'Средний';
     
-    $percentile = round($less / $total * 100);
+    $low = $levels[0];
+    $high = $levels[1];
     
-    if ($percentile <= 20) return 'Очень низкий';
-    if ($percentile <= 40) return 'Низкий';
-    if ($percentile <= 60) return 'Средний';
-    if ($percentile <= 80) return 'Высокий';
-    return 'Очень высокий';
+    // Определяем уровень по абсолютному значению
+    if ($score <= $low) {
+        $level = 'Низкий';
+    } elseif ($score > $high) {
+        $level = 'Высокий';
+    } else {
+        $level = 'Средний';
+    }
+    
+    return $level;
 }
 
-function getLevelColorByText($levelText) {
-    $colors = [
-        'Очень низкий' => '#e74c3c',
-        'Низкий' => '#f39c12',
-        'Средний' => '#f1c40f',
-        'Высокий' => '#27ae60',
-        'Очень высокий' => '#2ecc71',
-        'Нет данных' => '#95a5a6'
+/**
+ * Получить CSS класс для уровня
+ * @param string $levelText Текст уровня (Низкий, Средний, Высокий)
+ * @param bool $higherIsBetter true если больше = лучше
+ * @return string CSS класс
+ */
+function getLevelClass($levelText, $higherIsBetter = true) {
+    // Для higherIsBetter=false инвертируем логику классов
+    if (!$higherIsBetter) {
+        $inverted = [
+            'Низкий' => 'level-high',    // Низкий балл = хорошо
+            'Средний' => 'level-medium',
+            'Высокий' => 'level-low'     // Высокий балл = плохо
+        ];
+        return $inverted[$levelText] ?? 'level-medium';
+    }
+    
+    $classes = [
+        'Низкий' => 'level-low',
+        'Средний' => 'level-medium',
+        'Высокий' => 'level-high'
     ];
+    return $classes[$levelText] ?? 'level-medium';
+}
+
+/**
+ * Получить цвет уровня
+ * @param string $levelText Текст уровня (Низкий, Средний, Высокий)
+ * @param bool $higherIsBetter true если больше = лучше
+ * @return string HEX цвет
+ */
+function getLevelColorByText($levelText, $higherIsBetter = true) {
+    if ($higherIsBetter) {
+        // Больше = лучше: Высокий=зелёный, Средний=жёлтый, Низкий=красный
+        $colors = [
+            'Низкий' => '#e74c3c',    // красный
+            'Средний' => '#f1c40f',   // жёлтый
+            'Высокий' => '#27ae60',   // зелёный
+            'Нет данных' => '#95a5a6' // серый
+        ];
+    } else {
+        // Меньше = лучше: Низкий=зелёный, Средний=жёлтый, Высокий=красный
+        $colors = [
+            'Низкий' => '#27ae60',    // зелёный
+            'Средний' => '#f1c40f',   // жёлтый
+            'Высокий' => '#e74c3c',   // красный
+            'Нет данных' => '#95a5a6' // серый
+        ];
+    }
     return $colors[$levelText] ?? '#95a5a6';
 }
 
-// Определяем уровни
-$levels = [
-    'personal_urgent_important' => getLevel($scores['personal_urgent_important'], 1, 5),
-    'work_urgent_important' => getLevel($scores['work_urgent_important'], 1, 5),
-    'mijs' => getLevel($scores['mijs']['total'] ?? 0, 12, 60),
-    'mbi_exhaustion' => getLevel($scores['mbi']['exhaustion'] ?? 0, 9, 63),
-    'mbi_cynicism' => getLevel($scores['mbi']['cynicism'] ?? 0, 5, 35),
-    'mbi_efficacy' => getLevel($scores['mbi']['efficacy'] ?? 0, 0, 48),
-    'swls' => getLevel($scores['swls'] ?? 0, 5, 35),
-    'procrastination' => getLevel($scores['procrastination'] ?? 0, 8, 40),
-    'practices' => getLevel($scores['practices_freq'], 20, 120),
-    'vaccines' => getLevel($scores['vaccines'], 0, 15)
-];
+// ============================================================================
+// ОТОБРАЖЕНИЕ ТАБЛИЦЫ
+// ============================================================================
 
 // Генерируем рекомендацию по программе
 $practices_score = $scores['practices_freq'];
@@ -444,288 +628,74 @@ $page_title = 'Ваши результаты';
                     В исследовании участвует <strong><?= $total ?> человек</strong>
                 </p>
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <table class="results-table">
                         <thead>
-                            <tr style="background: #3498db; color: white;">
-                                <th rowspan="2" style="padding: 12px; text-align: left; border-radius: 4px 0 0 0">Шкала</th>
-                                <th rowspan="2" style="padding: 12px; text-align: center;">Ваш балл</th>
-                                <th rowspan="2" style="padding: 12px; text-align: center;">Уровень</th>
-                                <th colspan="3" style="padding: 12px; text-align: center; border-radius: 0 4px 0 0">Сравнение с другими<br><span style="font-size: 10px;">(включая меня)</span></th>
+                            <tr>
+                                <th rowspan="2">Шкала</th>
+                                <th rowspan="2">Ваш балл</th>
+                                <th rowspan="2">Уровень</th>
+                                <th colspan="3">Сравнение с другими<br><span style="font-size: 10px;">(включая меня)</span></th>
                             </tr>
-                            <tr style="background: #3498db; color: white;">
-                                <th style="padding: 12px; text-align: center;">Меньше</th>
-                                <th style="padding: 12px; text-align: center;">Равно</th>
-                                <th style="padding: 12px; text-align: center; border-radius: 0 0 4px 0">Больше</th>
+                            <tr>
+                                <th>Меньше</th>
+                                <th>Равно</th>
+                                <th>Больше</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (isset($scores['personal_urgent_important'])): ?>
+                            <?php foreach ($SCALE_CONFIG as $key => $config): ?>
                             <?php
-                            $pers_level = getPercentileLevelText(
-                                $percentiles['pers_less'] ?? 0,
-                                $percentiles['pers_equal'] ?? 0,
-                                $percentiles['pers_greater'] ?? 0,
-                                $total
-                            );
-                            $pers_color = getLevelColorByText($pers_level);
-                            $pers_comparison = getComparisonText(
-                                $percentiles['pers_less'] ?? 0,
-                                $percentiles['pers_equal'] ?? 0,
-                                $percentiles['pers_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">📅 Срочное/важное (личная жизнь)</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['personal_urgent_important'] ?> / 5</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $pers_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $pers_level ?></span></td>
-                                <?= $pers_comparison ?>
-                            </tr>
-                            <?php endif; ?>
+                            // Получаем значение балла
+                            $score = null;
+                            if ($key === 'mijs') {
+                                $score = $scores['mijs']['total'] ?? null;
+                            } elseif ($key === 'mbi_exhaustion') {
+                                $score = $scores['mbi']['exhaustion'] ?? null;
+                            } elseif ($key === 'mbi_cynicism') {
+                                $score = $scores['mbi']['cynicism'] ?? null;
+                            } elseif ($key === 'mbi_efficacy') {
+                                $score = $scores['mbi']['efficacy'] ?? null;
+                            } elseif ($key === 'practices') {
+                                $score = $scores['practices_freq'] ?? null;
+                            } elseif (isset($scores[$key])) {
+                                $score = $scores[$key];
+                            }
+                            
+                            // Пропускаем если нет данных
+                            if ($score === null) continue;
+                            
+                            // Пропускаем work_urgent_important и work_satisfaction если не работает
+                            if (($key === 'work_urgent_important' || $key === 'work_satisfaction') && $score <= 0) continue;
 
-                            <?php if (isset($scores['work_urgent_important']) && $scores['work_urgent_important'] > 0): ?>
-                            <?php
-                            $work_level = getPercentileLevelText(
-                                $percentiles['work_less'] ?? 0,
-                                $percentiles['work_equal'] ?? 0,
-                                $percentiles['work_greater'] ?? 0,
-                                $total
-                            );
-                            $work_color = getLevelColorByText($work_level);
-                            $work_comparison = getComparisonText(
-                                $percentiles['work_less'] ?? 0,
-                                $percentiles['work_equal'] ?? 0,
-                                $percentiles['work_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">💼 Срочное/важное (работа)</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['work_urgent_important'] ?> / 5</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $work_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $work_level ?></span></td>
-                                <?= $work_comparison ?>
-                            </tr>
-                            <?php endif; ?>
+                            // Получаем процентили (используем db_key если указан)
+                            $dbKey = $config['db_key'] ?? $key;
+                            $less = $percentiles[$dbKey . '_less'] ?? 0;
+                            $equal = $percentiles[$dbKey . '_equal'] ?? 0;
+                            $greater = $percentiles[$dbKey . '_greater'] ?? 0;
 
-                            <?php if (isset($scores['work_satisfaction']) && $scores['work_satisfaction'] > 0): ?>
-                            <?php
-                            $ws_level = getPercentileLevelText(
-                                $percentiles['ws_less'] ?? 0,
-                                $percentiles['ws_equal'] ?? 0,
-                                $percentiles['ws_greater'] ?? 0,
-                                $total
-                            );
-                            $ws_color = getLevelColorByText($ws_level);
-                            $ws_comparison = getComparisonText(
-                                $percentiles['ws_less'] ?? 0,
-                                $percentiles['ws_equal'] ?? 0,
-                                $percentiles['ws_greater'] ?? 0,
-                                $total
-                            );
+                            // Определяем уровень на основе абсолютного значения балла
+                            $level = getLevelByScore($score, $config['levels'], $config['higherIsBetter']);
+                            $levelClass = getLevelClass($level, $config['higherIsBetter']);
+                            
+                            // Получаем проценты для отображения
+                            $pcts = getComparisonPercentages($less, $equal, $greater, $total);
+                            
+                            // Формируем диапазон
+                            $range = $config['min'] . '-' . $config['max'];
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">😊 Удовлетворённость работой</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['work_satisfaction'] ?> / 7</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $ws_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $ws_level ?></span></td>
-                                <?= $ws_comparison ?>
+                                <td style="padding: 12px;"><?= $config['icon'] ?> <?= $config['label'] ?></td>
+                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $score ?> / <?= $config['max'] ?></strong></td>
+                                <td style="padding: 12px; text-align: center;"><span class="level-badge <?= $levelClass ?>"><?= $level ?></span></td>
+                                <td class="comparison-cell <?= $pcts['less'] === '—' ? 'zero' : '' ?>"><?= $pcts['less'] ?></td>
+                                <td class="comparison-cell <?= $pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $pcts['equal'] ?></td>
+                                <td class="comparison-cell <?= $pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $pcts['greater'] ?></td>
                             </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['mijs']['total'])): ?>
-                            <?php
-                            $mijs_level = getPercentileLevelText(
-                                $percentiles['mijs_less'] ?? 0,
-                                $percentiles['mijs_equal'] ?? 0,
-                                $percentiles['mijs_greater'] ?? 0,
-                                $total
-                            );
-                            $mijs_color = getLevelColorByText($mijs_level);
-                            $mijs_comparison = getComparisonText(
-                                $percentiles['mijs_less'] ?? 0,
-                                $percentiles['mijs_equal'] ?? 0,
-                                $percentiles['mijs_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">⚖️ MIJS (бремя срочности)</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mijs']['total'] ?> / 60</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $mijs_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $mijs_level ?></span></td>
-                                <?= $mijs_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['mbi']['exhaustion'])): ?>
-                            <?php
-                            $mbi_level = getPercentileLevelText(
-                                $percentiles['mbi_exh_less'] ?? 0,
-                                $percentiles['mbi_exh_equal'] ?? 0,
-                                $percentiles['mbi_exh_greater'] ?? 0,
-                                $total
-                            );
-                            $mbi_color = getLevelColorByText($mbi_level);
-                            $mbi_comparison = getComparisonText(
-                                $percentiles['mbi_exh_less'] ?? 0,
-                                $percentiles['mbi_exh_equal'] ?? 0,
-                                $percentiles['mbi_exh_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">🔥 MBI: Эмоциональное истощение</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['exhaustion'] ?> / 63</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $mbi_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $mbi_level ?></span></td>
-                                <?= $mbi_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['mbi']['cynicism'])): ?>
-                            <?php
-                            $cyn_level = getPercentileLevelText(
-                                $percentiles['mbi_cyn_less'] ?? 0,
-                                $percentiles['mbi_cyn_equal'] ?? 0,
-                                $percentiles['mbi_cyn_greater'] ?? 0,
-                                $total
-                            );
-                            $cyn_color = getLevelColorByText($cyn_level);
-                            $cyn_comparison = getComparisonText(
-                                $percentiles['mbi_cyn_less'] ?? 0,
-                                $percentiles['mbi_cyn_equal'] ?? 0,
-                                $percentiles['mbi_cyn_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">😒 MBI: Цинизм</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['cynicism'] ?> / 35</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $cyn_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $cyn_level ?></span></td>
-                                <?= $cyn_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['mbi']['efficacy'])): ?>
-                            <?php
-                            $eff_level = getPercentileLevelText(
-                                $percentiles['mbi_eff_less'] ?? 0,
-                                $percentiles['mbi_eff_equal'] ?? 0,
-                                $percentiles['mbi_eff_greater'] ?? 0,
-                                $total
-                            );
-                            $eff_color = getLevelColorByText($eff_level);
-                            $eff_comparison = getComparisonText(
-                                $percentiles['mbi_eff_less'] ?? 0,
-                                $percentiles['mbi_eff_equal'] ?? 0,
-                                $percentiles['mbi_eff_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">💪 MBI: Профессиональная эффективность</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['efficacy'] ?> / 48</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $eff_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $eff_level ?></span></td>
-                                <?= $eff_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['swls'])): ?>
-                            <?php
-                            $swls_level = getPercentileLevelText(
-                                $percentiles['swls_less'] ?? 0,
-                                $percentiles['swls_equal'] ?? 0,
-                                $percentiles['swls_greater'] ?? 0,
-                                $total
-                            );
-                            $swls_color = getLevelColorByText($swls_level);
-                            $swls_comparison = getComparisonText(
-                                $percentiles['swls_less'] ?? 0,
-                                $percentiles['swls_equal'] ?? 0,
-                                $percentiles['swls_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">😊 SWLS (удовлетворённость жизнью)</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['swls'] ?> / 35</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $swls_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $swls_level ?></span></td>
-                                <?= $swls_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['procrastination'])): ?>
-                            <?php
-                            $proc_level = getPercentileLevelText(
-                                $percentiles['proc_less'] ?? 0,
-                                $percentiles['proc_equal'] ?? 0,
-                                $percentiles['proc_greater'] ?? 0,
-                                $total
-                            );
-                            $proc_color = getLevelColorByText($proc_level);
-                            $proc_comparison = getComparisonText(
-                                $percentiles['proc_less'] ?? 0,
-                                $percentiles['proc_equal'] ?? 0,
-                                $percentiles['proc_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">⏰ Прокрастинация</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['procrastination'] ?> / 40</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $proc_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $proc_level ?></span></td>
-                                <?= $proc_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['practices_freq'])): ?>
-                            <?php
-                            $prac_level = getPercentileLevelText(
-                                $percentiles['prac_less'] ?? 0,
-                                $percentiles['prac_equal'] ?? 0,
-                                $percentiles['prac_greater'] ?? 0,
-                                $total
-                            );
-                            $prac_color = getLevelColorByText($prac_level);
-                            $prac_comparison = getComparisonText(
-                                $percentiles['prac_less'] ?? 0,
-                                $percentiles['prac_equal'] ?? 0,
-                                $percentiles['prac_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">🧘 Джедайские практики</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['practices_freq'] ?> / 120</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $prac_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $prac_level ?></span></td>
-                                <?= $prac_comparison ?>
-                            </tr>
-                            <?php endif; ?>
-
-                            <?php if (isset($scores['vaccines'])): ?>
-                            <?php
-                            $vacc_level = getPercentileLevelText(
-                                $percentiles['vacc_less'] ?? 0,
-                                $percentiles['vacc_equal'] ?? 0,
-                                $percentiles['vacc_greater'] ?? 0,
-                                $total
-                            );
-                            $vacc_color = getLevelColorByText($vacc_level);
-                            $vacc_comparison = getComparisonText(
-                                $percentiles['vacc_less'] ?? 0,
-                                $percentiles['vacc_equal'] ?? 0,
-                                $percentiles['vacc_greater'] ?? 0,
-                                $total
-                            );
-                            ?>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px;">💉 Джедайские вакцины</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['vaccines'] ?> / 15</strong></td>
-                                <td style="padding: 12px; text-align: center;"><span style="background: <?= $vacc_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $vacc_level ?></span></td>
-                                <?= $vacc_comparison ?>
-                            </tr>
-                            <?php endif; ?>
+                            <?php endforeach; ?>
 
                             <?php if (isset($scores['age'])): ?>
                             <?php
-                            $age_comparison = getComparisonText(
+                            $age_pcts = getComparisonPercentages(
                                 $percentiles['age_less'] ?? 0,
                                 $percentiles['age_equal'] ?? 0,
                                 $percentiles['age_greater'] ?? 0,
@@ -734,15 +704,17 @@ $page_title = 'Ваши результаты';
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 12px;">🎂 Возраст</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['age'] ?> лет</strong></td>
+                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $scores['age'] ?> лет</strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <?= $age_comparison ?>
+                                <td class="comparison-cell <?= $age_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['less'] ?></td>
+                                <td class="comparison-cell <?= $age_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['equal'] ?></td>
+                                <td class="comparison-cell <?= $age_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['greater'] ?></td>
                             </tr>
                             <?php endif; ?>
 
                             <?php if (isset($scores['children_count'])): ?>
                             <?php
-                            $child_comparison = getComparisonText(
+                            $child_pcts = getComparisonPercentages(
                                 $percentiles['child_less'] ?? 0,
                                 $percentiles['child_equal'] ?? 0,
                                 $percentiles['child_greater'] ?? 0,
@@ -751,9 +723,11 @@ $page_title = 'Ваши результаты';
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 12px;">👶 Количество детей</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['children_count'] ?></strong></td>
+                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $scores['children_count'] ?></strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <?= $child_comparison ?>
+                                <td class="comparison-cell <?= $child_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['less'] ?></td>
+                                <td class="comparison-cell <?= $child_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['equal'] ?></td>
+                                <td class="comparison-cell <?= $child_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['greater'] ?></td>
                             </tr>
                             <?php endif; ?>
 
@@ -768,29 +742,21 @@ $page_title = 'Ваши результаты';
                                 'full_remote' => 'Полная удалёнка'
                             ];
                             $remote_label = $remote_labels[$scores['remote_days']] ?? $scores['remote_days'];
-                            
-                            // Считаем распределение удалёнки
-                            $remote_counts = Database::selectOne("
-                                SELECT 
-                                    SUM(CASE WHEN remote_days = 'office' THEN 1 ELSE 0 END) AS office,
-                                    SUM(CASE WHEN remote_days = '1' THEN 1 ELSE 0 END) AS d1,
-                                    SUM(CASE WHEN remote_days = '2' THEN 1 ELSE 0 END) AS d2,
-                                    SUM(CASE WHEN remote_days = '3' THEN 1 ELSE 0 END) AS d3,
-                                    SUM(CASE WHEN remote_days = '4' THEN 1 ELSE 0 END) AS d4,
-                                    SUM(CASE WHEN remote_days = 'full_remote' THEN 1 ELSE 0 END) AS full_remote
-                                FROM respondents 
-                                WHERE status = 'completed' AND remote_days IS NOT NULL
-                            ");
-                            $remote_total = array_sum($remote_counts);
-                            $remote_pct = $remote_total > 0 ? round(($remote_counts[$scores['remote_days']] ?? 0) / $remote_total * 100) : 0;
+
+                            $remote_pcts = getComparisonPercentages(
+                                $percentiles['remote_less'] ?? 0,
+                                $percentiles['remote_equal'] ?? 0,
+                                $percentiles['remote_greater'] ?? 0,
+                                $total
+                            );
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 12px;">🏠 Удалённая работа</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $remote_label ?></strong></td>
+                                <td style="padding: 12px; text-align: center;"><strong class="score-value"><?= $remote_label ?></strong></td>
                                 <td style="padding: 12px; text-align: center;">—</td>
-                                <td style="padding: 12px; text-align: center; font-size: 13px;">
-                                    <?= $remote_pct ?>% респондентов так же
-                                </td>
+                                <td class="comparison-cell <?= $remote_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['less'] ?></td>
+                                <td class="comparison-cell <?= $remote_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['equal'] ?></td>
+                                <td class="comparison-cell <?= $remote_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['greater'] ?></td>
                             </tr>
                             <?php endif; ?>
                         </tbody>
