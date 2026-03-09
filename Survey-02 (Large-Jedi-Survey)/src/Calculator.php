@@ -56,33 +56,30 @@ class Calculator {
      * MBI: 3 субшкалы (22 items total)
      *
      * @param array $exhaustion_items Истощение (9 items)
-     * @param array $cynicism_items Цинизм/Деперсонализация (5 items)
-     * @param array $efficacy_items Эффективность (8 items, инвертируется)
+     * @param array $cynicism_items Цинизм (5 items)
+     * @param array $efficacy_items Профессиональная эффективность (8 items)
      * @return array
      */
     public static function calculateMbi(array $exhaustion_items, array $cynicism_items, array $efficacy_items): array {
-        // Истощение: 9 items, напрямую (1-7 каждый), диапазон 9-63
+        // Истощение: 9 items, напрямую (0-6 каждый), диапазон 0-54
         $exhaustion = count($exhaustion_items) >= 9 ? array_sum(array_slice($exhaustion_items, 0, 9)) : 0;
 
-        // Цинизм: 5 items, напрямую (1-7 каждый), диапазон 5-35
+        // Цинизм: 5 items, напрямую (0-6 каждый), диапазон 0-30
         $cynicism = count($cynicism_items) >= 5 ? array_sum(array_slice($cynicism_items, 0, 5)) : 0;
 
-        // Эффективность: 8 items, инвертируется (1→7, 2→6, ..., 7→1), диапазон 8-56
-        $efficacy = 0;
-        if (count($efficacy_items) >= 8) {
-            $efficacy_items_slice = array_slice($efficacy_items, 0, 8);
-            $efficacy = array_sum(array_map(fn($x) => 8 - $x, $efficacy_items_slice));
-        }
+        // Профессиональная эффективность: 8 items, напрямую (0-6 каждый), диапазон 0-48
+        // Выше балл = выше эффективность (лучше)
+        $efficacy = count($efficacy_items) >= 8 ? array_sum(array_slice($efficacy_items, 0, 8)) : 0;
 
-        // Общий балл: Истощение + Цинизм + Эффективность (после инверсии)
-        // Диапазон: 22-154
+        // Общий балл: Истощение + Цинизм + Эффективность (все напрямую)
+        // Диапазон: 0-132
         $total = $exhaustion + $cynicism + $efficacy;
 
         return [
-            'exhaustion' => $exhaustion,    // 9-63
-            'cynicism' => $cynicism,        // 5-35
-            'efficacy' => $efficacy,        // 8-56 (после инверсии)
-            'total' => $total               // 22-154
+            'exhaustion' => $exhaustion,    // 0-54
+            'cynicism' => $cynicism,        // 0-30
+            'efficacy' => $efficacy,        // 0-48 (выше = лучше)
+            'total' => $total               // 0-132
         ];
     }
     

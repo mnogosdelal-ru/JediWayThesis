@@ -324,7 +324,7 @@ $levels = [
     'mijs' => getLevel($scores['mijs']['total'] ?? 0, 12, 60),
     'mbi_exhaustion' => getLevel($scores['mbi']['exhaustion'] ?? 0, 9, 63),
     'mbi_cynicism' => getLevel($scores['mbi']['cynicism'] ?? 0, 5, 35),
-    'mbi_efficacy' => getLevel($scores['mbi']['efficacy'] ?? 0, 8, 56),
+    'mbi_efficacy' => getLevel($scores['mbi']['efficacy'] ?? 0, 0, 48),
     'swls' => getLevel($scores['swls'] ?? 0, 5, 35),
     'procrastination' => getLevel($scores['procrastination'] ?? 0, 8, 40),
     'practices' => getLevel($scores['practices_freq'], 20, 120),
@@ -621,7 +621,7 @@ $page_title = 'Ваши результаты';
                             ?>
                             <tr style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 12px;">💪 MBI: Профессиональная эффективность</td>
-                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['efficacy'] ?> / 56</strong></td>
+                                <td style="padding: 12px; text-align: center;"><strong><?= $scores['mbi']['efficacy'] ?> / 48</strong></td>
                                 <td style="padding: 12px; text-align: center;"><span style="background: <?= $eff_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;"><?= $eff_level ?></span></td>
                                 <?= $eff_comparison ?>
                             </tr>

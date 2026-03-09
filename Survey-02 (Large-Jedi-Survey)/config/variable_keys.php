@@ -61,13 +61,13 @@ $MBI_CYNICISM_KEYS = [
     22 => 'mbi_cyn_q22_v_poslednee_vremya_mne_kazhetsya_chto_kollegi_i_podchinennye' // «В последнее время мне кажется, что коллеги и подчиненные все чаще перекладывают на меня груз своих проблем и обязанностей.»
 ];
 
-// Профессиональная эффективность (8 items, инвертируются): 4, 7, 9, 12, 17, 18, 19, 21
+// Профессиональная эффективность (8 items): 4, 7, 9, 12, 17, 18, 19, 21
 $MBI_EFFICACY_KEYS = [
-    4 => 'mbi_eff_q4_ya_khorosho_ponimayu_chto_chuvstvui_moi_podchinennye', // «Я хорошо понимаю, что чувствуют мои подчиненные и коллеги, и стараюсь учитывать это в интересах дела.»
-    7 => 'mbi_eff_q7_ya_umeyu_nakhodit_pravilnoe_reshenie_v_konfliktnykh_situatsiyakh', // «Я умею находить правильное решение в конфликтных ситуациях, возникающих при общении с коллегами.»
+    4 => 'mbi_eff_q4_ya_khorosho_ponimayu_chto_chuvstvui_moi_podchinennye', // «Я хорошо понимаю, что чувствуют мои подчиненные и коллеги...»
+    7 => 'mbi_eff_q7_ya_umeyu_nakhodit_pravilnoe_reshenie_v_konfliktnykh_situatsiyakh', // «Я умею находить правильное решение в конфликтных ситуациях...»
     9 => 'mbi_eff_q9_ya_uveren_chto_moya_rabota_nuzhna_lyudyam', // «Я уверен, что моя работа нужна людям.»
     12 => 'mbi_eff_q12_u_menya_mnogo_planov_na_budushchee_i_ya_veru', // «У меня много планов на будущее, и я верю в их осуществление.»
-    17 => 'mbi_eff_q17_ya_legko_mogu_sozdat_atmosferu_dobrozhelatelnosti_i_sotrudnichestva', // «Я легко могу создать атмосферу доброжелательности и сотрудничества в коллективе.»
+    17 => 'mbi_eff_q17_ya_legko_mogu_sozdat_atmosferu_dobrozhelatelnosti_i_sotrudnichestva', // «Я легко могу создать атмосферу доброжелательности...»
     18 => 'mbi_eff_q18_vo_vremya_raboty_ya_chuvstvuyu_priyatnoe_ozhivlenie', // «Во время работы я чувствую приятное оживление.»
     19 => 'mbi_eff_q19_blagodarya_svoei_rabote_ya_uzhe_sdelal_v_zhizni', // «Благодаря своей работе я уже сделал в жизни много действительно ценного.»
     21 => 'mbi_eff_q21_na_rabote_ya_spokoyno_spravlayus_s_emotsionalnymi_problemami' // «На работе я спокойно справляюсь с эмоциональными проблемами.»
