@@ -104,9 +104,6 @@ CREATE TABLE IF NOT EXISTS respondents (
     user_agent TEXT,
     time_spent_seconds INT,
 
-    -- JSON поле для детализированных ответов с ключами
-    responses_detailed JSON,
-
     -- Индексы для производительности
     INDEX idx_status (status),
     INDEX idx_completed_at (completed_at),
@@ -126,7 +123,8 @@ CREATE TABLE IF NOT EXISTS respondents (
     INDEX idx_age (age),
     INDEX idx_children_count (children_count),
     INDEX idx_remote_days (remote_days),
-    INDEX idx_status_completed (status, completed_at)
+    INDEX idx_status_completed (status, completed_at),
+    INDEX idx_mindset (mindset_technical_humanitarian)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================

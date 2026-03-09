@@ -81,6 +81,7 @@ if ($is_save_request) {
     
     try {
         require_once __DIR__ . '/../src/Survey.php';
+        require_once __DIR__ . '/../src/Calculator.php';
 
         // Проверяем respondent_id
         if (empty($respondent_id)) {
@@ -92,11 +93,62 @@ if ($is_save_request) {
             'open_other_practices' => $_POST['open_other_practices'] ?? ''
         ];
 
-        $success = Survey::savePage($respondent_id, 10, $answers);
-        log_event("Page 10 saved for respondent $respondent_id: " . ($success ? 'success' : 'failed'));
+        // Получаем все данные респондента для бэкапа
+        $respondent = Survey::getRespondent($respondent_id);
+        if ($respondent) {
+            // Добавляем все сохранённые данные в бэкап
+            $answers['age'] = $respondent['age'];
+            $answers['gender'] = $respondent['gender'];
+            $answers['children_count'] = $respondent['children_count'];
+            $answers['position'] = $respondent['position'];
+            $answers['work_experience_years'] = $respondent['work_experience_years'];
+            $answers['industry'] = $respondent['industry'];
+            $answers['industry_other'] = $respondent['industry_other'];
+            $answers['remote_days'] = $respondent['remote_days'];
+            $answers['mindset_technical_humanitarian'] = $respondent['mindset_technical_humanitarian'];
+            $answers['tool_preference'] = $respondent['tool_preference'];
+            $answers['personal_urgent_important'] = $respondent['personal_urgent_important'];
+            $answers['work_urgent_important'] = $respondent['work_urgent_important'];
+            $answers['work_satisfaction'] = $respondent['work_satisfaction'];
+            $answers['mijs_items'] = $respondent['mijs_items'];
+            $answers['mijs_urgency_score'] = $respondent['mijs_urgency_score'];
+            $answers['mijs_agency_score'] = $respondent['mijs_agency_score'];
+            $answers['mijs_total'] = $respondent['mijs_total'];
+            $answers['swls_items'] = $respondent['swls_items'];
+            $answers['swls_total'] = $respondent['swls_total'];
+            $answers['mbi_exhaustion_items'] = $respondent['mbi_exhaustion_items'];
+            $answers['mbi_exhaustion_score'] = $respondent['mbi_exhaustion_score'];
+            $answers['mbi_cynicism_items'] = $respondent['mbi_cynicism_items'];
+            $answers['mbi_cynicism_score'] = $respondent['mbi_cynicism_score'];
+            $answers['mbi_efficacy_items'] = $respondent['mbi_efficacy_items'];
+            $answers['mbi_efficacy_score'] = $respondent['mbi_efficacy_score'];
+            $answers['mbi_total'] = $respondent['mbi_total'];
+            $answers['procrastination_items'] = $respondent['procrastination_items'];
+            $answers['procrastination_total'] = $respondent['procrastination_total'];
+            $answers['practices_frequency'] = $respondent['practices_frequency'];
+            $answers['practices_quality'] = $respondent['practices_quality'];
+            $answers['practices_freq_total'] = $respondent['practices_freq_total'];
+            $answers['practices_quality_total'] = $respondent['practices_quality_total'];
+            $answers['vaccines'] = $respondent['vaccines'];
+            $answers['vaccines_total'] = $respondent['vaccines_total'];
+            $answers['attention_check_passed'] = $respondent['attention_check_passed'];
+            $answers['attention_check_freq_answer'] = $respondent['attention_check_freq_answer'];
+            $answers['attention_check_quality_answer'] = $respondent['attention_check_quality_answer'];
+        }
 
-        // Агрегаты больше не используются - процентили считаются в реальном времени
-        log_event("Respondent $respondent_id completed survey (aggregates disabled)");
+        $success = Survey::savePage($respondent_id, 10, $answers);
+        
+        // Добавляем время прохождения
+        $answers['time_spent_seconds'] = Survey::calculateTimeSpent($respondent_id);
+
+        // Создаём резервную копию в файл
+        if ($success) {
+            require_once __DIR__ . '/backup.php';
+            saveRespondentBackup($respondent_id, $answers);
+            log_event("Respondent $respondent_id completed survey and backup created");
+        } else {
+            log_event("Respondent $respondent_id completed survey but backup FAILED", 'ERROR');
+        }
 
         // Возвращаем JSON - header ДО echo!
         header('Content-Type: application/json');

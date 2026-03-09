@@ -32,6 +32,17 @@ define('DB_CHARSET', 'utf8mb4');
 define('DEBUG_MODE', false);
 
 // ============================================================================
+// ЛОГИРОВАНИЕ
+// ============================================================================
+
+// Включить логирование (true/false)
+// Для продакшена рекомендуется false для экономии места на диске
+define('LOGGING', true);
+
+// Режим отладки: подробное логирование
+define('DEBUG_LOGGING', true);
+
+// ============================================================================
 // БЕЗОПАСНОСТЬ
 // ============================================================================
 
@@ -53,7 +64,7 @@ define('TEMPLATES_PATH', BASE_PATH . '/templates');
 
 // Базовый URL приложения (укажите ваш домен)
 define('BASE_URL', 'http://localhost/Online-Surveys/LargeJediSurvey/public');
-
+// define('BASE_URL', 'https://research.mnogosdelal.ru/LargeJediSurvey/public');
 // ============================================================================
 // ВРЕМЯ
 // ============================================================================
@@ -79,12 +90,17 @@ if (!file_exists(LOGS_PATH)) {
 
 /**
  * Логирование событий
- * 
+ *
  * @param string $message Сообщение
  * @param string $level Уровень (INFO, WARNING, ERROR)
  * @return void
  */
 function log_event($message, $level = 'INFO') {
+    // Проверяем, включено ли логирование
+    if (!defined('LOGGING') || !LOGGING) {
+        return;
+    }
+    
     $timestamp = date('Y-m-d H:i:s');
     $log_file = LOGS_PATH . '/app_' . date('Y-m-d') . '.log';
     $log_entry = "[$timestamp] [$level] $message" . PHP_EOL;

@@ -40,36 +40,76 @@ if ($respondent['status'] !== 'completed') {
 // Рассчитываем шкалы
 $scores = [];
 
-// MIJS
+// MIJS - читаем из БД (теперь там объект с ключами)
 $mijs_items = json_decode($respondent['mijs_items'] ?? '[]', true);
+// Если это объект с ключами, извлекаем значения
+if (is_array($mijs_items) && !empty($mijs_items) && array_keys($mijs_items) !== range(0, count($mijs_items) - 1)) {
+    $mijs_items = array_values($mijs_items);
+}
 if (count($mijs_items) >= 12) {
     $scores['mijs'] = Calculator::calculateMijs($mijs_items);
 }
 
 // MBI - берём готовые значения из БД
-$scores['mbi'] = [
-    'exhaustion' => (int)($respondent['mbi_exhaustion_score'] ?? 0),
-    'cynicism' => (int)($respondent['mbi_cynicism_score'] ?? 0),
-    'efficacy' => (int)($respondent['mbi_efficacy_score'] ?? 0)
-];
+// Примечание: в БД теперь хранится объект с ключами, но нам нужны только значения
+$mbi_exhaustion = json_decode($respondent['mbi_exhaustion_items'] ?? '{}', true);
+$mbi_cynicism = json_decode($respondent['mbi_cynicism_items'] ?? '{}', true);
+$mbi_efficacy = json_decode($respondent['mbi_efficacy_items'] ?? '{}', true);
 
-// SWLS
+// Если это объект с ключами, извлекаем значения
+if (is_array($mbi_exhaustion) && !empty($mbi_exhaustion)) {
+    $mbi_exhaustion = array_values($mbi_exhaustion);
+}
+if (is_array($mbi_cynicism) && !empty($mbi_cynicism)) {
+    $mbi_cynicism = array_values($mbi_cynicism);
+}
+if (is_array($mbi_efficacy) && !empty($mbi_efficacy)) {
+    $mbi_efficacy = array_values($mbi_efficacy);
+}
+
+$scores['mbi'] = Calculator::calculateMbi($mbi_exhaustion, $mbi_cynicism, $mbi_efficacy);
+
+// SWLS - читаем из БД (теперь там объект с ключами)
 $swls_items = json_decode($respondent['swls_items'] ?? '[]', true);
+// Если это объект с ключами, извлекаем значения
+if (is_array($swls_items) && !empty($swls_items) && array_keys($swls_items) !== range(0, count($swls_items) - 1)) {
+    $swls_items = array_values($swls_items);
+}
 if (count($swls_items) >= 5) {
     $scores['swls'] = Calculator::calculateSwls($swls_items);
 }
 
-// Прокрастинация
+// Прокрастинация - читаем из БД (теперь там объект с ключами)
 $procrastination_items = json_decode($respondent['procrastination_items'] ?? '[]', true);
+// Если это объект с ключами, извлекаем значения
+if (is_array($procrastination_items) && !empty($procrastination_items) && array_keys($procrastination_items) !== range(0, count($procrastination_items) - 1)) {
+    $procrastination_items = array_values($procrastination_items);
+}
 if (count($procrastination_items) >= 8) {
     $scores['procrastination'] = Calculator::calculateProcrastination($procrastination_items);
 }
 
-// Практики
+// Практики - читаем из БД (теперь там объект с ключами)
+$practices_frequency = json_decode($respondent['practices_frequency'] ?? '{}', true);
+$practices_quality = json_decode($respondent['practices_quality'] ?? '{}', true);
+
+// Если это объекты с ключами, извлекаем значения
+if (is_array($practices_frequency) && !empty($practices_frequency)) {
+    $practices_frequency = array_values($practices_frequency);
+}
+if (is_array($practices_quality) && !empty($practices_quality)) {
+    $practices_quality = array_values($practices_quality);
+}
+
 $scores['practices_freq'] = (int)($respondent['practices_freq_total'] ?? 0);
 $scores['practices_quality'] = (int)($respondent['practices_quality_total'] ?? 0);
 
-// Вакцины
+// Вакцины - читаем из БД (теперь там объект с ключами)
+$vaccines = json_decode($respondent['vaccines'] ?? '{}', true);
+// Если это объект с ключами, извлекаем значения
+if (is_array($vaccines) && !empty($vaccines) && array_keys($vaccines) !== range(0, count($vaccines) - 1)) {
+    $vaccines = array_values($vaccines);
+}
 $scores['vaccines'] = (int)($respondent['vaccines_total'] ?? 0);
 
 // Срочное/важное
@@ -83,6 +123,7 @@ $scores['work_satisfaction'] = (int)($respondent['work_satisfaction'] ?? 0);
 $scores['age'] = (int)($respondent['age'] ?? 0);
 $scores['children_count'] = (int)($respondent['children_count'] ?? 0);
 $scores['remote_days'] = $respondent['remote_days'] ?? null;
+$scores['mindset_technical_humanitarian'] = (int)($respondent['mindset_technical_humanitarian'] ?? 0);
 
 // ============================================================================
 // ПОЛУЧАЕМ ПРОЦЕНТИЛИ ОДНИМ ЗАПРОСОМ
@@ -157,6 +198,11 @@ $percentilesQuery = "
         SUM(CASE WHEN children_count < ? THEN 1 ELSE 0 END) AS child_less,
         SUM(CASE WHEN children_count = ? THEN 1 ELSE 0 END) AS child_equal,
         SUM(CASE WHEN children_count > ? THEN 1 ELSE 0 END) AS child_greater,
+
+        -- Гуманитарий/технарь
+        SUM(CASE WHEN mindset_technical_humanitarian < ? THEN 1 ELSE 0 END) AS mindset_less,
+        SUM(CASE WHEN mindset_technical_humanitarian = ? THEN 1 ELSE 0 END) AS mindset_equal,
+        SUM(CASE WHEN mindset_technical_humanitarian > ? THEN 1 ELSE 0 END) AS mindset_greater,
 
         -- Удалёнка (числовое представление: office=0, 1=1, 2=2, 3=3, 4=4, full_remote=5)
         SUM(CASE WHEN 
@@ -269,6 +315,11 @@ $params = array_merge($params, [
 // Дети
 $params = array_merge($params, [
     $scores['children_count'], $scores['children_count'], $scores['children_count']
+]);
+
+// Гуманитарий/технарь
+$params = array_merge($params, [
+    $scores['mindset_technical_humanitarian'], $scores['mindset_technical_humanitarian'], $scores['mindset_technical_humanitarian']
 ]);
 
 // Удалёнка (числовое представление)
@@ -409,6 +460,15 @@ $SCALE_CONFIG = [
         'higherIsBetter' => true,
         'levels' => [5, 10],  // <=5: Низкий, 5-10: Средний, >10: Высокий
         'db_key' => 'vacc'
+    ],
+    'mindset_technical_humanitarian' => [
+        'label' => 'На сколько ты гуманитарий',
+        'icon' => '🎭',
+        'min' => 1,
+        'max' => 5,
+        'higherIsBetter' => false,  // 5 = чисто гуманитарный
+        'levels' => [2, 3],  // <=2: Технарь, 2-4: Сбалансированный, >4: Гуманитарий
+        'db_key' => 'mindset'
     ]
 ];
 
@@ -658,6 +718,8 @@ $page_title = 'Ваши результаты';
                                 $score = $scores['mbi']['efficacy'] ?? null;
                             } elseif ($key === 'practices') {
                                 $score = $scores['practices_freq'] ?? null;
+                            } elseif ($key === 'mindset_technical_humanitarian') {
+                                $score = $scores['mindset_technical_humanitarian'] ?? null;
                             } elseif (isset($scores[$key])) {
                                 $score = $scores[$key];
                             }

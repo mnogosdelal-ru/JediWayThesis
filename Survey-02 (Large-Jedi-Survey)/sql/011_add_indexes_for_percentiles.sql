@@ -45,6 +45,7 @@ ALTER TABLE respondents ADD INDEX idx_work_satisfaction (work_satisfaction);
 ALTER TABLE respondents ADD INDEX idx_age (age);
 ALTER TABLE respondents ADD INDEX idx_children_count (children_count);
 ALTER TABLE respondents ADD INDEX idx_remote_days (remote_days);
+ALTER TABLE respondents ADD INDEX idx_mindset (mindset_technical_humanitarian);
 
 -- Статус (для фильтрации завершённых)
 ALTER TABLE respondents ADD INDEX idx_status_completed (status, completed_at);
