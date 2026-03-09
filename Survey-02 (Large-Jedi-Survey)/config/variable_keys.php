@@ -40,37 +40,38 @@ $SWLS_KEYS = [
 // ============================================================================
 
 // Эмоциональное истощение (9 items): 1, 2, 3, 6, 8, 13, 14, 16, 20
+// Item 6 - обратный
 $MBI_EXHAUSTION_KEYS = [
-    1 => 'mbi_exh_q1_ya_chuvstvuyu_sebya_emotsionalno_opustoshennym', // «Я чувствую себя эмоционально опустошенным.»
-    2 => 'mbi_exh_q2_posle_raboty_ya_chuvstvuyu_sebya_kak_vyzhatyy_limon', // «После работы я чувствую себя как «выжатый лимон».»
-    3 => 'mbi_exh_q3_utrom_ya_chuvstvuyu_ustalost_i_nezhelanie_idti', // «Утром я чувствую усталость и нежелание идти на работу.»
-    6 => 'mbi_exh_q6_posle_raboty_na_nekotoroe_vremya_khochetsya_uedinit_sya', // «После работы на некоторое время хочется уединиться от всех и всего.»
-    8 => 'mbi_exh_q8_ya_chuvstvuyu_ugnetennost_i_apatiyu', // «Я чувствую угнетенность и апатию.»
-    13 => 'mbi_exh_q13_moya_rabota_vse_bolshe_menya_razocharovyvaet', // «Моя работа все больше меня разочаровывает.»
-    14 => 'mbi_exh_q14_mne_kazhetsya_chto_ya_slishkom_mnogo_rabotayu', // «Мне кажется, что я слишком много работаю.»
-    16 => 'mbi_exh_q16_mne_khochetsya_uedinit_sya_i_otdokhnut_ot_vsego', // «Мне хочется уединиться и отдохнуть от всего и всех.»
-    20 => 'mbi_exh_q20_ya_chuvstvuyu_ravnodushie_i_poteryu_interesa' // «Я чувствую равнодушие и потерю интереса ко многому, что радовало меня в моей работе.»
+    1 => 'mbi_exh_q1_k_kontsu_rabochey_nedeli_ya_chuvstvuyu_sebya_emotsionalno_opustoshennym',
+    2 => 'mbi_exh_q2_k_kontsu_rabochego_dnya_ya_chuvstvuyu_sebya_kak_vyzhatyy_limon',
+    3 => 'mbi_exh_q3_ya_chuvstvuyu_sebya_ustalym_kogda_vstayu_utrom',
+    6 => 'mbi_exh_q6_ya_chuvstvuyu_sebya_energichnym_i_emotsionalno_voodushevlyennym', // обратный
+    8 => 'mbi_exh_q8_ya_chuvstvuyu_ugnetennost_i_apatiyu',
+    13 => 'mbi_exh_q13_u_menya_mnogo_zhiznennykh_razocharovaniy',
+    14 => 'mbi_exh_q14_ya_chuvstvuyu_ravnodushie_i_poteryu_interesa',
+    16 => 'mbi_exh_q16_mne_khochetsya_uedinit_sya_i_otdokhnut_ot_vsego',
+    20 => 'mbi_exh_q20_ya_chuvstvuyu_sebya_na_predele_vozmozhnostey'
 ];
 
 // Цинизм/Деперсонализация (5 items): 5, 10, 11, 15, 22
 $MBI_CYNICISM_KEYS = [
-    5 => 'mbi_cyn_q5_ya_chuvstvuyu_chto_obshchayus_s_nekotorymi_podchinennymi', // «Я чувствую, что общаюсь с некоторыми подчиненными и коллегами как с предметами (без теплоты и расположения к ним).»
-    10 => 'mbi_cyn_q10_v_poslednee_vremya_ya_stal_bolee_cherstvym_po_otnosheniyu', // «В последнее время я стал более "черствым" по отношению к тем, с кем работаю.»
-    11 => 'mbi_cyn_q11_ya_zamechayu_chto_moya_rabota_ozhestochaet_menya', // «Я замечаю, что моя работа ожесточает меня.»
-    15 => 'mbi_cyn_q15_byvaet_chto_mne_deistvitelno_bezrazlichno_to', // «Бывает, что мне действительно безразлично то, что происходит с некоторыми моими подчиненными и коллегами.»
-    22 => 'mbi_cyn_q22_v_poslednee_vremya_mne_kazhetsya_chto_kollegi_i_podchinennye' // «В последнее время мне кажется, что коллеги и подчиненные все чаще перекладывают на меня груз своих проблем и обязанностей.»
+    5 => 'mbi_cyn_q5_menya_razdrazhayut_podchinennye_kotorye_zhaluyutsya',
+    10 => 'mbi_cyn_q10_v_poslednee_vremya_ya_stal_bolee_cherstvym_vo_vzaimootnosheniyakh',
+    11 => 'mbi_cyn_q11_lyudi_s_kotorymi_mne_prikhoditsya_rabotat_neinteresny_dlya_menya',
+    15 => 'mbi_cyn_q15_mne_bezrazlichno_chto_proiskhodit_s_moimi_podchinennymi',
+    22 => 'mbi_cyn_q22_ya_proyavlyayu_k_podchinennym_bolshe_vnimaniya_i_zaboty'
 ];
 
 // Профессиональная эффективность (8 items): 4, 7, 9, 12, 17, 18, 19, 21
 $MBI_EFFICACY_KEYS = [
-    4 => 'mbi_eff_q4_ya_khorosho_ponimayu_chto_chuvstvui_moi_podchinennye', // «Я хорошо понимаю, что чувствуют мои подчиненные и коллеги...»
-    7 => 'mbi_eff_q7_ya_umeyu_nakhodit_pravilnoe_reshenie_v_konfliktnykh_situatsiyakh', // «Я умею находить правильное решение в конфликтных ситуациях...»
-    9 => 'mbi_eff_q9_ya_uveren_chto_moya_rabota_nuzhna_lyudyam', // «Я уверен, что моя работа нужна людям.»
-    12 => 'mbi_eff_q12_u_menya_mnogo_planov_na_budushchee_i_ya_veru', // «У меня много планов на будущее, и я верю в их осуществление.»
-    17 => 'mbi_eff_q17_ya_legko_mogu_sozdat_atmosferu_dobrozhelatelnosti_i_sotrudnichestva', // «Я легко могу создать атмосферу доброжелательности...»
-    18 => 'mbi_eff_q18_vo_vremya_raboty_ya_chuvstvuyu_priyatnoe_ozhivlenie', // «Во время работы я чувствую приятное оживление.»
-    19 => 'mbi_eff_q19_blagodarya_svoei_rabote_ya_uzhe_sdelal_v_zhizni', // «Благодаря своей работе я уже сделал в жизни много действительно ценного.»
-    21 => 'mbi_eff_q21_na_rabote_ya_spokoyno_spravlayus_s_emotsionalnymi_problemami' // «На работе я спокойно справляюсь с эмоциональными проблемами.»
+    4 => 'mbi_eff_q4_rezultaty_moei_raboty_ne_stoyat_tekh_usiliy',
+    7 => 'mbi_eff_q7_pri_razgovore_s_agressivnymi_rabotnikami_ya_umeyu_dogovorit_sya',
+    9 => 'mbi_eff_q9_ya_legko_mogu_povliyat_na_produktivnost_raboty_moikh_podchinennykh',
+    12 => 'mbi_eff_q12_u_menya_mnogo_planov_na_budushchee_i_ya_veru_v_ix_osushchestvlenie',
+    17 => 'mbi_eff_q17_ya_legko_mogu_sozdat_atmosferu_dobrozhelatelnosti_i_sotrudnichestva',
+    18 => 'mbi_eff_q18_ya_legko_obshchayus_na_rabote_so_vsemi',
+    19 => 'mbi_eff_q19_ya_dovolen_svoyami_zhiznennymi_uspehami_dostizheniyami',
+    21 => 'mbi_eff_q21_ya_smogu_esche_mnogo_sdelat_v_svoyey_zhizni'
 ];
 
 // ============================================================================

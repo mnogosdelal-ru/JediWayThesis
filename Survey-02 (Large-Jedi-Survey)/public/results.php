@@ -262,7 +262,7 @@ function getComparisonText($less, $equal, $greater, $total) {
     $equal_pct = round($equal / $total * 100);
     $greater_pct = round($greater / $total * 100);
     
-    return "<td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$less_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$equal_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$greater_pct}%</td>";
+    return "<td style=\"padding: 12px; text-align: center; font-size: 14px;\">" . (($less_pct == 0) ? '—' : $less_pct . "%") . "</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">{$equal_pct}%</td><td style=\"padding: 12px; text-align: center; font-size: 14px;\">" . (($greater_pct == 0) ? '—' : $greater_pct . "%") . "</td>";
 }
 
 /**

@@ -54,6 +54,8 @@ class Calculator {
     
     /**
      * MBI: 3 субшкалы (22 items total)
+     * 
+     * По методике Водопьяновой (2007) с шкалой 0-6
      *
      * @param array $exhaustion_items Истощение (9 items)
      * @param array $cynicism_items Цинизм (5 items)
@@ -61,19 +63,30 @@ class Calculator {
      * @return array
      */
     public static function calculateMbi(array $exhaustion_items, array $cynicism_items, array $efficacy_items): array {
-        // Истощение: 9 items, напрямую (0-6 каждый), диапазон 0-54
-        $exhaustion = count($exhaustion_items) >= 9 ? array_sum(array_slice($exhaustion_items, 0, 9)) : 0;
+        // Истощение: 9 items, шкала 0-6
+        // Items 1, 2, 3, 8, 13, 14, 16, 20: напрямую
+        // Item 6: обратный, инвертируется (0→6, 1→5, 2→4, 3→3, 4→2, 5→1, 6→0)
+        $exhaustion = 0;
+        if (count($exhaustion_items) >= 9) {
+            // Прямые пункты (индексы 0,1,2,3,4,5,6,7 в массиве)
+            $exhaustion += array_sum(array_slice($exhaustion_items, 0, 3)); // items 1,2,3
+            $exhaustion += array_sum(array_slice($exhaustion_items, 3, 5)); // items 8,13,14,16,20
+            
+            // Item 6 (индекс 3 в массиве) - обратный
+            $item6 = $exhaustion_items[3] ?? 0;
+            $exhaustion += (6 - $item6); // инверсия
+        }
 
-        // Цинизм: 5 items, напрямую (0-6 каждый), диапазон 0-30
+        // Цинизм: 5 items, напрямую (0-6 каждый)
         $cynicism = count($cynicism_items) >= 5 ? array_sum(array_slice($cynicism_items, 0, 5)) : 0;
 
-        // Профессиональная эффективность: 8 items, напрямую (0-6 каждый), диапазон 0-48
+        // Профессиональная эффективность: 8 items, напрямую (0-6 каждый)
         // Выше балл = выше эффективность (лучше)
         $efficacy = count($efficacy_items) >= 8 ? array_sum(array_slice($efficacy_items, 0, 8)) : 0;
 
-        // Общий балл: Истощение + Цинизм + Эффективность (все напрямую)
+        // Общий балл выгорания: Истощение + Цинизм + (48 - Эффективность)
         // Диапазон: 0-132
-        $total = $exhaustion + $cynicism + $efficacy;
+        $total = $exhaustion + $cynicism + (48 - $efficacy);
 
         return [
             'exhaustion' => $exhaustion,    // 0-54
