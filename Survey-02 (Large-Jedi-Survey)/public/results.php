@@ -1041,6 +1041,32 @@ $owner_message = $is_owner
                 </div>
             </div>
 
+            <!-- Открытые вопросы (если заполнены) -->
+            <?php
+            $most_useful = trim($respondent['open_most_useful_practice'] ?? '');
+            $other_practices = trim($respondent['open_other_practices'] ?? '');
+            ?>
+            
+            <?php if (!empty($most_useful) || !empty($other_practices)): ?>
+            <div class="result-card">
+                <h3>📝 Ответы на открытые вопросы</h3>
+                
+                <?php if (!empty($most_useful)): ?>
+                <div class="open-answer">
+                    <strong>Самая полезная практика:</strong>
+                    <p><?= nl2br(htmlspecialchars($most_useful)) ?></p>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($other_practices)): ?>
+                <div class="open-answer">
+                    <strong>Другие практики, которые используете:</strong>
+                    <p><?= nl2br(htmlspecialchars($other_practices)) ?></p>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <div class="result-card featured">
                 <h3>🎓 Рекомендация по обучению</h3>
 
