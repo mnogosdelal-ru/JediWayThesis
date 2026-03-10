@@ -32,6 +32,7 @@ if (!$code) {
 
 // Проверяем, является ли текущий пользователь этим же респондентом
 $is_owner = false;
+$has_completed_survey = false; // Есть ли у пользователя завершённый опрос
 $current_respondent_id = $_SESSION['respondent_id'] ?? null;
 
 // Получаем данные респондента
@@ -43,6 +44,17 @@ $respondent = Database::selectOne(
 // Проверяем, совпадает ли текущий respondent_id с владельцем результатов
 if ($current_respondent_id && $respondent && $current_respondent_id === $respondent['id']) {
     $is_owner = true;
+}
+
+// Проверяем, есть ли у текущего пользователя завершённый опрос
+if (!empty($current_respondent_id)) {
+    $current_user = Database::selectOne(
+        "SELECT status FROM respondents WHERE id = ?",
+        [$current_respondent_id]
+    );
+    if ($current_user && $current_user['status'] === 'completed') {
+        $has_completed_survey = true;
+    }
 }
 
 if (!$respondent) {
@@ -854,8 +866,8 @@ $owner_message = $is_owner
         <div class="results-container">
             <h1><?= htmlspecialchars($main_heading) ?></h1>
             
-            <?php if (!$is_owner): ?>
-            <!-- Кнопка "Пройти опрос самому" для не-владельцев -->
+            <?php if (!$is_owner && !$has_completed_survey): ?>
+            <!-- Кнопка "Пройти опрос самому" для тех, у кого нет завершённого опроса -->
             <div class="result-card take-survey-card">
                 <h3>🚀 Пройти опрос самостоятельно</h3>
                 <p>
@@ -1105,7 +1117,7 @@ $owner_message = $is_owner
             </div>
 
             <div class="back-link-section">
-                <?php if (!$is_owner): ?>
+                <?php if (!$is_owner && !$has_completed_survey): ?>
                     <a href="index.php?page=0" class="back-link">← Пройти опрос самостоятельно</a>
                 <?php endif; ?>
             </div>
