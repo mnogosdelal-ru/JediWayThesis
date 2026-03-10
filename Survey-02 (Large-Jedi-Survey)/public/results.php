@@ -9,6 +9,20 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/Database.php';
 
+// Настройка времени жизни сессии (7 дней)
+ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+session_set_cookie_params([
+    'lifetime' => SESSION_LIFETIME,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'] ?? 'localhost',
+    'secure' => false,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
+// Старт сессии для проверки текущего пользователя
+session_start();
+
 // Получаем код из запроса
 $code = $_GET['code'] ?? null;
 
@@ -16,11 +30,20 @@ if (!$code) {
     die('Не указан код респондента');
 }
 
+// Проверяем, является ли текущий пользователь этим же респондентом
+$is_owner = false;
+$current_respondent_id = $_SESSION['respondent_id'] ?? null;
+
 // Получаем данные респондента
 $respondent = Database::selectOne(
     "SELECT * FROM respondents WHERE code = ?",
     [$code]
 );
+
+// Проверяем, совпадает ли текущий respondent_id с владельцем результатов
+if ($current_respondent_id && $respondent && $current_respondent_id === $respondent['id']) {
+    $is_owner = true;
+}
 
 if (!$respondent) {
     die('Респондент с таким кодом не найден');
@@ -524,6 +547,69 @@ function getLevelColorByText($levelText, $higherIsBetter = true) {
     return $colors[$levelText] ?? '#95a5a6';
 }
 
+/**
+ * Рассчитать процент от максимума шкалы
+ * Формула: (x - min) / (max - min) * 100
+ * @param int $score Балл респондента
+ * @param int $min Минимальный балл по шкале
+ * @param int $max Максимальный балл по шкале
+ * @return int Процент (0-100)
+ */
+function calculatePercentage($score, $min, $max) {
+    if ($max === $min) return 0;
+    $percentage = (($score - $min) / ($max - $min)) * 100;
+    return (int)round($percentage);
+}
+
+/**
+ * Получить HTML прогресс-бара с цветовыми зонами
+ * @param int $percentage Процент заполненности (0-100)
+ * @param bool $higherIsBetter true если больше = лучше
+ * @return string HTML прогресс-бара
+ */
+function getProgressBar($percentage, $higherIsBetter = true) {
+    // Определяем порядок цветов
+    if ($higherIsBetter) {
+        // Больше = лучше: красный (0-33%), жёлтый (33-66%), зелёный (66-100%)
+        $colors = [
+            'red' => '#e74c3c',
+            'yellow' => '#f1c40f',
+            'green' => '#27ae60'
+        ];
+    } else {
+        // Меньше = лучше: зелёный (0-33%), жёлтый (33-66%), красный (66-100%)
+        $colors = [
+            'red' => '#e74c3c',
+            'yellow' => '#f1c40f',
+            'green' => '#27ae60'
+        ];
+    }
+    
+    // Для higherIsBetter=false инвертируем визуальное отображение
+    $displayPercentage = $higherIsBetter ? $percentage : (100 - $percentage);
+    
+    // Определяем цвет индикатора
+    $indicatorColor = $colors['green'];
+    if ($displayPercentage <= 33) {
+        $indicatorColor = $colors['red'];
+    } elseif ($displayPercentage <= 66) {
+        $indicatorColor = $colors['yellow'];
+    }
+    
+    // Генерируем HTML с градиентным фоном и индикатором
+    $gradient = $higherIsBetter 
+        ? "linear-gradient(to right, {$colors['red']} 0%, {$colors['red']} 33%, {$colors['yellow']} 33%, {$colors['yellow']} 66%, {$colors['green']} 66%, {$colors['green']} 100%)"
+        : "linear-gradient(to right, {$colors['green']} 0%, {$colors['green']} 33%, {$colors['yellow']} 33%, {$colors['yellow']} 66%, {$colors['red']} 66%, {$colors['red']} 100%)";
+    
+    $html = '<div class="progress-bar-container">';
+    $html .= '<div class="progress-bar-bg" style="background: ' . $gradient . ';">';
+    $html .= '<div class="progress-bar-indicator" style="left: ' . $percentage . '%; background-color: ' . $indicatorColor . ';"></div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    
+    return $html;
+}
+
 // ============================================================================
 // ОТОБРАЖЕНИЕ ТАБЛИЦЫ
 // ============================================================================
@@ -605,7 +691,13 @@ $practices_names = [
     20 => '15 минут наедине с мыслями'
 ];
 
-$page_title = 'Ваши результаты';
+// Заголовки и тексты в зависимости от владельца
+$page_title = 'Результаты исследования';
+$main_heading = $is_owner ? '📊 Ваши результаты' : '📊 Результаты исследования';
+$code_label = $is_owner ? '🔑 Ваш код респондента' : '🔑 Код респондента';
+$owner_message = $is_owner 
+    ? 'Это ваши результаты. Сохраните ссылку, чтобы вернуться позже.'
+    : 'Вы просматриваете результаты другого участника.';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -619,11 +711,24 @@ $page_title = 'Ваши результаты';
 <body>
     <div class="container">
         <div class="results-container">
-            <h1>📊 Ваши результаты</h1>
+            <h1><?= htmlspecialchars($main_heading) ?></h1>
+            
+            <?php if (!$is_owner): ?>
+            <!-- Кнопка "Пройти опрос самому" для не-владельцев -->
+            <div class="result-card take-survey-card">
+                <h3>🚀 Пройти опрос самостоятельно</h3>
+                <p>
+                    Хотите узнать свои результаты? Пройдите исследование самостоятельно!
+                </p>
+                <a href="index.php?page=0" class="btn btn-primary btn-large">
+                    ✨ Пройти опрос самому
+                </a>
+            </div>
+            <?php endif; ?>
 
             <!-- Код респондента -->
             <div class="result-card code-card">
-                <h3>🔑 Ваш код респондента</h3>
+                <h3><?= htmlspecialchars($code_label) ?></h3>
                 <p>
                     <a href="results.php?code=<?= htmlspecialchars($code) ?>" class="code-link">
                         <?= htmlspecialchars($code) ?>
@@ -646,8 +751,7 @@ $page_title = 'Ваши результаты';
                         <thead>
                             <tr>
                                 <th rowspan="2">Шкала</th>
-                                <th rowspan="2">Ваш балл</th>
-                                <th rowspan="2">Уровень</th>
+                                <th rowspan="2" style="min-width: 200px;">Ваш результат</th>
                                 <th colspan="3">Сравнение с другими<br><span class="small-text">(включая меня)</span></th>
                             </tr>
                             <tr>
@@ -683,23 +787,27 @@ $page_title = 'Ваши результаты';
                             // Пропускаем work_urgent_important и work_satisfaction если не работает
                             if (($key === 'work_urgent_important' || $key === 'work_satisfaction') && $score <= 0) continue;
 
+                            // Рассчитываем процент от максимума
+                            $percentage = calculatePercentage($score, $config['min'], $config['max']);
+                            
                             // Получаем процентили (используем db_key если указан)
                             $dbKey = $config['db_key'] ?? $key;
                             $less = $percentiles[$dbKey . '_less'] ?? 0;
                             $equal = $percentiles[$dbKey . '_equal'] ?? 0;
                             $greater = $percentiles[$dbKey . '_greater'] ?? 0;
 
-                            // Определяем уровень на основе абсолютного значения балла
-                            $level = getLevelByScore($score, $config['levels'], $config['higherIsBetter']);
-                            $levelClass = getLevelClass($level, $config['higherIsBetter']);
-
                             // Получаем проценты для отображения
                             $pcts = getComparisonPercentages($less, $equal, $greater, $total);
                             ?>
                             <tr>
                                 <td><?= $config['icon'] ?> <?= $config['label'] ?></td>
-                                <td><strong class="score-value"><?= $score ?> / <?= $config['max'] ?></strong></td>
-                                <td><span class="level-badge <?= $levelClass ?>"><?= $level ?></span></td>
+                                <td>
+                                    <div class="score-result">
+                                        <strong class="score-percentage"><?= $percentage ?>%</strong>
+                                        <span class="score-fraction">(<?= $score ?> / <?= $config['max'] ?>)</span>
+                                    </div>
+                                    <?= getProgressBar($percentage, $config['higherIsBetter']) ?>
+                                </td>
                                 <td class="comparison-cell <?= $pcts['less'] === '—' ? 'zero' : '' ?>"><?= $pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $pcts['greater'] ?></td>
@@ -718,7 +826,6 @@ $page_title = 'Ваши результаты';
                             <tr>
                                 <td>🎂 Возраст</td>
                                 <td><strong class="score-value"><?= $scores['age'] ?> лет</strong></td>
-                                <td>—</td>
                                 <td class="comparison-cell <?= $age_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $age_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $age_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $age_pcts['greater'] ?></td>
@@ -737,7 +844,6 @@ $page_title = 'Ваши результаты';
                             <tr>
                                 <td>👶 Количество детей</td>
                                 <td><strong class="score-value"><?= $scores['children_count'] ?></strong></td>
-                                <td>—</td>
                                 <td class="comparison-cell <?= $child_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $child_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $child_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $child_pcts['greater'] ?></td>
@@ -766,7 +872,6 @@ $page_title = 'Ваши результаты';
                             <tr>
                                 <td>🏠 Удалённая работа</td>
                                 <td><strong class="score-value"><?= $remote_label ?></strong></td>
-                                <td>—</td>
                                 <td class="comparison-cell <?= $remote_pcts['less'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $remote_pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['equal'] ?></td>
                                 <td class="comparison-cell <?= $remote_pcts['greater'] === '—' ? 'zero' : '' ?>"><?= $remote_pcts['greater'] ?></td>
@@ -809,7 +914,9 @@ $page_title = 'Ваши результаты';
             </div>
 
             <div class="back-link-section">
-                <a href="index.php?page=0" class="back-link">← Пройти опрос заново</a>
+                <?php if (!$is_owner): ?>
+                    <a href="index.php?page=0" class="back-link">← Пройти опрос самостоятельно</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

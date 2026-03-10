@@ -709,6 +709,28 @@ button,
     border: 2px solid #3498db;
 }
 
+/* Карточка "Пройти опрос самому" для не-владельцев */
+.result-card.take-survey-card {
+    background: #e8f8f5;
+    border: 2px solid #27ae60;
+    text-align: center;
+}
+
+.result-card.take-survey-card h3 {
+    color: #27ae60;
+}
+
+.result-card.take-survey-card .btn-large {
+    font-size: 18px;
+    padding: 15px 30px;
+    margin-top: 15px;
+    background: #27ae60;
+}
+
+.result-card.take-survey-card .btn-large:hover {
+    background: #229954;
+}
+
 .result-card h3 {
     text-align: center;
     margin-bottom: 15px;
@@ -793,6 +815,83 @@ button,
 
 .results-table td:not(:first-child) {
     text-align: center;
+}
+
+/* Стили для отображения результата с прогресс-баром */
+.results-table td:nth-child(2) {
+    text-align: center;
+    padding: 15px 12px;
+}
+
+.score-result {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.score-result strong.score-percentage {
+    font-size: 18px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.score-result span.score-fraction {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    font-weight: normal;
+}
+
+/* Прогресс-бар с цветовыми зонами */
+.progress-bar-container {
+    width: 100%;
+    height: 20px;
+    border-radius: 3px;
+    overflow: visible;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.progress-bar-bg {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.progress-bar-indicator {
+    position: absolute;
+    top: -2px;
+    width: 8px;
+    height: 24px;
+    border-radius: 6px;
+    transform: translateX(-50%);
+    background: #000;
+    border: 3px solid #000;
+    box-shadow: none;
+    transition: left 0.3s ease;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 600px) {
+    .score-result {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .progress-bar-container {
+        height: 16px;
+    }
+    
+    .progress-bar-indicator {
+        height: 20px;
+        width: 6px;
+        top: -2px;
+        background: #000;
+        border: 3px solid #000;
+        box-shadow: none;
+    }
 }
 
 .warning-box {

@@ -12,6 +12,17 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/Database.php';
 require_once __DIR__ . '/../src/Survey.php';
 
+// Настройка времени жизни сессии (7 дней)
+ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+session_set_cookie_params([
+    'lifetime' => SESSION_LIFETIME,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'] ?? 'localhost',
+    'secure' => false,  // Установите true для HTTPS
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
 // Старт сессии
 session_start();
 
