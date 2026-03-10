@@ -103,6 +103,31 @@ if (!$respondent_id) {
     exit;
 }
 
+// Проверяем, не временный ли это ID (согласие ещё не дано)
+$is_temp = (substr($respondent_id, 0, 5) === 'temp_');
+
+// Если сохраняем страницу 0 (согласие) и это временный ID - создаём реальную запись
+if ($page === 0 && $is_temp && isset($input['consent_given']) && $input['consent_given']) {
+    // Создаём реальную запись в БД
+    $new_respondent_id = Survey::createRespondent();
+    
+    // Обновляем сессию
+    $_SESSION['respondent_id'] = $new_respondent_id;
+    unset($_SESSION['is_temp']);
+    
+    $respondent_id = $new_respondent_id;
+    log_event("Consent saved - created respondent: $respondent_id");
+} elseif ($page === 0 && $is_temp && (!isset($input['consent_given']) || !$input['consent_given'])) {
+    // Не дал согласие - не создаём запись, просто возвращаем успех
+    log_event("Visitor on page 0 - no consent given");
+    echo json_encode([
+        'success' => true,
+        'redirect' => "index.php?page=$next_page",
+        'respondent_id' => $respondent_id
+    ]);
+    exit;
+}
+
 try {
     // Собираем ответы в зависимости от страницы
     $answers = [];

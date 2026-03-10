@@ -29,35 +29,60 @@ session_start();
 // Получаем ID респондента из сессии
 $respondent_id = $_SESSION['respondent_id'] ?? null;
 
-// Если нет ID в сессии - создаём нового респондента
-if (empty($respondent_id)) {
-    $respondent_id = Survey::createRespondent();
-    $_SESSION['respondent_id'] = $respondent_id;
-    log_event("Created new respondent in index.php (no session): $respondent_id");
-}
-
-// Проверяем, существует ли респондент в БД (для логирования)
-$existing_respondent = null;
-try {
-    $existing_respondent = Survey::getRespondent($respondent_id);
-    if ($existing_respondent) {
-        log_event("Found existing respondent: $respondent_id, status={$existing_respondent['status']}");
-    } else {
-        log_event("WARNING: Respondent $respondent_id from session not found in DB, but keeping ID");
-    }
-} catch (Exception $e) {
-    log_event("ERROR getting respondent: " . $e->getMessage(), 'ERROR');
-    // Продолжаем с существующим ID из сессии
-}
-
 // Определяем текущую страницу
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 0;
 $page = max(0, min(10, $page)); // 0-10
 
+// Создаём запись в БД только когда респондент дал согласие (переход на страницу 1)
+// Если на странице 0 и нет respondent_id - просто генерируем временный ID для сессии
+if ($page === 0 && empty($respondent_id)) {
+    // Ещё не дал согласие - не создаём запись в БД
+    $respondent_id = 'temp_' . md5(uniqid() . time());
+    $_SESSION['respondent_id'] = $respondent_id;
+    $_SESSION['is_temp'] = true;
+    log_event("Visitor on page 0 (no consent yet): session=" . session_id());
+}
+// Если переход на страницу 1 и есть временный ID - создаём запись в БД
+elseif ($page === 1 && !empty($_SESSION['is_temp'])) {
+    // Удаляем временный ID и создаём реальную запись
+    unset($_SESSION['respondent_id']);
+    unset($_SESSION['is_temp']);
+    
+    $respondent_id = Survey::createRespondent();
+    $_SESSION['respondent_id'] = $respondent_id;
+    log_event("Consent given - created respondent: $respondent_id");
+}
+// Если уже есть постоянный respondent_id - проверяем его
+elseif (!empty($respondent_id) && substr($respondent_id, 0, 5) !== 'temp_') {
+    $existing_respondent = Survey::getRespondent($respondent_id);
+    if ($existing_respondent) {
+        log_event("Found existing respondent: $respondent_id, status={$existing_respondent['status']}");
+    } else {
+        log_event("WARNING: Respondent $respondent_id from session not found in DB, creating new one");
+        $respondent_id = Survey::createRespondent();
+        $_SESSION['respondent_id'] = $respondent_id;
+    }
+}
+
 log_event("index.php page $page: respondent_id=$respondent_id, session=" . session_id());
 
 // Получаем данные респондента
-$respondent = Survey::getRespondent($respondent_id);
+$respondent = null;
+if (!empty($respondent_id) && substr($respondent_id, 0, 5) !== 'temp_') {
+    $respondent = Survey::getRespondent($respondent_id);
+}
+
+// Если уже дал согласие (есть запись в БД) и пытается вернуться на страницу 0 - редирект на страницу 1
+if ($page === 0 && $respondent && $respondent['consent_given']) {
+    header('Location: index.php?page=1');
+    exit;
+}
+
+// Если пытается попасть на страницу 1+ без согласия (временный ID) - редирект на страницу 0
+if ($page >= 1 && !empty($_SESSION['is_temp'])) {
+    header('Location: index.php?page=0');
+    exit;
+}
 
 // Заголовок страницы
 $titles = [
