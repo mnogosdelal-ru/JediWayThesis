@@ -676,54 +676,133 @@ function getProgressBar($percentage, $levels, $min, $max, $higherIsBetter = true
 // ОТОБРАЖЕНИЕ ТАБЛИЦЫ
 // ============================================================================
 
-// Генерируем рекомендацию по программе
-$practices_score = $scores['practices_freq'];
-$mbi_score = $scores['mbi']['exhaustion'] ?? 0;
+// ============================================================================
+// ЛОГИКА РЕКОМЕНДАЦИЙ ПРОГРАММ
+// ============================================================================
+
+// Определяем, находится ли шкала в красной зоне
+function isRedZone($score, $levels, $higherIsBetter) {
+    if ($score < $levels[0]) {
+        // Низкий уровень
+        return $higherIsBetter; // Красный если higherIsBetter=true (мало = плохо)
+    } elseif ($score >= $levels[1]) {
+        // Высокий уровень
+        return !$higherIsBetter; // Красный если higherIsBetter=false (много = плохо)
+    }
+    return false; // Средняя зона (жёлтая) - не красная
+}
+
+// Проверяем, есть ли красные зоны (кроме стиля мышления)
+$redZonesCount = 0;
+$mbiRedCount = 0; // Считаем красные зоны MBI
+
+foreach ($SCALE_CONFIG as $key => $config) {
+    // Пропускаем стиль мышления
+    if ($key === 'mindset_technical_humanitarian') continue;
+    
+    // Пропускаем демографию
+    if (in_array($key, ['age', 'children_count', 'remote_days'])) continue;
+    
+    // Пропускаем work_urgent_important и work_satisfaction если не работает
+    if (($key === 'work_urgent_important' || $key === 'work_satisfaction') && 
+        isset($scores[$key]) && $scores[$key] <= 0) continue;
+    
+    // Получаем значение
+    $score = null;
+    if ($key === 'mijs') {
+        $score = $scores['mijs']['total'] ?? null;
+    } elseif ($key === 'mbi_exhaustion') {
+        $score = $scores['mbi']['exhaustion'] ?? null;
+    } elseif ($key === 'mbi_cynicism') {
+        $score = $scores['mbi']['cynicism'] ?? null;
+    } elseif ($key === 'mbi_efficacy') {
+        $score = $scores['mbi']['efficacy'] ?? null;
+    } elseif ($key === 'practices') {
+        $score = $scores['practices_freq'] ?? null;
+    } elseif (isset($scores[$key])) {
+        $score = $scores[$key];
+    }
+    
+    if ($score === null) continue;
+    
+    // Проверяем красную зону
+    if (isRedZone($score, $config['levels'], $config['higherIsBetter'])) {
+        $redZonesCount++;
+        
+        // Считаем красные зоны MBI
+        if (in_array($key, ['mbi_exhaustion', 'mbi_cynicism', 'mbi_efficacy'])) {
+            $mbiRedCount++;
+        }
+    }
+}
+
+// Определяем уровень практик (красная/зелёная зона)
+$practices_score = $scores['practices_freq'] ?? 0;
+$practices_config = $SCALE_CONFIG['practices'];
+$practicesInRed = isRedZone($practices_score, $practices_config['levels'], $practices_config['higherIsBetter']);
+$practicesInGreen = !$practicesInRed && $practices_score >= $practices_config['levels'][1]; // Зелёная = высокий уровень
+
+// ============================================================================
+// ФОРМИРУЕМ РЕКОМЕНДАЦИЮ
+// ============================================================================
+// Структура:
+// - programs: массив программ ['start', 'sprint', 'both']
+// - warning: boolean
+// - warning_text: текст предупреждения (если есть)
+// - reason: причина рекомендации
+// ============================================================================
 
 $recommendation = null;
 
-if ($mbi_score > 45) {
+// Приоритет 1: Все три субшкалы MBI в красной зоне
+if ($mbiRedCount === 3) {
     $recommendation = [
-        'program' => 'Джедайский старт',
-        'url' => 'https://sprint.mnogosdelal.ru/start',
-        'description' => 'Программа формирования навыков самоорганизации',
+        'programs' => ['start'],
         'warning' => true,
-        'warning_text' => 'При высоком уровне выгорания может быть полезно сначала исследовать физиологические причины: проконсультироваться с терапевтом, сдать анализы (гормоны щитовидной железы, витамин D, железо). Прокрастинация и низкая продуктивность могут быть следствием не "слабой воли", а физиологических причин. Не корите себя — начните с заботы о здоровье.',
-        'reason' => 'Высокий уровень выгорания требует бережного подхода к восстановлению'
-    ];
-} elseif ($practices_score < 56) {
-    $recommendation = [
-        'program' => 'Джедайский старт',
-        'url' => 'https://sprint.mnogosdelal.ru/start',
-        'description' => 'Программа формирования навыков самоорганизации. Поможет внедрить базовые практики и снизить бремя срочности.',
-        'warning' => false,
-        'reason' => 'Низкий уровень использования практик самоорганизации'
-    ];
-} elseif ($practices_score >= 56 && $mbi_score <= 40) {
-    $recommendation = [
-        'program' => 'Спринт 12 недель',
-        'url' => 'https://sprint.mnogosdelal.ru/',
-        'description' => 'Продвинутая программа для тех, у кого уже есть навыки самоорганизации. Поможет достичь значимых целей за 12 недель.',
-        'warning' => false,
-        'reason' => 'У вас уже есть навыки самоорганизации для работы над значимыми целями'
-    ];
-} elseif ($practices_score >= 56 && $mbi_score > 40 && $mbi_score <= 45) {
-    $recommendation = [
-        'program' => 'Джедайский старт',
-        'url' => 'https://sprint.mnogosdelal.ru/start',
-        'description' => 'Вам уже знакомы практики самоорганизации, но сейчас важно уделить внимание восстановлению. Программа поможет сбалансировать продуктивность и заботу о себе.',
-        'warning' => false,
-        'reason' => 'Важно сбалансировать продуктивность и восстановление'
-    ];
-} else {
-    $recommendation = [
-        'program' => 'Джедайский старт',
-        'url' => 'https://sprint.mnogosdelal.ru/start',
-        'description' => 'Программа формирования навыков самоорганизации',
-        'warning' => false,
-        'reason' => 'Поможет улучшить навыки самоорганизации'
+        'warning_text' => 'Судя по всему, вы сильно утомлены. Вы можете к нам пойти на программу "Джедайский старт", но лучше, конечно, если вы сначала сходите к терапевту и скажете, что у вас высокий уровень выгорания по шкале Маслач. Надо с этим разобраться в первую очередь.',
+        'reason' => 'Все три субшкалы MBI в красной зоне — требуется поддержка'
     ];
 }
+// Приоритет 2: Нет красных зон и практики в зеленой (кроме стиля мышления) → Спринт 12 недель
+elseif (($redZonesCount === 0) && $practicesInGreen) {
+    $recommendation = [
+        'programs' => ['sprint'],
+        'warning' => false,
+        'reason' => 'У вас нет красных зон и джедайские практики в зеленой зоне — вы можете эффективно работать над целями и будете хорошим помощником своим бадди 😉'
+    ];
+}
+// Приоритет 3: Практики в красной зоне → Джедайский старт
+elseif ($practicesInRed) {
+    $recommendation = [
+        'programs' => ['start'],
+        'warning' => false,
+        'reason' => 'Джедайские практики в красной зоне, мы рекомендуем сначала внедрить базовые практики самоорганизации'
+    ];
+}
+// Приоритет 4: Остальные случаи → обе программы
+else {
+    $recommendation = [
+        'programs' => ['start', 'sprint'],
+        'warning' => false,
+        'reason' => 'Вам подойдут обе наши программы в зависимости от ваших целей'
+    ];
+}
+
+// Описания программ
+$programDescriptions = [
+    'start' => [
+        'name' => 'Джедайский.Старт',
+        'url' => 'https://sprint.mnogosdelal.ru/start',
+        'icon' => '📘',
+        'description' => 'Программа формирования навыков самоорганизации. Поможет внедрить базовые практики и снизить бремя срочности.'
+    ],
+    'sprint' => [
+        'name' => 'Спринт "12 недель"',
+        'url' => 'https://sprint.mnogosdelal.ru/',
+        'icon' => '🚀',
+        'description' => 'Продвинутая программа для тех, у кого уже есть навыки самоорганизации. Поможет достичь значимых целей за 12 недель.'
+    ]
+];
 
 // Получаем топ-3 практики
 $practices_freq = json_decode($respondent['practices_frequency'] ?? '{}', true);
@@ -953,7 +1032,8 @@ $owner_message = $is_owner
             <div class="result-card featured">
                 <h3>🎓 Рекомендация по обучению</h3>
 
-                <?php if ($recommendation): ?>
+                <?php if ($recommendation && !empty($recommendation['programs'])): ?>
+                    
                     <?php if ($recommendation['warning']): ?>
                     <div class="warning-box">
                         <strong>⚠️ Важно:</strong>
@@ -962,21 +1042,64 @@ $owner_message = $is_owner
                     <?php endif; ?>
 
                     <div class="program-section">
-                        <h4 class="program-title">
-                            <?= htmlspecialchars($recommendation['program']) ?>
-                        </h4>
-                        <p class="program-description">
-                            <?= htmlspecialchars($recommendation['description']) ?>
-                        </p>
-                        <p class="program-reason">
-                            <em>Причина рекомендации: <?= htmlspecialchars($recommendation['reason']) ?></em>
-                        </p>
-                    </div>
+                        <?php 
+                        $programsCount = count($recommendation['programs']);
+                        $showBoth = $programsCount > 1;
+                        ?>
+                        
+                        <?php if ($showBoth): ?>
+                            <!-- Обе программы -->
+                            <p class="program-description" style="font-size: 16px; margin-bottom: 20px;">
+                                Вы можете принять участие в любой нашей программе, выбирайте то, что больше нравится:
+                            </p>
+                            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                                <?php foreach ($recommendation['programs'] as $programKey): ?>
+                                    <?php $prog = $programDescriptions[$programKey]; ?>
+                                    <a href="<?= htmlspecialchars($prog['url']) ?>" 
+                                       class="btn btn-primary program-button" 
+                                       target="_blank">
+                                        <?= $prog['icon'] ?> <?= htmlspecialchars($prog['name']) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                            <!-- Описания программ под кнопками -->
+                            <div style="margin-top: 20px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                                <?php foreach ($recommendation['programs'] as $programKey): ?>
+                                    <?php $prog = $programDescriptions[$programKey]; ?>
+                                    <p style="margin-bottom: 10px; font-size: 14px; color: #555;">
+                                        <strong><?= $prog['icon'] ?> <?= htmlspecialchars($prog['name']) ?>:</strong>
+                                        <?= htmlspecialchars($prog['description']) ?>
+                                    </p>
+                                <?php endforeach; ?>
+                            </div>
+                            <p class="program-reason" style="margin-top: 15px;">
+                                <em><?= htmlspecialchars($recommendation['reason']) ?></em>
+                            </p>
+                            
+                        <?php else: ?>
+                            <!-- Одна программа -->
+                            <?php 
+                            $programKey = $recommendation['programs'][0];
+                            $prog = $programDescriptions[$programKey];
+                            ?>
+                            <h4 class="program-title">
+                                <?= htmlspecialchars($prog['name']) ?>
+                            </h4>
+                            <p class="program-description">
+                                <?= htmlspecialchars($prog['description']) ?>
+                            </p>
+                            <p class="program-reason">
+                                <em>Причина рекомендации: <?= htmlspecialchars($recommendation['reason']) ?></em>
+                            </p>
 
-                    <div class="back-link-section">
-                        <a href="<?= htmlspecialchars($recommendation['url']) ?>" class="btn btn-primary program-button" target="_blank">
-                            🚀 Узнать больше о программе
-                        </a>
+                            <div class="back-link-section">
+                                <a href="<?= htmlspecialchars($prog['url']) ?>" 
+                                   class="btn btn-primary program-button" 
+                                   target="_blank">
+                                    🚀 Узнать больше о программе
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>

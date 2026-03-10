@@ -29,6 +29,7 @@
             <option value="">Выберите...</option>
             <option value="owner">Владелец бизнеса</option>
             <option value="top_manager">ТОП-менеджер</option>
+            <option value="freelancer">Фрилансер</option>
             <option value="middle_manager">Руководитель среднего уровня</option>
             <option value="team_lead">Линейный руководитель / Тимлид</option>
             <option value="senior_specialist">Старший специалист</option>

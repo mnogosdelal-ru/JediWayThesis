@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS respondents (
     gender ENUM('male', 'female', 'other', 'prefer_not'),
     children_count INT DEFAULT 0,
     work_experience_years INT,
-    position ENUM('owner', 'top_manager', 'middle_manager', 'team_lead',
+    position ENUM('owner', 'top_manager', 'freelancer', 'middle_manager', 'team_lead',
                   'senior_specialist', 'specialist', 'junior',
                   'student', 'pensioner', 'unemployed'),
     industry ENUM('it', 'science', 'education', 'finance', 'production',
