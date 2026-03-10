@@ -105,26 +105,53 @@ CREATE TABLE IF NOT EXISTS respondents (
     time_spent_seconds INT,
 
     -- Индексы для производительности
+    -- Базовые
     INDEX idx_status (status),
     INDEX idx_completed_at (completed_at),
     INDEX idx_code (code),
+    INDEX idx_created_at (created_at),
+    
+    -- Для monitor.php
+    INDEX idx_status_created (status, created_at),
+    INDEX idx_status_page (status, current_page),
+    
+    -- Основные шкалы
     INDEX idx_mijs_total (mijs_total),
+    INDEX idx_mijs_urgency (mijs_urgency_score),
+    INDEX idx_mijs_agency (mijs_agency_score),
     INDEX idx_mbi_exhaustion (mbi_exhaustion_score),
     INDEX idx_mbi_cynicism (mbi_cynicism_score),
     INDEX idx_mbi_efficacy (mbi_efficacy_score),
+    INDEX idx_mbi_total (mbi_total),
     INDEX idx_swls_total (swls_total),
     INDEX idx_procrastination (procrastination_total),
     INDEX idx_practices_freq (practices_freq_total),
     INDEX idx_practices_quality (practices_quality_total),
     INDEX idx_vaccines (vaccines_total),
+    
+    -- Срочное/важное и удовлетворённость
     INDEX idx_personal_urgent (personal_urgent_important),
     INDEX idx_work_urgent (work_urgent_important),
     INDEX idx_work_satisfaction (work_satisfaction),
+    
+    -- Демография
     INDEX idx_age (age),
+    INDEX idx_gender (gender),
     INDEX idx_children_count (children_count),
+    INDEX idx_position (position),
+    INDEX idx_industry (industry),
     INDEX idx_remote_days (remote_days),
+    INDEX idx_mindset (mindset_technical_humanitarian),
+    
+    -- Контроль качества
+    INDEX idx_attention_check (attention_check_passed),
+    
+    -- Составные индексы для аналитики
     INDEX idx_status_completed (status, completed_at),
-    INDEX idx_mindset (mindset_technical_humanitarian)
+    INDEX idx_mbi_gender (mbi_exhaustion_score, gender),
+    INDEX idx_mbi_position (mbi_exhaustion_score, position),
+    INDEX idx_practices_mbi (practices_freq_total, mbi_exhaustion_score),
+    INDEX idx_mijs_mbi (mijs_total, mbi_exhaustion_score)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
