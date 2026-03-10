@@ -837,6 +837,14 @@ button,
     font-weight: 700;
 }
 
+/* Цветной индикатор уровня в названии шкалы */
+.results-table td:first-child .level-emoji {
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 14px;
+    line-height: 1;
+}
+
 .score-result span.score-fraction {
     font-size: 14px;
     color: #666;
@@ -862,10 +870,10 @@ button,
 
 .progress-bar-indicator {
     position: absolute;
-    top: -2px;
+    top: -4px;
     width: 8px;
-    height: 24px;
-    border-radius: 6px;
+    height: 28px;
+    border-radius: 2px;
     transform: translateX(-50%);
     background: #000;
     border: 3px solid #000;
@@ -876,18 +884,25 @@ button,
 /* Адаптация для мобильных */
 @media (max-width: 600px) {
     .score-result {
-        flex-direction: column;
-        gap: 4px;
+        gap: 6px;
+    }
+    
+    .score-result strong.score-percentage {
+        font-size: 16px;
+    }
+    
+    .results-table td:first-child .level-emoji {
+        font-size: 12px;
     }
     
     .progress-bar-container {
-        height: 16px;
+        height: 14px;
     }
     
     .progress-bar-indicator {
         height: 20px;
-        width: 6px;
-        top: -2px;
+        width: 5px;
+        top: -3px;
         background: #000;
         border: 3px solid #000;
         box-shadow: none;

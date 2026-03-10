@@ -344,7 +344,7 @@ $SCALE_CONFIG = [
         'min' => 1,
         'max' => 5,
         'higherIsBetter' => true,
-        'levels' => [2, 3],  // <=2: Низкий, 2-4: Средний, >4: Высокий
+        'levels' => [2.3, 3.7],  // <=2: Низкий, 2-4: Средний, >4: Высокий
         'db_key' => 'pers'
     ],
     'work_urgent_important' => [
@@ -353,7 +353,7 @@ $SCALE_CONFIG = [
         'min' => 1,
         'max' => 5,
         'higherIsBetter' => true,
-        'levels' => [2, 3],
+        'levels' => [2.3, 3.7],
         'db_key' => 'work'
     ],
     'work_satisfaction' => [
@@ -443,7 +443,7 @@ $SCALE_CONFIG = [
         'min' => 1,
         'max' => 5,
         'higherIsBetter' => false,  // 5 = чисто гуманитарный
-        'levels' => [2, 3],  // <=2: Технарь, 2-4: Сбалансированный, >4: Гуманитарий
+        'levels' => [3.2, 4.2],  // <=2: Технарь, 2-4: Сбалансированный, >4: Гуманитарий
         'db_key' => 'mindset'
     ]
 ];
@@ -479,20 +479,64 @@ function getComparisonPercentages($less, $equal, $greater, $total) {
  */
 function getLevelByScore($score, $levels, $higherIsBetter = true) {
     if (!isset($levels[0], $levels[1])) return 'Средний';
-    
+
     $low = $levels[0];
     $high = $levels[1];
-    
+
     // Определяем уровень по абсолютному значению
-    if ($score <= $low) {
+    // Используем < и >= для консистентности с прогресс-баром
+    if ($score < $low) {
         $level = 'Низкий';
-    } elseif ($score > $high) {
+    } elseif ($score >= $high) {
         $level = 'Высокий';
     } else {
         $level = 'Средний';
     }
-    
+
     return $level;
+}
+
+/**
+ * Получить цветной эмодзи-индикатор уровня
+ * Учитывает higherIsBetter для правильного отображения цвета
+ * @param int $score Балл респондента
+ * @param array $levels Пороговые значения [low, high] из конфигурации
+ * @param bool $higherIsBetter true если больше = лучше
+ * @return string Эмодзи кружка (🔴 🟡 🟢)
+ */
+function getLevelEmoji($score, $levels, $higherIsBetter = true) {
+    if (!isset($levels[0], $levels[1])) return '🟡';
+    
+    $low = $levels[0];
+    $high = $levels[1];
+    
+    // Определяем "качество" уровня
+    if ($score < $low) {
+        $quality = 'low';
+    } elseif ($score >= $high) {
+        $quality = 'high';
+    } else {
+        $quality = 'medium';
+    }
+    
+    // Выбираем цвет в зависимости от higherIsBetter
+    if ($higherIsBetter) {
+        // Больше = лучше: Низкий=красный, Средний=жёлтый, Высокий=зелёный
+        $emojis = [
+            'low' => '🔴',
+            'medium' => '🟡',
+            'high' => '🟢'
+        ];
+    } else {
+        // Меньше = лучше: Низкий=зелёный, Средний=жёлтый, Высокий=красный
+        $emojis = [
+            'low' => '🟢',
+            'medium' => '🟡',
+            'high' => '🔴'
+        ];
+    }
+    
+    return $emojis[$quality];
 }
 
 /**
@@ -562,48 +606,66 @@ function calculatePercentage($score, $min, $max) {
 }
 
 /**
- * Получить HTML прогресс-бара с цветовыми зонами
+ * Получить HTML прогресс-бара с цветовыми зонами на основе levels
  * @param int $percentage Процент заполненности (0-100)
+ * @param array $levels Пороговые значения [low, high] из конфигурации
+ * @param int $min Минимум шкалы
+ * @param int $max Максимум шкалы
  * @param bool $higherIsBetter true если больше = лучше
  * @return string HTML прогресс-бара
  */
-function getProgressBar($percentage, $higherIsBetter = true) {
-    // Определяем порядок цветов
+function getProgressBar($percentage, $levels, $min, $max, $higherIsBetter = true) {
+    // Рассчитываем проценты для границ зон на основе absolute значений levels
+    $lowThreshold = $levels[0] ?? 0;
+    $highThreshold = $levels[1] ?? 100;
+    
+    // Конвертируем абсолютные значения в проценты
+    $lowPercent = (($lowThreshold - $min) / ($max - $min)) * 100;
+    $highPercent = (($highThreshold - $min) / ($max - $min)) * 100;
+    
+    // Округляем до целых
+    $lowPercent = (int)round($lowPercent);
+    $highPercent = (int)round($highPercent);
+    
+    // Определяем цвета
+    $colors = [
+        'red' => '#e74c3c',
+        'yellow' => '#f1c40f',
+        'green' => '#27ae60'
+    ];
+    
+    // Определяем порядок зон в зависимости от higherIsBetter
     if ($higherIsBetter) {
-        // Больше = лучше: красный (0-33%), жёлтый (33-66%), зелёный (66-100%)
-        $colors = [
-            'red' => '#e74c3c',
-            'yellow' => '#f1c40f',
-            'green' => '#27ae60'
-        ];
+        // Больше = лучше: красный (0-low%), жёлтый (low-high%), зелёный (high-100%)
+        $gradient = "linear-gradient(to right, 
+            {$colors['red']} 0%, {$colors['red']} {$lowPercent}%, 
+            {$colors['yellow']} {$lowPercent}%, {$colors['yellow']} {$highPercent}%, 
+            {$colors['green']} {$highPercent}%, {$colors['green']} 100%)";
     } else {
-        // Меньше = лучше: зелёный (0-33%), жёлтый (33-66%), красный (66-100%)
-        $colors = [
-            'red' => '#e74c3c',
-            'yellow' => '#f1c40f',
-            'green' => '#27ae60'
-        ];
+        // Меньше = лучше: зелёный (0-low%), жёлтый (low-high%), красный (high-100%)
+        $gradient = "linear-gradient(to right, 
+            {$colors['green']} 0%, {$colors['green']} {$lowPercent}%, 
+            {$colors['yellow']} {$lowPercent}%, {$colors['yellow']} {$highPercent}%, 
+            {$colors['red']} {$highPercent}%, {$colors['red']} 100%)";
     }
     
-    // Для higherIsBetter=false инвертируем визуальное отображение
+    // Определяем цвет индикатора на основе позиции
+    // Используем < и >= для консистентности с getLevelByScore
     $displayPercentage = $higherIsBetter ? $percentage : (100 - $percentage);
+    $displayLowPercent = $lowPercent;
+    $displayHighPercent = $highPercent;
     
-    // Определяем цвет индикатора
     $indicatorColor = $colors['green'];
-    if ($displayPercentage <= 33) {
+    if ($displayPercentage < $displayLowPercent) {
         $indicatorColor = $colors['red'];
-    } elseif ($displayPercentage <= 66) {
+    } elseif ($displayPercentage >= $displayHighPercent) {
         $indicatorColor = $colors['yellow'];
     }
     
-    // Генерируем HTML с градиентным фоном и индикатором
-    $gradient = $higherIsBetter 
-        ? "linear-gradient(to right, {$colors['red']} 0%, {$colors['red']} 33%, {$colors['yellow']} 33%, {$colors['yellow']} 66%, {$colors['green']} 66%, {$colors['green']} 100%)"
-        : "linear-gradient(to right, {$colors['green']} 0%, {$colors['green']} 33%, {$colors['yellow']} 33%, {$colors['yellow']} 66%, {$colors['red']} 66%, {$colors['red']} 100%)";
-    
+    // Генерируем HTML
     $html = '<div class="progress-bar-container">';
     $html .= '<div class="progress-bar-bg" style="background: ' . $gradient . ';">';
-    $html .= '<div class="progress-bar-indicator" style="left: ' . $percentage . '%; background-color: ' . $indicatorColor . ';"></div>';
+    $html .= '<div class="progress-bar-indicator" style="left: ' . $percentage . '%;"></div>';
     $html .= '</div>';
     $html .= '</div>';
     
@@ -790,6 +852,9 @@ $owner_message = $is_owner
                             // Рассчитываем процент от максимума
                             $percentage = calculatePercentage($score, $config['min'], $config['max']);
                             
+                            // Получаем цветной эмодзи-индикатор уровня
+                            $levelEmoji = getLevelEmoji($score, $config['levels'], $config['higherIsBetter']);
+                            
                             // Получаем процентили (используем db_key если указан)
                             $dbKey = $config['db_key'] ?? $key;
                             $less = $percentiles[$dbKey . '_less'] ?? 0;
@@ -800,13 +865,16 @@ $owner_message = $is_owner
                             $pcts = getComparisonPercentages($less, $equal, $greater, $total);
                             ?>
                             <tr>
-                                <td><?= $config['icon'] ?> <?= $config['label'] ?></td>
+                                <td>
+                                    <span class="level-emoji"><?= $levelEmoji ?></span>
+                                    <? //$config['icon'] ?> <?= $config['label'] ?>
+                                </td>
                                 <td>
                                     <div class="score-result">
                                         <strong class="score-percentage"><?= $percentage ?>%</strong>
                                         <span class="score-fraction">(<?= $score ?> / <?= $config['max'] ?>)</span>
                                     </div>
-                                    <?= getProgressBar($percentage, $config['higherIsBetter']) ?>
+                                    <?= getProgressBar($percentage, $config['levels'], $config['min'], $config['max'], $config['higherIsBetter']) ?>
                                 </td>
                                 <td class="comparison-cell <?= $pcts['less'] === '—' ? 'zero' : '' ?>"><?= $pcts['less'] ?></td>
                                 <td class="comparison-cell <?= $pcts['equal'] === '—' ? 'zero' : '' ?>"><?= $pcts['equal'] ?></td>
