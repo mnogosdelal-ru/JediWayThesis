@@ -336,6 +336,63 @@ button,
 
 .practice-desc {
     margin-top: 10px;
+    line-height: 1.6;
+}
+
+/* HTML-форматирование в описаниях практик */
+.practice-desc strong,
+.practice-desc b {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.practice-desc em,
+.practice-desc i {
+    color: #666;
+    font-style: italic;
+}
+
+.practice-desc ul,
+.practice-desc ol {
+    margin: 10px 0 10px 20px;
+    padding-left: 10px;
+}
+
+.practice-desc li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.practice-desc ul li {
+    list-style-type: disc;
+}
+
+.practice-desc ol li {
+    list-style-type: decimal;
+}
+
+/* Вложенные списки */
+.practice-desc li ul,
+.practice-desc li ol {
+    margin: 6px 0 6px 20px;
+}
+
+.practice-desc li ul li {
+    list-style-type: circle;
+}
+
+.practice-desc li ol li {
+    list-style-type: lower-alpha;
+}
+
+.practice-desc br {
+    display: block;
+    content: "";
+    margin-top: 8px;
+}
+
+.practice-desc p {
+    margin: 10px 0;
 }
 
 .practice-section-label {
@@ -369,6 +426,63 @@ button,
 
 .vaccine-desc {
     margin-top: 10px;
+    line-height: 1.6;
+}
+
+/* HTML-форматирование в описаниях вакцин */
+.vaccine-desc strong,
+.vaccine-desc b {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.vaccine-desc em,
+.vaccine-desc i {
+    color: #666;
+    font-style: italic;
+}
+
+.vaccine-desc ul,
+.vaccine-desc ol {
+    margin: 10px 0 10px 20px;
+    padding-left: 10px;
+}
+
+.vaccine-desc li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.vaccine-desc ul li {
+    list-style-type: disc;
+}
+
+.vaccine-desc ol li {
+    list-style-type: decimal;
+}
+
+/* Вложенные списки */
+.vaccine-desc li ul,
+.vaccine-desc li ol {
+    margin: 6px 0 6px 20px;
+}
+
+.vaccine-desc li ul li {
+    list-style-type: circle;
+}
+
+.vaccine-desc li ol li {
+    list-style-type: lower-alpha;
+}
+
+.vaccine-desc br {
+    display: block;
+    content: "";
+    margin-top: 8px;
+}
+
+.vaccine-desc p {
+    margin: 10px 0;
 }
 
 /* ============================================================================
@@ -554,7 +668,7 @@ button,
     body {
         padding: 10px;
     }
-
+    
     .container {
         padding: 15px;
     }
