@@ -111,7 +111,8 @@ $PRACTICES_KEYS = [
     17 => 'prac_q17_vypolnit_zelenuyu_zadachu',
     18 => 'prac_q18_zelenaya_zadacha_do_chatov',
     19 => 'prac_q19_inkubator_idey',
-    20 => 'prac_q20_15_minut_naedine_s_myslyami'
+    20 => 'prac_q20_15_minut_naedine_s_myslyami',
+    21 => 'prac_q21_spat_minimum_8_chasov_nochnyu'
 ];
 
 // ============================================================================
