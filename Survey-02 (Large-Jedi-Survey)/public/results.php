@@ -61,16 +61,6 @@ if (!$respondent) {
     die('Респондент с таким кодом не найден');
 }
 
-// Если статус не completed - показываем предупреждение
-if ($respondent['status'] !== 'completed') {
-    Database::update('respondents', $respondent['id'], [
-        'status' => 'completed',
-        'completed_at' => date('Y-m-d H:i:s')
-    ]);
-    $respondent['status'] = 'completed';
-    $respondent['completed_at'] = date('Y-m-d H:i:s');
-}
-
 // Получаем готовые шкалы из БД
 $scores = [];
 

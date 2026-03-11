@@ -67,6 +67,7 @@ $pageNames = [
 $recentQuery = "
     SELECT code, status, current_page, created_at, completed_at
     FROM respondents
+	WHERE status = 'completed'
     ORDER BY created_at DESC
     LIMIT 10
 ";
@@ -367,9 +368,13 @@ $page_title = 'Мониторинг сбора данных';
                     <?php foreach ($recent as $r): ?>
                     <tr>
                         <td style="font-family: monospace; font-size: 14px;">
-                            <a href="results.php?code=<?= htmlspecialchars($r['code']) ?>" target="_blank">
-                                <?= htmlspecialchars($r['code']) ?>
-                            </a>
+                            <?php if ($r['status'] === 'completed'):  ?>
+                                <a href="results.php?code=<?= htmlspecialchars($r['code']) ?>" target="_blank">
+                                    <?= htmlspecialchars($r['code']) ?>
+                                </a>
+                            <?php else: ?>
+                                —
+                            <?php endif; ?>
                         </td>
                         <td>
                             <span class="status-badge status-<?= $r['status'] ?>">
