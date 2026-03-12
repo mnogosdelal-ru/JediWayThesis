@@ -445,12 +445,14 @@ class ProductivityControl {
         const startDrag = (e) => {
             isDragging = true;
             document.body.classList.add('pc-dragging');
+            element.setPointerCapture(e.pointerId);
             handleMove(e);
         };
 
-        const stopDrag = () => {
+        const stopDrag = (e) => {
             isDragging = false;
             document.body.classList.remove('pc-dragging');
+            element.releasePointerCapture(e.pointerId);
         };
 
         const handleMove = (e) => {
@@ -471,12 +473,14 @@ class ProductivityControl {
             callback(val);
         };
 
-        element.addEventListener('mousedown', startDrag);
-        element.addEventListener('touchstart', startDrag);
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('touchmove', handleMove);
-        window.addEventListener('mouseup', stopDrag);
-        window.addEventListener('touchend', stopDrag);
+        // Pointer events работают для mouse, touch и pen
+        element.addEventListener('pointerdown', startDrag);
+        element.addEventListener('pointermove', handleMove);
+        element.addEventListener('pointerup', stopDrag);
+        element.addEventListener('pointercancel', stopDrag);
+        
+        // Предотвращаем стандартное поведение touch (скролл)
+        element.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     }
 
     /**
