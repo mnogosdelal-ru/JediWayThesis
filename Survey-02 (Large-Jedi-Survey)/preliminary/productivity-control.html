@@ -41,10 +41,11 @@
             display: flex;
             justify-content: space-between;
             width: 300px;
+            margin-left: 70px; /* Смещение для выравнивания с матрицей (40px подписи + 30px бегунок) */
             font-size: 14px;
             color: #495057;
             font-weight: 500;
-            margin-bottom: 10px;
+            margin-bottom: 2px;
         }
 
         /* Основная обёртка: вертикальный слайдер + квадрат */
@@ -180,25 +181,8 @@
         .zone {
             position: absolute;
             transition: background-color 0.3s, width 0.1s, height 0.1s, top 0.1s, left 0.1s;
-            border: 1px solid rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.4);
             box-sizing: border-box;
-        }
-
-        /* Скругление углов для зон */
-        #zone-tl {
-            border-radius: 8px 0 0 0;
-        }
-
-        #zone-tr {
-            border-radius: 0 8px 0 0;
-        }
-
-        #zone-bl {
-            border-radius: 0 0 0 8px;
-        }
-
-        #zone-br {
-            border-radius: 0 0 8px 0;
         }
 
         /* Горизонтальные слайдеры - снаружи */
@@ -461,7 +445,7 @@
         vHandle.style.top = `${state.vSplit}%`;
         hThumbTop.style.left = `${state.hSplitTop}%`;
         hThumbBottom.style.left = `${state.hSplitBottom}%`;
-
+        
         // 2. Обновляем размеры зон
         // state.vSplit: 0 = линия сверху, 100 = линия снизу.
         // Значит Высота Верхней части = state.vSplit
@@ -497,10 +481,10 @@
         const areaBR = (bottomHeight / 100) * ((100 - state.hSplitBottom) / 100) * 100;
         const areaBL = (bottomHeight / 100) * (state.hSplitBottom / 100) * 100;
 
-        legendValues.tr.textContent = `${areaTR.toFixed(1)}%`;
-        legendValues.tl.textContent = `${areaTL.toFixed(1)}%`;
-        legendValues.br.textContent = `${areaBR.toFixed(1)}%`;
-        legendValues.bl.textContent = `${areaBL.toFixed(1)}%`;
+        legendValues.tr.textContent = `${Math.round(areaTR)}%`;
+        legendValues.tl.textContent = `${Math.round(areaTL)}%`;
+        legendValues.br.textContent = `${Math.round(areaBR)}%`;
+        legendValues.bl.textContent = `${Math.round(areaBL)}%`;
     }
 
     init();
