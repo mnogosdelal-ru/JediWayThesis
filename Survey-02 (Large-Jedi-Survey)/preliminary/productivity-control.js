@@ -113,7 +113,7 @@ class ProductivityControl {
                 <div class="pc-legend">
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tl"></span>
-                        <span>Рутина, шум, «убийство» времени</span>
+                        <span>Рутина, «убийство» времени</span>
                         <span class="pc-legend-value" id="pc-val-tl">0%</span>
                     </div>
                     <div class="pc-legend-item">
@@ -123,7 +123,7 @@ class ProductivityControl {
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-bl"></span>
-                        <span>Помогает избежать проблем</span>
+                        <span>Задачи для избегания проблем</span>
                         <span class="pc-legend-value" id="pc-val-bl">0%</span>
                     </div>
                     <div class="pc-legend-item">
