@@ -6,14 +6,22 @@
     <title>Контрол Продуктивности</title>
     <style>
         :root {
+            /* === Размеры === */
+            --matrix-size: 300px;        /* Размер матрицы (ширина и высота, квадрат) */
+            --v-labels-width: 40px;      /* Ширина контейнера вертикальных подписей слева */
+            --v-slider-width: 30px;      /* Ширина вертикального бегунка */
+            --h-slider-height: 25px;     /* Высота горизонтального бегунка с отступом */
+            --handle-size: 20px;         /* Размер кружка бегунка */
+
+            /* === Цвета === */
             --bg-color: #f8f9fa;
             --border-color: #dee2e6;
             --handle-color: #333;
-            --zone-top-right: #d1e7dd; /* Зеленый: Приближает к важным целям */
-            --zone-top-left: #e2e3e5;  /* Серый: Рутина, шум, «убийство» времени */
+            --zone-top-right: #a8e6cf;   /* Зеленый: Приближает к важным целям */
+            --zone-top-left: #e2e3e5;    /* Серый: Рутина, шум, «убийство» времени */
             --zone-bottom-right: #ffcba4; /* Оранжевый: «Через угрозы к целям» */
-            --zone-bottom-left: #f8d7da; /* Красный: Помогает избежать проблем */
-            --divider-color: #212529; /* Контрастный черный для линий */
+            --zone-bottom-left: #ffb3ba; /* Красный: Помогает избежать проблем */
+            --divider-color: #212529;
         }
 
         body {
@@ -40,9 +48,9 @@
         .labels-top {
             display: flex;
             justify-content: space-between;
-            width: 300px;
-            margin-left: 70px; /* Смещение для выравнивания с матрицей (40px подписи + 30px бегунок) */
-            font-size: 14px;
+            width: var(--matrix-size);
+            margin-left: calc(var(--v-labels-width) + var(--v-slider-width));
+            font-size: 12px;
             color: #495057;
             font-weight: 500;
             margin-bottom: 2px;
@@ -58,9 +66,9 @@
         /* Контейнер для вертикальных подписей (слева от матрицы) */
         .v-labels-container {
             position: relative;
-            width: 40px;
-            height: 300px;
-            margin-top: 25px; /* То же смещение, что и у вертикального бегунка */
+            width: var(--v-labels-width);
+            height: var(--matrix-size);
+            margin-top: var(--h-slider-height);
         }
 
         /* Вертикальные подписи (верхняя и нижняя часть) - неподвижные */
@@ -69,7 +77,7 @@
             left: 0;
             top: 0;
             height: 50%;
-            width: 40px;
+            width: var(--v-labels-width);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -80,7 +88,7 @@
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             color: #495057;
             font-weight: 500;
         }
@@ -90,7 +98,7 @@
             left: 0;
             top: 50%;
             height: 50%;
-            width: 40px;
+            width: var(--v-labels-width);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -101,7 +109,7 @@
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             color: #495057;
             font-weight: 500;
         }
@@ -109,12 +117,12 @@
         /* Контейнер для вертикального бегунка */
         .v-slider-container {
             position: relative;
-            width: 30px;
-            height: 300px;
+            width: var(--v-slider-width);
+            height: var(--matrix-size);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 25px; /* Смещение на высоту верхнего горизонтального бегунка (20px + 5px margin) */
+            margin-top: var(--h-slider-height);
         }
 
         /* Вертикальный слайдер - слева от матрицы */
@@ -149,8 +157,8 @@
             position: absolute;
             left: 50%;
             top: 50%;
-            width: 20px;
-            height: 20px;
+            width: var(--handle-size);
+            height: var(--handle-size);
             background: var(--handle-color);
             border: 2px solid #fff;
             border-radius: 50%;
@@ -170,8 +178,8 @@
         /* Контейнер квадрата */
         .matrix-container {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: var(--matrix-size);
+            height: var(--matrix-size);
             background-color: var(--bg-color);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -198,7 +206,7 @@
 
         .slider-h-track {
             position: relative;
-            width: 300px;
+            width: var(--matrix-size);
             height: 4px;
             background: rgba(0,0,0,0.2);
             border-radius: 2px;
@@ -207,8 +215,8 @@
         .slider-h-thumb {
             position: absolute;
             top: 50%;
-            width: 20px;
-            height: 20px;
+            width: var(--handle-size);
+            height: var(--handle-size);
             background: var(--handle-color);
             border: 2px solid #fff;
             border-radius: 50%;
@@ -230,7 +238,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 300px;
+            width: var(--matrix-size);
         }
 
         .legend-item {
@@ -370,6 +378,9 @@
         bl: document.getElementById('val-bl')
     };
 
+    // Размер матрицы (берём из CSS-переменной)
+    const matrixSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--matrix-size'));
+
     // Состояние (в процентах 0-100)
     let state = {
         vSplit: 50, // 0 = все сверху (избегание плохого), 100 = все снизу (можно отложить) - инвертируем логику для UI
@@ -418,11 +429,11 @@
             if (isVertical) {
                 // Вертикальный: Y координата
                 let y = e.clientY - rect.top;
-                val = (y / 300) * 100;
+                val = (y / matrixSize) * 100;
             } else {
                 // Горизонтальный: X координата
                 let x = e.clientX - rect.left;
-                val = (x / 300) * 100;
+                val = (x / matrixSize) * 100;
             }
 
             // Ограничения 0-100
