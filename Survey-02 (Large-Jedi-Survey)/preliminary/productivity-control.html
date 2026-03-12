@@ -8,6 +8,7 @@
         :root {
             /* === Размеры === */
             --matrix-size: 300px;        /* Размер матрицы (ширина и высота, квадрат) */
+            --v-title-width: 50px;       /* Ширина левой вертикальной надписи */
             --v-labels-width: 40px;      /* Ширина контейнера вертикальных подписей слева */
             --v-slider-width: 30px;      /* Ширина вертикального бегунка */
             --h-slider-height: 25px;     /* Высота горизонтального бегунка с отступом */
@@ -44,16 +45,31 @@
             padding: 20px;
         }
 
+        /* Общая надпись над горизонтальными подписями */
+        .h-title-top {
+            width: var(--matrix-size);
+            margin-left: calc(var(--v-title-width) + var(--v-labels-width) + var(--v-slider-width));
+            font-size: 12px;
+            color: #495057;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
         /* Подписи сверху (горизонтальные) */
         .labels-top {
             display: flex;
-            justify-content: space-between;
             width: var(--matrix-size);
-            margin-left: calc(var(--v-labels-width) + var(--v-slider-width));
+            margin-left: calc(var(--v-title-width) + var(--v-labels-width) + var(--v-slider-width));
             font-size: 12px;
             color: #495057;
             font-weight: 500;
             margin-bottom: 2px;
+        }
+
+        .labels-top span {
+            width: 50%;
+            text-align: center;
         }
 
         /* Основная обёртка: вертикальный слайдер + квадрат */
@@ -61,6 +77,26 @@
             display: flex;
             align-items: stretch;
             gap: 0;
+        }
+
+        /* Левая вертикальная надпись */
+        .v-title-container {
+            position: relative;
+            width: var(--v-title-width);
+            height: var(--matrix-size);
+            margin-top: var(--h-slider-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .v-title-container span {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-align: center;
+            font-size: 12px;
+            color: #495057;
+            font-weight: 500;
         }
 
         /* Контейнер для вертикальных подписей (слева от матрицы) */
@@ -91,6 +127,10 @@
             font-size: 12px;
             color: #495057;
             font-weight: 500;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .label-v-bottom {
@@ -112,6 +152,10 @@
             font-size: 12px;
             color: #495057;
             font-weight: 500;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Контейнер для вертикального бегунка */
@@ -277,6 +321,11 @@
 <div class="productivity-control">
     <h3>Распределите ваши задачи</h3>
 
+    <!-- Общая надпись над горизонтальными подписями -->
+    <div class="h-title-top">
+        <span>То, что я это сделал ...</span>
+    </div>
+
     <!-- Подписи сверху -->
     <div class="labels-top">
         <span>Не помогает целям</span>
@@ -285,6 +334,11 @@
 
     <!-- Основной layout: вертикальный слайдер + квадрат -->
     <div class="matrix-layout">
+        <!-- Левая вертикальная надпись -->
+        <div class="v-title-container">
+            <span>Если бы я это не сделал(а), то ...</span>
+        </div>
+
         <!-- Вертикальные подписи (неподвижные) -->
         <div class="v-labels-container">
             <div class="label-v-top">
