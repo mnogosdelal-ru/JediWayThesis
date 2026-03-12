@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProductivityControl — Пример использования</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 40px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        
+        .output {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #3498db;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h1>ProductivityControl — Пример использования</h1>
+    <p>
+    Вспомните что вы сделали <strong>в личной жизни</strong>. Двигая три бегунка постройте картину того, как распределялись ваши силы.
+    </p>
+    <p>
+        <strong>Вертикальный бегунок</strong> — это раздел обязательного и не обязательного:
+        <ul>
+            <li>Верхняя часть — то, что можно было как минимум отложить, а то и не делать вовсе,</li>
+            <li>Нижняя часть — то, что нельзя было отложить без неприятных последствий.</li>
+        </ul>
+    </p>
+    <p>
+        <strong>Горизонтальные бегунки</strong> — разделяет на части относительно влияния на достижение ваших долгосрочных целей:
+        <ul>
+            <li>Левая часть — это никак не помогает вам в достижении <strong>ваших личных целей</strong>,</li>
+            <li>Правая часть — выполнив эти задачи вы стали хотя бы чуточку ближе хотя бы к одной из <strong>ваших личных целей</strong>.
+                <br>Пусть даже вы не видите сиюминутного результата. И даже если вы не уверены на 100% в том, что эти задачи вас приблизят.</li>
+        </ul>
+    </p>
+    <br><br><br>
+    <div id="control-container"></div>
+    
+    <div class="output" id="output">
+        Значения: { tl: 0, tr: 0, bl: 0, br: 0 }
+    </div>
+    
+    <div class="buttons">
+        <button onclick="setEqual()">Разделить поровну</button>
+        <button onclick="setRandom()">Случайные значения</button>
+    </div>
+</div>
+
+<script src="productivity-control.js"></script>
+<script>
+    const output = document.getElementById('output');
+    
+    // Создаём виджет
+    const control = new ProductivityControl(
+        document.getElementById('control-container'),
+        {
+            size: 300,
+            onChange: (values) => {
+                output.textContent = `Значения: ${JSON.stringify(values)}`;
+            }
+        }
+    );
+
+    // Функции для кнопок
+    function setEqual() {
+        control.setValues({ tl: 25, tr: 25, bl: 25, br: 25 });
+    }
+
+    function setRandom() {
+        const rand = () => Math.floor(Math.random() * 100);
+        control.setValues({
+            tl: rand(),
+            tr: rand(),
+            bl: rand(),
+            br: rand()
+        });
+    }
+
+</script>
+
+</body>
+</html>
