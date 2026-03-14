@@ -3,10 +3,16 @@
  * 
  * Создаёт интерактивную матрицу с бегунками для распределения задач по категориям.
  * 
+ * Режимы работы (mode):
+ *   'standard'  - стандартный: тянешь бегунок вправо/вниз - граница движется туда же
+ *   'inverted'  - инвертированный: тянешь бегунок вправо - граница уходит влево
+ *   'horizontal' - все бегунки горизонтальные под матрицей
+ * 
  * Использование:
  *   const container = document.getElementById('my-container');
  *   const control = new ProductivityControl(container, {
  *     size: 300,
+ *     mode: 'standard',
  *     onChange: (values) => console.log(values)
  *   });
  * 
@@ -21,6 +27,7 @@ class ProductivityControl {
         this.container = container;
         this.options = {
             size: options.size || 300,
+            mode: options.mode || 'standard', // 'standard', 'inverted', 'horizontal'
             onChange: options.onChange || null,
             initialValues: options.initialValues || { vSplit: 50, hSplitTop: 50, hSplitBottom: 50 }
         };
@@ -41,6 +48,7 @@ class ProductivityControl {
      */
     render() {
         const size = this.options.size;
+        const mode = this.options.mode;
         
         // Инъекция стилей (только один раз)
         if (!document.getElementById('productivity-control-styles')) {
@@ -49,6 +57,20 @@ class ProductivityControl {
             style.textContent = this.getStyles();
             document.head.appendChild(style);
         }
+
+        // Выбираем шаблон в зависимости от режима
+        if (mode === 'horizontal') {
+            this.renderHorizontal();
+        } else {
+            this.renderStandard();
+        }
+    }
+
+    /**
+     * Стандартный/инвертированный режим: вертикальный бегунок слева
+     */
+    renderStandard() {
+        const size = this.options.size;
 
         // Основной контейнер
         this.container.innerHTML = `
@@ -140,6 +162,131 @@ class ProductivityControl {
         this.elements = {
             vSlider: this.container.querySelector('#pc-v-slider'),
             vHandle: this.container.querySelector('#pc-v-handle'),
+            hSliderTop: this.container.querySelector('#pc-h-slider-top'),
+            hThumbTop: this.container.querySelector('#pc-h-thumb-top'),
+            hSliderBottom: this.container.querySelector('#pc-h-slider-bottom'),
+            hThumbBottom: this.container.querySelector('#pc-h-thumb-bottom'),
+            matrix: this.container.querySelector('#pc-matrix'),
+            zones: {
+                tl: this.container.querySelector('#pc-zone-tl'),
+                tr: this.container.querySelector('#pc-zone-tr'),
+                bl: this.container.querySelector('#pc-zone-bl'),
+                br: this.container.querySelector('#pc-zone-br')
+            },
+            legendValues: {
+                tl: this.container.querySelector('#pc-val-tl'),
+                tr: this.container.querySelector('#pc-val-tr'),
+                bl: this.container.querySelector('#pc-val-bl'),
+                br: this.container.querySelector('#pc-val-br')
+            }
+        };
+    }
+
+    /**
+     * Горизонтальный режим: все бегунки под матрицей
+     */
+    renderHorizontal() {
+        const size = this.options.size;
+
+        // Основной контейнер
+        this.container.innerHTML = `
+            <div class="pc-widget pc-horizontal" style="--pc-size: ${size}px;">
+                <!-- Подписи сверху -->
+                <div class="pc-labels-top-h">
+                    <span>ни на что не повлияло</span>
+                    <span>приблизило меня к моим целям</span>
+                </div>
+
+                <!-- Матрица -->
+                <div class="pc-matrix-h">
+                    <!-- Подписи слева -->
+                    <div class="pc-v-labels-h">
+                        <div class="pc-v-label-h-top"><span>ничего бы не поменялось</span></div>
+                        <div class="pc-v-label-h-bottom"><span>произошло бы что-то плохое</span></div>
+                    </div>
+                    
+                    <!-- Матрица -->
+                    <div class="pc-matrix" id="pc-matrix">
+                        <div class="pc-zone pc-zone-tl" id="pc-zone-tl"></div>
+                        <div class="pc-zone pc-zone-tr" id="pc-zone-tr"></div>
+                        <div class="pc-zone pc-zone-bl" id="pc-zone-bl"></div>
+                        <div class="pc-zone pc-zone-br" id="pc-zone-br"></div>
+                    </div>
+                </div>
+
+                <!-- Горизонтальные бегунки под матрицей -->
+                <div class="pc-sliders-h">
+                    <div class="pc-slider-h-group">
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-top">← отложить было нельзя | было можно →</span>
+                        </div>
+                        <div class="pc-h-slider" id="pc-v-slider-h">
+                            <div class="pc-h-track">
+                                <div class="pc-h-thumb" id="pc-v-thumb-h"></div>
+                            </div>
+                        </div>
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-bottom">Горизонтальное разделение матрицы</span>
+                        </div>
+                    </div>
+                    <div class="pc-slider-h-group">
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-top">← приблизило к цели | не приблизило →</span>
+                        </div>
+                        <div class="pc-h-slider" id="pc-h-slider-top">
+                            <div class="pc-h-track">
+                                <div class="pc-h-thumb" id="pc-h-thumb-top"></div>
+                            </div>
+                        </div>
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-bottom">Верхняя часть матрицы</span>
+                        </div>
+                    </div>
+                    <div class="pc-slider-h-group">
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-top">← приблизило к цели | не приблиззило →</span>
+                        </div>
+                        <div class="pc-h-slider" id="pc-h-slider-bottom">
+                            <div class="pc-h-track">
+                                <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
+                            </div>
+                        </div>
+                        <div class="pc-slider-h-labels">
+                            <span class="pc-slider-h-label-bottom">Нижняя часть матрицы</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Легенда -->
+                <div class="pc-legend">
+                    <div class="pc-legend-item">
+                        <span class="pc-legend-color pc-color-tl"></span>
+                        <span>Рутина, «убийство» времени</span>
+                        <span class="pc-legend-value" id="pc-val-tl">0%</span>
+                    </div>
+                    <div class="pc-legend-item">
+                        <span class="pc-legend-color pc-color-tr"></span>
+                        <span>Приближает к важным целям</span>
+                        <span class="pc-legend-value" id="pc-val-tr">0%</span>
+                    </div>
+                    <div class="pc-legend-item">
+                        <span class="pc-legend-color pc-color-bl"></span>
+                        <span>Задачи для избегания проблем</span>
+                        <span class="pc-legend-value" id="pc-val-bl">0%</span>
+                    </div>
+                    <div class="pc-legend-item">
+                        <span class="pc-legend-color pc-color-br"></span>
+                        <span>«Через угрозы к целям»</span>
+                        <span class="pc-legend-value" id="pc-val-br">0%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Сохраняем ссылки на элементы
+        this.elements = {
+            vSlider: this.container.querySelector('#pc-v-slider-h'),
+            vHandle: this.container.querySelector('#pc-v-thumb-h'),
             hSliderTop: this.container.querySelector('#pc-h-slider-top'),
             hThumbTop: this.container.querySelector('#pc-h-thumb-top'),
             hSliderBottom: this.container.querySelector('#pc-h-slider-bottom'),
@@ -415,6 +562,122 @@ class ProductivityControl {
             .pc-dragging {
                 user-select: none;
             }
+
+            /* === Горизонтальный режим === */
+            .pc-horizontal .pc-labels-top-h {
+                display: flex;
+                width: var(--pc-size);
+                font-size: 12px;
+                color: #495057;
+                font-weight: 500;
+                margin-bottom: 5px;
+            }
+
+            .pc-horizontal .pc-labels-top-h span {
+                width: 50%;
+                text-align: center;
+            }
+
+            .pc-horizontal .pc-matrix-h {
+                display: flex;
+                align-items: stretch;
+            }
+
+            .pc-horizontal .pc-v-labels-h {
+                display: flex;
+                flex-direction: column;
+                width: 40px;
+            }
+
+            .pc-horizontal .pc-v-label-h-top,
+            .pc-horizontal .pc-v-label-h-bottom {
+                width: 40px;
+                height: calc(var(--pc-size) / 2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .pc-horizontal .pc-v-label-h-top span,
+            .pc-horizontal .pc-v-label-h-bottom span {
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                text-align: center;
+                font-size: 11px;
+                color: #495057;
+                font-weight: 500;
+            }
+
+            .pc-horizontal .pc-matrix {
+                border-radius: 8px;
+            }
+
+            .pc-horizontal .pc-sliders-h {
+                margin-top: 25px;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                width: var(--pc-size);
+            }
+
+            .pc-horizontal .pc-slider-h-group {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+
+            .pc-horizontal .pc-slider-h-labels {
+                display: flex;
+                justify-content: space-between;
+                padding: 0 5px;
+            }
+
+            .pc-horizontal .pc-slider-h-label-top {
+                width: 100%;
+                text-align: center;
+                font-size: 12px;
+                color: #495057;
+                font-weight: 500;
+            }
+
+            .pc-horizontal .pc-slider-h-label-bottom {
+                width: 100%;
+                text-align: center;
+                font-size: 11px;
+                color: #868e96;
+            }
+
+            .pc-horizontal .pc-h-slider {
+                position: relative;
+                width: 100%;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: ew-resize;
+            }
+
+            .pc-horizontal .pc-h-track {
+                position: relative;
+                width: 100%;
+                height: 6px;
+                background: rgba(0,0,0,0.15);
+                border-radius: 3px;
+            }
+
+            .pc-horizontal .pc-h-thumb {
+                position: absolute;
+                top: 50%;
+                width: 22px;
+                height: 22px;
+                background: #333;
+                border: 3px solid #fff;
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                pointer-events: none;
+            }
         `;
     }
 
@@ -422,20 +685,30 @@ class ProductivityControl {
      * Привязывает события
      */
     bindEvents() {
+        const mode = this.options.mode;
+        const inverted = mode === 'inverted';
+
+        // Вертикальный бегунок (или горизонтальный в режиме horizontal)
         this.setupDrag(this.elements.vSlider, (val) => {
-            this.state.vSplit = val;
+            // В инвертированном режиме: тянешь вверх → граница идёт вниз
+            this.state.vSplit = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, true, this.elements.vSlider);
+        }, this.options.mode === 'horizontal' ? false : true, 
+           this.options.mode === 'horizontal' ? this.elements.vSlider : this.elements.vSlider);
 
+        // Горизонтальный бегунок сверху
         this.setupDrag(this.elements.hSliderTop, (val) => {
-            this.state.hSplitTop = val;
+            // В инвертированном режиме: тянешь вправо → граница идёт влево
+            this.state.hSplitTop = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
         }, false, this.elements.matrix);
 
+        // Горизонтальный бегунок снизу
         this.setupDrag(this.elements.hSliderBottom, (val) => {
-            this.state.hSplitBottom = val;
+            // В инвертированном режиме: тянешь вправо → граница идёт влево
+            this.state.hSplitBottom = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
         }, false, this.elements.matrix);
@@ -495,11 +768,24 @@ class ProductivityControl {
     updateUI() {
         const { vSplit, hSplitTop, hSplitBottom } = this.state;
         const { vHandle, hThumbTop, hThumbBottom, zones, legendValues } = this.elements;
+        const mode = this.options.mode;
+        const inverted = mode === 'inverted';
 
-        // Позиции ручек
-        vHandle.style.top = `${vSplit}%`;
-        hThumbTop.style.left = `${hSplitTop}%`;
-        hThumbBottom.style.left = `${hSplitBottom}%`;
+        // Позиции ручек (в инвертированном режиме - инвертируем отображение)
+        const displayVSplit = inverted ? (100 - vSplit) : vSplit;
+        const displayHSplitTop = inverted ? (100 - hSplitTop) : hSplitTop;
+        const displayHSplitBottom = inverted ? (100 - hSplitBottom) : hSplitBottom;
+
+        if (mode === 'horizontal') {
+            // В горизонтальном режиме все бегунки горизонтальные
+            vHandle.style.left = `${vSplit}%`;
+            hThumbTop.style.left = `${hSplitTop}%`;
+            hThumbBottom.style.left = `${hSplitBottom}%`;
+        } else {
+            vHandle.style.top = `${displayVSplit}%`;
+            hThumbTop.style.left = `${displayHSplitTop}%`;
+            hThumbBottom.style.left = `${displayHSplitBottom}%`;
+        }
 
         // Размеры зон
         const topHeight = vSplit;
