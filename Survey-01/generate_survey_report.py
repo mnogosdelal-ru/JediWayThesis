@@ -13,15 +13,15 @@ from statsmodels.stats.multitest import multipletests
 
 # --- Настройки ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
-REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-#REPORT_DIR = ''
+#REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
+REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
 # Целевая шкала для корреляционного анализа (можно менять)
-# TARGET_SCALE = 'MIJS-2+'
+TARGET_SCALE = 'MIJS-2+'
 #TARGET_SCALE = 'MIJS-3+'
-TARGET_SCALE = 'single_item'
+#TARGET_SCALE = 'single_item'
 # TARGET_SCALE = 'MIJS-2'
 #TARGET_SCALE = 'MIJS'
 
@@ -88,6 +88,7 @@ def generate_report():
     COL_MAPPING = {
         1: 'age',
         2: 'gender',
+        3: 'cohort_raw',
         4: 'jedi_single_raw',
         5: 'mijs_q1',
         6: 'mijs_q2',
@@ -191,6 +192,13 @@ def generate_report():
     for col in numeric_cols:
         data[col] = pd.to_numeric(data[col], errors='coerce')
 
+    # Группировка когорт
+    def map_cohort(val):
+        if val in ['CORP_GRP', 'CORP_GRP_RMND']:
+            return 'Корпоративная'
+        return 'Другие'
+    data['cohort_group'] = data['cohort_raw'].apply(map_cohort)
+
     # Сохраняем полную версию для демографии (до dropna по шкалам)
     demo_data = data.copy()
     
@@ -258,6 +266,7 @@ def generate_report():
     report_content += f"![Удаленка](images/demo_remote.png)\n\n"
 
     # --- Раздел 2: Анализ используемых шкал ---
+    print("Анализ психометрики шкал...")
     report_content += hm.get_header(1, "Анализ используемых шкал") + "\n\n"
 
     QUESTION_TEXTS = {
@@ -281,6 +290,7 @@ def generate_report():
     summary_rows = []
 
     for scale_name, items in scales.items():
+        print(f"  Обработка шкалы: {scale_name}...")
         report_content += hm.get_header(2, f"Шкала: {scale_name}") + "\n\n"
         
         # Расчет суммарного балла (сумма)
@@ -389,8 +399,10 @@ def generate_report():
     report_content += "\n"
 
     # --- Раздел 3: Выбираем лучшие приемы и практики ---
+    print("Поиск лучших практик...")
     report_content += hm.get_header(1, "Выбираем лучшие приемы и практики") + "\n\n"
     # --- Раздел 3.1: Корреляционный анализ ---
+    print("  Выполнение корреляционного анализа...")
     report_content += hm.get_header(2, "Корреляционный анализ (ранговая корреляция)") + "\n\n"
     report_content += f"В данном разделе представлена связь различных практик с целевой шкалой **{TARGET_SCALE}**. "
     report_content += "Для анализа используется коэффициент ранговой корреляции Спирмена (ρ).\n\n"
@@ -448,6 +460,7 @@ def generate_report():
     report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале {TARGET_SCALE} (меньше стресса/завала).* \n\n"
 
     # --- Раздел 3.2: Сравнение средних (ANOVA) ---
+    print("  Выполнение дисперсионного анализа (ANOVA)...")
     report_content += hm.get_header(2, "Сравнение средних (ANOVA)") + "\n\n"
     report_content += "В данном разделе анализируется, как частота использования или уровень внедрения приема связаны со средним значением продуктивности. "
     report_content += "Для проверки значимости различий между группами используется однофакторный дисперсионный анализ (One-way ANOVA).\n\n"
@@ -536,6 +549,7 @@ def generate_report():
 
 
     # --- Раздел 3.3: Сравнение трёх групп продуктивности (Kruskal-Wallis + Dunn) ---
+    print("  Выполнение анализа Краскела-Уоллиса (Kruskal-Wallis)...")
     report_content += hm.get_header(2, "Сравнение трёх групп продуктивности (Kruskal-Wallis)") + "\n\n"
     report_content += "Респонденты разделены на три группы по терцилям (20-й и 80-й перцентили) суммарного балла продуктивности. "
     report_content += f"Низкая группа – наиболее продуктивные (низкие баллы {TARGET_SCALE}), высокая группа – наименее продуктивные (высокие баллы {TARGET_SCALE}). "
@@ -616,7 +630,9 @@ def generate_report():
         if sig_kw:
             # Ограничим число практик для детального анализа (например, первые 15)
             top_sig = sig_kw[:15]
-            for r in top_sig:
+            print(f"    Проведение попарных сравнений для {len(top_sig)} значимых практик...")
+            for idx, r in enumerate(top_sig, 1):
+                if idx % 5 == 0: print(f"      Прогресс: {idx}/{len(top_sig)}...")
                 feat = r['feat']
                 report_content += f"#### {r['label']}\n\n"
                 # Собираем данные по группам
@@ -745,6 +761,7 @@ def generate_report():
 
 
     # --- Раздел 4: Анализ шкалы, составленной из практик, одобренных большинством методов ---
+    print("Анализ консенсусной шкалы...")
     report_content += hm.get_header(1, "Анализ шкалы из практик, получивших наибольший консенсус") + "\n\n"
     report_content += "В этом разделе мы отбираем практики, которые вошли в топ‑15 хотя бы трёх из четырёх использованных методов "
     report_content += "(корреляционный анализ, ANOVA для частоты, критерий Краскела‑Уоллиса). "
@@ -989,11 +1006,160 @@ def generate_report():
                 plt.ylabel('Частота')
                 plot_filename = f"subscale_{factor_num}_hist.png"
                 save_plot(plot_filename)
-                report_content += f"![Гистограмма](images/{plot_filename})\n\n"
+                report_content += f"![Гистограмма](images/{plot_filename})\n\n"    
 
+    # --- Раздел 5: Гендерные различия в использовании практик и продуктивности ---
+    print("Анализ гендерных различий...")
+    report_content += hm.get_header(1, "Гендерные различия в использовании практик и продуктивности") + "\n\n"
+    report_content += "В данном разделе анализируется, есть ли статистически значимые различия в частоте использования практик и баллах по целевой шкале между мужчинами и женщинами. "
+    report_content += "Для анализа используется критерий Манна-Уитни (U-тест), так как частота использования является порядковой переменной.\n\n"
 
+    # Определяем метки пола (берем два наиболее частых значения)
+    gender_counts = demo_data['gender'].value_counts()
+    if len(gender_counts) >= 2:
+        g1_label, g2_label = gender_counts.index[0], gender_counts.index[1]
+        report_content += f"Сравнение проводится между группами: **{g1_label}** (n={gender_counts[g1_label]}) и **{g2_label}** (n={gender_counts[g2_label]}).\n\n"
 
+        # --- Сравнение по целевой шкале ---
+        report_content += hm.get_header(2, f"Сравнение по целевой шкале {TARGET_SCALE}") + "\n\n"
+        target_col = TARGET_SCALE + '_total'
+        g1_target = data_scales[data_scales['gender'] == g1_label][target_col].dropna()
+        g2_target = data_scales[data_scales['gender'] == g2_label][target_col].dropna()
+        
+        if len(g1_target) >= 5 and len(g2_target) >= 5:
+            u_stat, p_val = mannwhitneyu(g1_target, g2_target, alternative='two-sided')
+            mean_g1 = g1_target.mean()
+            mean_g2 = g2_target.mean()
+            report_content += f"- **Средний балл ({g1_label}):** {mean_g1:.2f}\n"
+            report_content += f"- **Средний балл ({g2_label}):** {mean_g2:.2f}\n"
+            report_content += f"- **U-статистика:** {u_stat:.1f}, **p-value:** {p_val:.4f}\n\n"
+            if p_val < 0.05:
+                # Определяем направление (меньший балл - лучше)
+                group_better = g1_label if mean_g1 < mean_g2 else g2_label
+                report_content += f"**Выявлены статистически значимые различия.** В среднем баллы группы «{group_better}» ниже (что означает более высокую продуктивность в контексте {TARGET_SCALE}).\n\n"
+            else:
+                report_content += f"**Статистически значимых различий** по шкале {TARGET_SCALE} между группами **не выявлено**.\n\n"
+        else:
+            report_content += "Недостаточно данных для сравнения по целевой шкале.\n\n"
 
+        # --- Сравнение по практикам ---
+        report_content += hm.get_header(2, "Сравнение частоты использования отдельных практик") + "\n\n"
+
+        gender_diff_results = []
+        for feat in prac_cols:
+            g1_vals = data_scales[data_scales['gender'] == g1_label][feat].dropna()
+            g2_vals = data_scales[data_scales['gender'] == g2_label][feat].dropna()
+
+            if len(g1_vals) >= 5 and len(g2_vals) >= 5:
+                u_stat, p_val = mannwhitneyu(g1_vals, g2_vals, alternative='two-sided')
+                mean_g1 = g1_vals.mean()
+                mean_g2 = g2_vals.mean()
+                
+                gender_diff_results.append({
+                    'Label': FEATURE_LABELS.get(feat, feat),
+                    'Mean1': mean_g1,
+                    'Mean2': mean_g2,
+                    'U': u_stat,
+                    'PVal': p_val
+                })
+
+        if gender_diff_results:
+            # Коррекция p-значений
+            p_vals_g = [r['PVal'] for r in gender_diff_results]
+            reject_g, p_adj_g, _, _ = multipletests(p_vals_g, method='fdr_bh')
+            for i, r in enumerate(gender_diff_results):
+                r['PVal_adj'] = p_adj_g[i]
+                sig = "****" if p_adj_g[i] < 0.0001 else "***" if p_adj_g[i] < 0.001 else "**" if p_adj_g[i] < 0.01 else "*" if p_adj_g[i] < 0.05 else ""
+                r['Sig'] = sig
+
+            # Сортировка по p-value (возрастанию)
+            gender_diff_results.sort(key=lambda x: x['PVal'])
+
+            report_content += f"| № | Практика | Среднее ({g1_label}) | Среднее ({g2_label}) | U | p‑value | p‑value (adj) | Знач. |\n"
+            report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+            for i, res in enumerate(gender_diff_results, 1):
+                report_content += f"| {i} | {res['Label']} | {res['Mean1']:.2f} | {res['Mean2']:.2f} | {res['U']:.1f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
+            report_content += "\n*Примечание: 0 — никогда/редко, 4 — всегда. Практики отсортированы по возрастанию p-value (от наиболее значимых различий к наименее).*\n\n"
+        else:
+            report_content += "Недостаточно данных для анализа различий.\n\n"
+    else:
+        report_content += "В выборке представлен только один пол или данных недостаточно.\n\n"
+
+    # --- Раздел 6: Различия между когортами (Корпоративные vs Другие) ---
+    print("Анализ различий между когортами...")
+    report_content += hm.get_header(1, "Различия между когортами") + "\n\n"
+    report_content += "Респонденты были разделены на две группы: **Корпоративная** (когорты CORP_GRP и CORP_GRP_RMND) и **Другие** (все остальные). "
+    report_content += "В данном разделе сравниваются показатели между этими двумя группами.\n\n"
+
+    cohort_counts = data_scales['cohort_group'].value_counts()
+    if len(cohort_counts) >= 2:
+        c1_label = 'Корпоративная'
+        c2_label = 'Другие'
+        report_content += f"Сравнение проводится между группами: **{c1_label}** (n={cohort_counts.get(c1_label, 0)}) и **{c2_label}** (n={cohort_counts.get(c2_label, 0)}).\n\n"
+
+        # --- Сравнение по целевой шкале ---
+        report_content += hm.get_header(2, f"Сравнение по целевой шкале {TARGET_SCALE}") + "\n\n"
+        target_col = TARGET_SCALE + '_total'
+        c1_target = data_scales[data_scales['cohort_group'] == c1_label][target_col].dropna()
+        c2_target = data_scales[data_scales['cohort_group'] == c2_label][target_col].dropna()
+        
+        if len(c1_target) >= 5 and len(c2_target) >= 5:
+            u_stat, p_val = mannwhitneyu(c1_target, c2_target, alternative='two-sided')
+            mean_c1 = c1_target.mean()
+            mean_c2 = c2_target.mean()
+            report_content += f"- **Средний балл ({c1_label}):** {mean_c1:.2f}\n"
+            report_content += f"- **Средний балл ({c2_label}):** {mean_c2:.2f}\n"
+            report_content += f"- **U-статистика:** {u_stat:.1f}, **p-value:** {p_val:.4f}\n\n"
+            if p_val < 0.05:
+                group_better = c1_label if mean_c1 < mean_c2 else c2_label
+                report_content += f"**Выявлены статистически значимые различия.** В среднем баллы группы «{group_better}» ниже (что означает более высокую продуктивность).\n\n"
+            else:
+                report_content += f"**Статистически значимых различий** по шкале {TARGET_SCALE} между когортами **не выявлено**.\n\n"
+        else:
+            report_content += "Недостаточно данных для сравнения когорт по целевой шкале.\n\n"
+
+        # --- Сравнение по практикам ---
+        report_content += hm.get_header(2, "Сравнение частоты использования отдельных практик") + "\n\n"
+
+        cohort_diff_results = []
+        for feat in prac_cols:
+            c1_vals = data_scales[data_scales['cohort_group'] == c1_label][feat].dropna()
+            c2_vals = data_scales[data_scales['cohort_group'] == c2_label][feat].dropna()
+
+            if len(c1_vals) >= 5 and len(c2_vals) >= 5:
+                u_stat, p_val = mannwhitneyu(c1_vals, c2_vals, alternative='two-sided')
+                mean_c1 = c1_vals.mean()
+                mean_c2 = c2_vals.mean()
+                
+                cohort_diff_results.append({
+                    'Label': FEATURE_LABELS.get(feat, feat),
+                    'Mean1': mean_c1,
+                    'Mean2': mean_c2,
+                    'U': u_stat,
+                    'PVal': p_val
+                })
+
+        if cohort_diff_results:
+            p_vals_c = [r['PVal'] for r in cohort_diff_results]
+            reject_c, p_adj_c, _, _ = multipletests(p_vals_c, method='fdr_bh')
+            for i, r in enumerate(cohort_diff_results):
+                r['PVal_adj'] = p_adj_c[i]
+                sig = "****" if p_adj_c[i] < 0.0001 else "***" if p_adj_c[i] < 0.001 else "**" if p_adj_c[i] < 0.01 else "*" if p_adj_c[i] < 0.05 else ""
+                r['Sig'] = sig
+
+            cohort_diff_results.sort(key=lambda x: x['PVal'])
+
+            report_content += f"| № | Практика | Среднее ({c1_label}) | Среднее ({c2_label}) | U | p‑value | p‑value (adj) | Знач. |\n"
+            report_content += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+            for i, res in enumerate(cohort_diff_results, 1):
+                report_content += f"| {i} | {res['Label']} | {res['Mean1']:.2f} | {res['Mean2']:.2f} | {res['U']:.1f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
+            report_content += "\n*Примечание: 0 — никогда/редко, 4 — всегда. Практики отсортированы по возрастанию p-value.*\n\n"
+        else:
+            report_content += "Недостаточно данных для анализа различий между когортами.\n\n"
+    else:
+        report_content += "Для анализа когорт требуется наличие хотя бы двух групп.\n\n"
+
+    # --- Сохранение отчета ---
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(report_content)
     

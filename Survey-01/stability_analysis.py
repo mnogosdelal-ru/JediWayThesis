@@ -14,12 +14,23 @@ import textwrap
 
 # --- Настройки (из основного скрипта) ---
 INPUT_FILE = 'Большое исследование джедайских приемов (Responses).csv'
-#REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
-#IMAGES_DIR = REPORT_DIR + 'images'
 REPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+#REPORT_DIR = 'C:\\Users\\maxim\\OneDrive\\Obsidian\\MyBrain\\Мои исследования\\Джедайская шкала\\'
 IMAGES_DIR = os.path.join(REPORT_DIR, 'images')
 ROBUSTNESS_REPORT = os.path.join(REPORT_DIR, 'robustness_report.md')
-TARGET_SCALE = 'single_item'
+
+# Целевая шкала для анализа (можно менять)
+# Доступные: 'MIJS-2+', 'MIJS-3+', 'single_item', 'MIJS-2', 'MIJS'
+TARGET_SCALE = 'MIJS-2+'
+
+# Определения составов шкал
+SCALES = {
+    "MIJS": ['mijs_q1', 'mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q5', 'mijs_q6'],
+    "MIJS-2": ['mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q6'],
+    "MIJS-2+": ['mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q6', 'jedi_inv'],
+    "MIJS-3+": ['mijs_q2', 'mijs_q4', 'mijs_q6', 'jedi_inv'],
+    "single_item": ['jedi_inv']
+}
 
 # Настройки симуляции
 N_ITERATIONS = 1000 # Установлено 10 для отладки
@@ -61,7 +72,8 @@ def load_and_preprocess():
     df = pd.read_csv(INPUT_FILE)
     
     COL_MAPPING = {
-        1: 'age', 4: 'jedi_single_raw',
+        1: 'age', 2: 'gender', 4: 'jedi_single_raw',
+        5: 'mijs_q1', 6: 'mijs_q2', 7: 'mijs_q3', 8: 'mijs_q4', 9: 'mijs_q5', 10: 'mijs_q6',
         11: 'prac_screen_bed', 12: 'prac_two_min_nothing', 13: 'prac_unload_memory',
         14: 'prac_separate_tasks', 15: 'prac_only_listed', 16: 'prac_monkey_style',
         17: 'prac_later_list', 18: 'prac_silence_blocks', 19: 'prac_morning_no_phone',
@@ -115,16 +127,26 @@ def load_and_preprocess():
     data['jedi_single'] = data['jedi_single_raw'].apply(map_jedi)
     data['jedi_inv'] = 6 - data['jedi_single']
     
+    # Пункты MIJS (убеждаемся, что они числовые)
+    mijs_items = ['mijs_q1', 'mijs_q2', 'mijs_q3', 'mijs_q4', 'mijs_q5', 'mijs_q6']
+    for col in mijs_items:
+        data[col] = pd.to_numeric(data[col], errors='coerce')
+
     prac_cols = [c for c in data.columns if c.startswith('prac_')]
     for col in prac_cols: data[col] = data[col].apply(map_frequency)
     
     setup_cols = [c for c in data.columns if c.startswith('setup_')]
     for col in setup_cols: data[col] = data[col].apply(map_implementation)
 
-    data['single_item_total'] = data['jedi_inv'] # Наша целевая шкала
+    # Расчет целевой шкалы
+    if TARGET_SCALE not in SCALES:
+        raise ValueError(f"Unknown TARGET_SCALE: {TARGET_SCALE}. Available: {list(SCALES.keys())}")
     
-    # Очистка
-    data = data.dropna(subset=['jedi_single']).copy()
+    target_items = SCALES[TARGET_SCALE]
+    data[TARGET_SCALE + '_total'] = data[target_items].sum(axis=1)
+    
+    # Очистка (по пунктам выбранной шкалы)
+    data = data.dropna(subset=target_items).copy()
     
     # Метки для отчета
     FEATURE_LABELS = {name: df.columns[i] for i, name in COL_MAPPING.items()}
@@ -238,6 +260,7 @@ def run_stability_analysis():
     with open(ROBUSTNESS_REPORT, 'w', encoding='utf-8') as f:
         f.write("# Анализ устойчивости (Stability Selection)\n\n")
         f.write(f"Параметры: {N_ITERATIONS} итераций, подвыборка {SAMPLE_SIZE} человек (~80%).\n")
+        f.write(f"Целевая шкала: {TARGET_SCALE}\n")
         f.write(f"Stability Score показывает, в каком проценте случаев практика попадала в 'Топ-15 консенсуса' в {CONSENSUS_THRESHOLD} из 3 алгоритмов при случайных изменениях в выборке.\n\n")
 
         f.write("![Stability Selection Graph](images/stability_selection.png)\n\n")
@@ -284,7 +307,7 @@ def run_stability_analysis():
             
             # Валидность
             total_core = core_data.mean(axis=1)
-            target = data.loc[core_data.index, 'single_item_total']
+            target = data.loc[core_data.index, TARGET_SCALE + '_total']
             r_pears, _ = pearsonr(total_core, target)
             r_spear, _ = spearmanr(total_core, target)
             f.write(f"- **Корреляция с целевой шкалой (Pearson r):** {r_pears:.3f}\n")
@@ -297,13 +320,27 @@ def run_stability_analysis():
             f.write(f"- **KMO:** {kmo:.3f}\n")
             f.write(f"- **Тест Бартлетта:** p={pval:.4f}\n\n")
             
-            fa = FactorAnalyzer(n_factors=1, rotation=None)
+            # Определяем количество факторов по Кайзеру (EV > 1)
+            fa_init = FactorAnalyzer(n_factors=1, rotation=None)
+            fa_init.fit(core_data)
+            ev, _ = fa_init.get_eigenvalues()
+            n_factors = sum(ev > 1)
+            if n_factors < 1: n_factors = 1
+
+            # Ре-ран с нужным количеством факторов
+            # Если фактор один - без ротации, если больше - с varimax для удобства интерпретации
+            fa = FactorAnalyzer(n_factors=n_factors, rotation='varimax' if n_factors > 1 else None)
             fa.fit(core_data)
-            ev, _ = fa.get_eigenvalues()
-            loadings = fa.loadings_.flatten()
-            var = fa.get_factor_variance()[1][0] * 100
+            loadings = fa.loadings_
+            var_info = fa.get_factor_variance()
             
-            f.write(f"**Дисперсия, объясненная фактором (EFA):** {var:.1f}%\n")
+            if n_factors == 1:
+                f.write(f"**Дисперсия, объясненная фактором (EFA):** {var_info[1][0]*100:.1f}%\n")
+            else:
+                total_var = var_info[2][-1] * 100
+                f.write(f"**Количество выделенных факторов (EV > 1):** {n_factors}\n")
+                f.write(f"**Суммарная объясненная дисперсия (EFA, {n_factors} факт.):** {total_var:.1f}%\n")
+            
             f.write(f"**Собственные числа (Eigenvalues) и полная дисперсия (PCA):**\n\n")
             
             f.write("| Фактор | Собств. число | % Полной дисперсии |\n")
@@ -314,11 +351,54 @@ def run_stability_analysis():
                 f.write(f"| {i+1} | {val:.3f} | {var_pct:.1f}% |\n")
             f.write("\n")
             
-            f.write("| Практика | Нагрузка (1 фактор) |\n")
-            f.write("| :--- | :---: |\n")
+            headers = ["Практика"] + [f"Фактор {j+1}" for j in range(n_factors)]
+            header_row = "| " + " | ".join(headers) + " |"
+            sep_row = "| :--- | " + " | ".join([":---:" for _ in range(n_factors)]) + " |"
+            f.write(header_row + "\n")
+            f.write(sep_row + "\n")
+            
             for i, feat in enumerate(core_feats):
                 label = FEATURE_LABELS.get(feat, feat)
-                f.write(f"| {label} | {loadings[i]:.3f} |\n")
+                lds = loadings[i]
+                if n_factors == 1:
+                    lds_str = f"{lds[0]:.3f}"
+                else:
+                    lds_str = " | ".join([f"{l:.3f}" for l in lds])
+                f.write(f"| {label} | {lds_str} |\n")
+            
+            # --- Сравнение Ядра с Целевой шкалой ---
+            print("Валидация ядра (Ядро vs Целевая шкала)...")
+            target_col = TARGET_SCALE + '_total'
+            # Оцениваем предсказательную силу через линейную регрессию
+            # Обучаем простую модель: Целевая шкала ~ Среднее по Ядру
+            from sklearn.linear_model import LinearRegression
+            from sklearn.metrics import r2_score
+            
+            X = total_core.values.reshape(-1, 1)
+            y = target.values
+            
+            reg = LinearRegression().fit(X, y)
+            y_pred = reg.predict(X)
+            r2 = r2_score(y, y_pred)
+            
+            f.write("\n### Прогностическая ценность 'Ядра'\n\n")
+            f.write(f"Оценка связи между средним баллом по практикам 'Ядра' и целевой шкалой {TARGET_SCALE}.\n\n")
+            f.write(f"- **Коэффициент детерминации (R²):** {r2:.3f}\n")
+            f.write(f"- **Интерпретация:** Ядро практик объясняет **{r2*100:.1f}%** дисперсии целевой шкалы.\n\n")
+            
+            f.write("![Core vs Target](images/core_vs_target.png)\n\n")
+            
+            # Построение графика
+            plt.figure(figsize=(10, 6))
+            sns.regplot(x=total_core, y=target, scatter_kws={'alpha':0.5}, line_kws={'color':'red'})
+            plt.title(f"Связь Ядра практик и целевой шкалы {TARGET_SCALE} (R² = {r2:.3f})")
+            plt.xlabel("Средний балл по практикам Ядра")
+            plt.ylabel(f"Суммарный балл по шкале {TARGET_SCALE}")
+            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.tight_layout()
+            core_plot_path = os.path.join(IMAGES_DIR, "core_vs_target.png")
+            plt.savefig(core_plot_path)
+            plt.close()
     
     print("Готово!")
 
