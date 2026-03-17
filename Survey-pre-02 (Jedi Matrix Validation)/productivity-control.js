@@ -77,8 +77,8 @@ class ProductivityControl {
             <div class="pc-widget" style="--pc-size: ${size}px;">
                 <!-- Подписи сверху -->
                 <div class="pc-labels-top">
-                    <span>ни на что не повлияло</span>
                     <span>приблизило меня к моим целям</span>
+                    <span>ни на что не повлияло</span>
                 </div>
 
                 <!-- Основной layout -->
@@ -128,8 +128,8 @@ class ProductivityControl {
 
                 <!-- Подписи снизу -->
                 <div class="pc-labels-bottom">
-                    <span>ни на что не повлияло</span>
                     <span>приблизило меня к моим целям</span>
+                    <span>ни на что не повлияло</span>
                 </div>
 
                 <!-- Легенда -->
@@ -193,8 +193,8 @@ class ProductivityControl {
             <div class="pc-widget pc-horizontal" style="--pc-size: ${size}px;">
                 <!-- Подписи сверху -->
                 <div class="pc-labels-top-h">
-                    <span>ни на что не повлияло</span>
                     <span>приблизило меня к моим целям</span>
+                    <span>ни на что не повлияло</span>
                 </div>
 
                 <!-- Матрица -->
@@ -215,45 +215,43 @@ class ProductivityControl {
                 </div>
 
                 <!-- Горизонтальные бегунки под матрицей -->
-                <div class="pc-sliders-h">
-                    <div class="pc-slider-h-group">
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-top">← Больше срочного | Больше не срочного →</span>
-                        </div>
-                        <div class="pc-h-slider" id="pc-v-slider-h">
-                            <div class="pc-h-track">
-                                <div class="pc-h-thumb" id="pc-v-thumb-h"></div>
-                            </div>
-                        </div>
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-bottom">Горизонтальное разделение матрицы</span>
+                <div class="pc-slider-h-container">
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-top">← Больше срочного | Больше не срочного →</span>
+                    </div>
+                    <div class="pc-h-slider" id="pc-v-slider-h">
+                        <div class="pc-h-track">
+                            <div class="pc-h-thumb" id="pc-v-thumb-h"></div>
                         </div>
                     </div>
-                    <div class="pc-slider-h-group">
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-top">← Приблизило к цели | не приблизило →</span>
-                        </div>
-                        <div class="pc-h-slider" id="pc-h-slider-top">
-                            <div class="pc-h-track">
-                                <div class="pc-h-thumb" id="pc-h-thumb-top"></div>
-                            </div>
-                        </div>
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-bottom">Не срочные задачи</span>
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-bottom">Горизонтальное разделение матрицы</span>
+                    </div>
+                </div>
+                <div class="pc-slider-h-container">
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-top">← Меньше важного | Больше важного →</span>
+                    </div>
+                    <div class="pc-h-slider" id="pc-h-slider-top">
+                        <div class="pc-h-track">
+                            <div class="pc-h-thumb" id="pc-h-thumb-top"></div>
                         </div>
                     </div>
-                    <div class="pc-slider-h-group">
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-top">← приблизило к цели | не приблиззило →</span>
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-bottom">Не срочные задачи</span>
+                    </div>
+                </div>
+                <div class="pc-slider-h-container">
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-top">← Меньше важного | Больше важного →</span>
+                    </div>
+                    <div class="pc-h-slider" id="pc-h-slider-bottom">
+                        <div class="pc-h-track">
+                            <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
                         </div>
-                        <div class="pc-h-slider" id="pc-h-slider-bottom">
-                            <div class="pc-h-track">
-                                <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
-                            </div>
-                        </div>
-                        <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-bottom">Срочные задачи</span>
-                        </div>
+                    </div>
+                    <div class="pc-slider-h-labels">
+                        <span class="pc-slider-h-label-bottom">Срочные задачи</span>
                     </div>
                 </div>
 
@@ -612,19 +610,22 @@ class ProductivityControl {
                 border-radius: 8px;
             }
 
-            .pc-horizontal .pc-sliders-h {
-                margin-top: 25px;
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-                width: var(--pc-size);
-            }
-
-            .pc-horizontal .pc-slider-h-group {
+            .pc-horizontal .pc-slider-h-container {
+                margin-top: 20px;
                 display: flex;
                 flex-direction: column;
                 align-items: stretch;
                 gap: 4px;
+                padding: 12px;
+                background: #fff;
+                border-radius: 6px;
+                border: 1px solid #e0e0e0;
+                width: var(--pc-size);
+                box-sizing: border-box;
+            }
+
+            .pc-horizontal .pc-slider-h-container:first-child {
+                margin-top: 25px;
             }
 
             .pc-horizontal .pc-slider-h-labels {
@@ -636,9 +637,10 @@ class ProductivityControl {
             .pc-horizontal .pc-slider-h-label-top {
                 width: 100%;
                 text-align: center;
-                font-size: 12px;
+                font-size: 11px;
                 color: #495057;
                 font-weight: 500;
+                white-space: nowrap;
             }
 
             .pc-horizontal .pc-slider-h-label-bottom {
@@ -789,20 +791,20 @@ class ProductivityControl {
             hThumbBottom.style.left = `${displayHSplitBottom}%`;
         }
 
-        // Размеры зон
+        // Размеры зон (инвертировано: важное справа, неважное слева)
         const topHeight = vSplit;
         const bottomHeight = 100 - vSplit;
 
-        zones.tl.style.cssText = `top: 0; height: ${topHeight}%; left: 0; width: ${hSplitTop}%;`;
-        zones.tr.style.cssText = `top: 0; height: ${topHeight}%; left: ${hSplitTop}%; width: ${100 - hSplitTop}%;`;
-        zones.bl.style.cssText = `top: ${topHeight}%; height: ${bottomHeight}%; left: 0; width: ${hSplitBottom}%;`;
-        zones.br.style.cssText = `top: ${topHeight}%; height: ${bottomHeight}%; left: ${hSplitBottom}%; width: ${100 - hSplitBottom}%;`;
+        zones.tr.style.cssText = `top: 0; height: ${topHeight}%; left: 0; width: ${hSplitTop}%;`;
+        zones.tl.style.cssText = `top: 0; height: ${topHeight}%; left: ${hSplitTop}%; width: ${100 - hSplitTop}%;`;
+        zones.br.style.cssText = `top: ${topHeight}%; height: ${bottomHeight}%; left: 0; width: ${hSplitBottom}%;`;
+        zones.bl.style.cssText = `top: ${topHeight}%; height: ${bottomHeight}%; left: ${hSplitBottom}%; width: ${100 - hSplitBottom}%;`;
 
-        // Значения в легенде
-        const areaTL = (topHeight / 100) * (hSplitTop / 100) * 100;
-        const areaTR = (topHeight / 100) * ((100 - hSplitTop) / 100) * 100;
-        const areaBL = (bottomHeight / 100) * (hSplitBottom / 100) * 100;
-        const areaBR = (bottomHeight / 100) * ((100 - hSplitBottom) / 100) * 100;
+        // Значения в легенде (инвертировано)
+        const areaTR = (topHeight / 100) * (hSplitTop / 100) * 100;
+        const areaTL = (topHeight / 100) * ((100 - hSplitTop) / 100) * 100;
+        const areaBR = (bottomHeight / 100) * (hSplitBottom / 100) * 100;
+        const areaBL = (bottomHeight / 100) * ((100 - hSplitBottom) / 100) * 100;
 
         legendValues.tl.textContent = `${Math.round(areaTL)}%`;
         legendValues.tr.textContent = `${Math.round(areaTR)}%`;
@@ -829,10 +831,10 @@ class ProductivityControl {
         const bottomHeight = 100 - vSplit;
 
         return {
-            tl: Math.round((topHeight / 100) * (hSplitTop / 100) * 100),
-            tr: Math.round((topHeight / 100) * ((100 - hSplitTop) / 100) * 100),
-            bl: Math.round((bottomHeight / 100) * (hSplitBottom / 100) * 100),
-            br: Math.round((bottomHeight / 100) * ((100 - hSplitBottom) / 100) * 100)
+            tl: Math.round((topHeight / 100) * ((100 - hSplitTop) / 100) * 100),
+            tr: Math.round((topHeight / 100) * (hSplitTop / 100) * 100),
+            bl: Math.round((bottomHeight / 100) * ((100 - hSplitBottom) / 100) * 100),
+            br: Math.round((bottomHeight / 100) * (hSplitBottom / 100) * 100)
         };
     }
 
@@ -853,8 +855,9 @@ class ProductivityControl {
         if (total === 0) return;
 
         this.state.vSplit = (topSum / total) * 100;
-        this.state.hSplitTop = topSum > 0 ? (tl / topSum) * 100 : 50;
-        this.state.hSplitBottom = bottomSum > 0 ? (bl / bottomSum) * 100 : 50;
+        // hSplit контролирует левую (важную) часть: tr и br
+        this.state.hSplitTop = topSum > 0 ? (tr / topSum) * 100 : 50;
+        this.state.hSplitBottom = bottomSum > 0 ? (br / bottomSum) * 100 : 50;
 
         this.updateUI();
         this.emitChange();
