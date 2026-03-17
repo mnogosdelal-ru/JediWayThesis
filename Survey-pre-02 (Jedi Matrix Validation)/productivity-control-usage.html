@@ -42,16 +42,7 @@
             display: inline-block;
             margin-bottom: 30px;
         }
-        
-        .output {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-        
+
         .buttons {
             margin-top: 15px;
             display: flex;
@@ -72,22 +63,6 @@
             background: #2980b9;
         }
 
-        .instructions {
-            max-width: 600px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .instructions ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-
-        .instructions li {
-            margin: 5px 0;
-        }
-
         .variants-grid {
             display: flex;
             flex-wrap: wrap;
@@ -102,77 +77,80 @@
 <body>
 
 <h1>ProductivityControl — Тестирование вариантов</h1>
-<p class="description">Цель: определить, какой вариант управления интуитивнее для респондентов</p>
 
 <div class="variants-grid">
 
     <!-- Вариант 1: Стандартный -->
     <div class="variant">
-        <h2>Вариант 1: Стандартный</h2>
-        <p class="description">Тянешь бегунок вправо/вниз → граница движется туда же</p>
-        
+        <h2>Ретроспектива личных задач</h2>
+        <div class="description" style="max-width: 600px; margin-bottom: 30px; font-size: 14px; line-height: 1.6;">
+            <p>Перед тем, как ответить на следующие вопросы, подумайте:</p>
+            <ol>
+                <li>Какие цели (среднесрочные и долгосрочные) в личной жизни перед вами стоят?</li>
+                <li>Какие задачи (связанные с целями или нет - не важно) за последние 2 недели в личной жизни вы выполнили? Из того, что вы сделали, что было:
+                    <ul>
+                       <li><strong>Важным</strong>. Важной мы будем называть задачу, выполнение которой было необходимо вам для приближения к любой из ваших целей.</li>
+                       <li><strong>Срочным</strong>. Срочным мы будем называть задачу, которую нельзя было отложить без негативных последствий.</li>
+                    </ul>
+                </li>
+            </ol>
+
+            Не торопитесь. Если надо, то возьмите лист бумаги и отдельно выпишите на нем свои цели и выполненные за последние 2 недели задачи.
+
+            <p>При помощи ползунков ниже покажите, сколько своего ресурса (времени, мыслетоплива) вы потратили на каждую из этих категорий:</p>
+            <p><strong>Вертикальный бегунок</strong> — раздел срочного и не срочного:</p>
+            <ul>
+                <li>Верхняя часть — то, что можно было и отложить хотя бы на 2 дня без каких-либо негативных последствий,</li>
+                <li>Нижняя часть — то, что нельзя было отложить без негативных последствий.</li>
+            </ul>
+            <p><strong>Горизонтальные ползунки</strong> — влияние на ваши цели:</p>
+            <ul>
+                <li>Левая часть — никак не приблизило вас ни к одной из ваших целей,</li>
+                <li>Правая часть — приблизило вас хотя бы к одной из ваших целей.</li>
+            </ul>
+        </div>
+
         <div class="container">
-            <div class="instructions">
-                <p>Вспомните, что вы сделали <strong>в личной жизни</strong>. Двигая три бегунка, постройте картину того, как распределялись ваши силы.</p>
-                <p><strong>Вертикальный бегунок</strong> — раздел обязательного и не обязательного:</p>
-                <ul>
-                    <li>Верхняя часть — то, что можно было отложить,</li>
-                    <li>Нижняя часть — то, что нельзя было отложить без неприятных последствий.</li>
-                </ul>
-                <p><strong>Горизонтальные бегунки</strong> — влияние на ваши цели:</p>
-                <ul>
-                    <li>Левая часть — не помогает вашим целям,</li>
-                    <li>Правая часть — приближает к вашим целям.</li>
-                </ul>
-            </div>
             <div id="control-container-1"></div>
-            <div class="output" id="output-1">Значения: { tl: 0, tr: 0, bl: 0, br: 0 }</div>
             <div class="buttons">
                 <button onclick="setEqual1()">Поровну</button>
                 <button onclick="setRandom1()">Случайно</button>
             </div>
         </div>
     </div>
-    
-    <!-- Вариант 2: Инвертированный -->
-    <div class="variant">
-        <h2>Вариант 2: Инвертированный</h2>
-        <p class="description">Тянешь бегунок вправо → граница уходит влево. Тянешь вверх → граница уходит вниз.</p>
-        
-        <div class="container">
-            <div class="instructions">
-                <p>Вспомните, что вы сделали <strong>в личной жизни</strong>. Двигая три бегунка, постройте картину того, как распределялись ваши силы.</p>
-                <p><strong>Вертикальный бегунок</strong> — раздел обязательного и не обязательного:</p>
-                <ul>
-                    <li>Верхняя часть — то, что можно было отложить,</li>
-                    <li>Нижняя часть — то, что нельзя было отложить без неприятных последствий.</li>
-                </ul>
-                <p><strong>Горизонтальные бегунки</strong> — влияние на ваши цели:</p>
-                <ul>
-                    <li>Левая часть — не помогает вашим целям,</li>
-                    <li>Правая часть — приближает к вашим целям.</li>
-                </ul>
-            </div>
-            <div id="control-container-2"></div>
-            <div class="output" id="output-2">Значения: { tl: 0, tr: 0, bl: 0, br: 0 }</div>
-            <div class="buttons">
-                <button onclick="setEqual2()">Поровну</button>
-                <button onclick="setRandom2()">Случайно</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Вариант 3: Горизонтальные бегунки -->
     <div class="variant">
-        <h2>Вариант 3: Горизонтальные бегунки</h2>
-        <p class="description">Все три бегунка расположены горизонтально под матрицей, по ширине матрицы</p>
-        
+        <h2>Ретроспектива рабочих задач</h2>
+        <div class="description" style="max-width: 600px; margin-bottom: 30px; font-size: 14px; line-height: 1.6;">
+            <p>Перед тем, как ответить на следующие вопросы, подумайте:</p>
+            <ol>
+                <li>Какие стратегические цели стоят перед вашей командой / компанией?</li>
+                <li>Какие рабочие задачи (связанные с целями или нет - не важно) за последние 2 недели вы выполнили? Из того, что вы сделали, что было:
+                    <ul>
+                       <li><strong>Важным</strong>. Важной мы будем называть задачу, выполнение которой было необходимо вам для приближения к любой из ваших целей.</li>
+                       <li><strong>Срочным</strong>. Срочным мы будем называть задачу, которую нельзя было отложить без негативных последствий.</li>
+                    </ul>
+                </li>
+            </ol>
+
+            Не торопитесь. Если надо, то возьмите лист бумаги и отдельно выпишите на нем цели команды / компании и выполненные за последние 2 недели задачи.
+
+            <p>При помощи ползунков ниже покажите, сколько своего ресурса (времени, мыслетоплива) вы потратили на каждую из этих категорий:</p>
+            <p><strong>Вертикальный бегунок</strong> — раздел срочного и не срочного:</p>
+            <ul>
+                <li>Верхняя часть — то, что можно было и отложить хотя бы на 2 дня без каких-либо негативных последствий,</li>
+                <li>Нижняя часть — то, что нельзя было отложить без негативных последствий.</li>
+            </ul>
+            <p><strong>Горизонтальные ползунки</strong> — влияние на ваши цели:</p>
+            <ul>
+                <li>Левая часть — никак не приблизило вас ни к одной из ваших целей,</li>
+                <li>Правая часть — приблизило вас хотя бы к одной из ваших целей.</li>
+            </ul>
+        </div>
+
         <div class="container">
-            <div class="instructions">
-                <p>Вспомните, что вы сделали <strong>в личной жизни</strong>. Двигая три бегунка, постройте картину того, как распределялись ваши силы.</p>
-            </div>
             <div id="control-container-3"></div>
-            <div class="output" id="output-3">Значения: { tl: 0, tr: 0, bl: 0, br: 0 }</div>
             <div class="buttons">
                 <button onclick="setEqual3()">Поровну</button>
                 <button onclick="setRandom3()">Случайно</button>
@@ -185,15 +163,11 @@
 <script src="productivity-control.js"></script>
 <script>
     // Вариант 1: Стандартный
-    const output1 = document.getElementById('output-1');
     const control1 = new ProductivityControl(
         document.getElementById('control-container-1'),
         {
             size: 280,
-            mode: 'standard',
-            onChange: (values) => {
-                output1.textContent = `Значения: ${JSON.stringify(values)}`;
-            }
+            mode: 'standard'
         }
     );
 
@@ -203,35 +177,12 @@
         control1.setValues({ tl: rand(), tr: rand(), bl: rand(), br: rand() });
     }
 
-    // Вариант 2: Инвертированный
-    const output2 = document.getElementById('output-2');
-    const control2 = new ProductivityControl(
-        document.getElementById('control-container-2'),
-        {
-            size: 280,
-            mode: 'inverted',
-            onChange: (values) => {
-                output2.textContent = `Значения: ${JSON.stringify(values)}`;
-            }
-        }
-    );
-
-    function setEqual2() { control2.setValues({ tl: 25, tr: 25, bl: 25, br: 25 }); }
-    function setRandom2() {
-        const rand = () => Math.floor(Math.random() * 100);
-        control2.setValues({ tl: rand(), tr: rand(), bl: rand(), br: rand() });
-    }
-
     // Вариант 3: Горизонтальные бегунки
-    const output3 = document.getElementById('output-3');
     const control3 = new ProductivityControl(
         document.getElementById('control-container-3'),
         {
             size: 280,
-            mode: 'horizontal',
-            onChange: (values) => {
-                output3.textContent = `Значения: ${JSON.stringify(values)}`;
-            }
+            mode: 'horizontal'
         }
     );
 

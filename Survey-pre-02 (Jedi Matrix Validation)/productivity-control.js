@@ -218,7 +218,7 @@ class ProductivityControl {
                 <div class="pc-sliders-h">
                     <div class="pc-slider-h-group">
                         <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-top">← отложить было нельзя | было можно →</span>
+                            <span class="pc-slider-h-label-top">← Больше срочного | Больше не срочного →</span>
                         </div>
                         <div class="pc-h-slider" id="pc-v-slider-h">
                             <div class="pc-h-track">
@@ -231,7 +231,7 @@ class ProductivityControl {
                     </div>
                     <div class="pc-slider-h-group">
                         <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-top">← приблизило к цели | не приблизило →</span>
+                            <span class="pc-slider-h-label-top">← Приблизило к цели | не приблизило →</span>
                         </div>
                         <div class="pc-h-slider" id="pc-h-slider-top">
                             <div class="pc-h-track">
@@ -239,7 +239,7 @@ class ProductivityControl {
                             </div>
                         </div>
                         <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-bottom">Верхняя часть матрицы</span>
+                            <span class="pc-slider-h-label-bottom">Не срочные задачи</span>
                         </div>
                     </div>
                     <div class="pc-slider-h-group">
@@ -252,7 +252,7 @@ class ProductivityControl {
                             </div>
                         </div>
                         <div class="pc-slider-h-labels">
-                            <span class="pc-slider-h-label-bottom">Нижняя часть матрицы</span>
+                            <span class="pc-slider-h-label-bottom">Срочные задачи</span>
                         </div>
                     </div>
                 </div>
@@ -694,8 +694,8 @@ class ProductivityControl {
             this.state.vSplit = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, this.options.mode === 'horizontal' ? false : true, 
-           this.options.mode === 'horizontal' ? this.elements.vSlider : this.elements.vSlider);
+        }, this.options.mode === 'horizontal' ? false : true,
+           this.elements.vSlider);
 
         // Горизонтальный бегунок сверху
         this.setupDrag(this.elements.hSliderTop, (val) => {
@@ -703,7 +703,7 @@ class ProductivityControl {
             this.state.hSplitTop = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, false, this.elements.matrix);
+        }, false, this.elements.hSliderTop);
 
         // Горизонтальный бегунок снизу
         this.setupDrag(this.elements.hSliderBottom, (val) => {
@@ -711,7 +711,7 @@ class ProductivityControl {
             this.state.hSplitBottom = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, false, this.elements.matrix);
+        }, false, this.elements.hSliderBottom);
     }
 
     /**
@@ -719,12 +719,14 @@ class ProductivityControl {
      */
     setupDrag(element, callback, isVertical, referenceElement) {
         let isDragging = false;
-        const size = this.options.size;
+        let rect = null;
 
         const startDrag = (e) => {
             isDragging = true;
             document.body.classList.add('pc-dragging');
             element.setPointerCapture(e.pointerId);
+            // Кэшируем rect один раз при начале перетаскивания
+            rect = referenceElement.getBoundingClientRect();
             handleMove(e);
         };
 
@@ -732,20 +734,20 @@ class ProductivityControl {
             isDragging = false;
             document.body.classList.remove('pc-dragging');
             element.releasePointerCapture(e.pointerId);
+            rect = null;
         };
 
         const handleMove = (e) => {
-            if (!isDragging) return;
+            if (!isDragging || !rect) return;
 
-            const rect = referenceElement.getBoundingClientRect();
             let val;
 
             if (isVertical) {
                 const y = e.clientY - rect.top;
-                val = (y / size) * 100;
+                val = (y / rect.height) * 100;
             } else {
                 const x = e.clientX - rect.left;
-                val = (x / size) * 100;
+                val = (x / rect.width) * 100;
             }
 
             val = Math.max(0, Math.min(100, val));
@@ -757,7 +759,7 @@ class ProductivityControl {
         element.addEventListener('pointermove', handleMove);
         element.addEventListener('pointerup', stopDrag);
         element.addEventListener('pointercancel', stopDrag);
-        
+
         // Предотвращаем стандартное поведение touch (скролл)
         element.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     }
