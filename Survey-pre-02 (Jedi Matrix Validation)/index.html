@@ -22,7 +22,7 @@
 
         <div class="card form-card">
             <h2>Расскажите немного о себе</h2>
-            
+
             <div class="form-group">
                 <label for="demo-age">Полных лет:</label>
                 <input type="number" id="demo-age" min="18" max="100" placeholder="Например, 30">
@@ -34,33 +34,6 @@
                     <option value="">Выберите...</option>
                     <option value="male">Мужской</option>
                     <option value="female">Женский</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="demo-marital-status">Семейное положение:</label>
-                <select id="demo-marital-status">
-                    <option value="">Выберите...</option>
-                    <option value="single">Холост / Не замужем</option>
-                    <option value="married">В браке</option>
-                    <option value="divorced">В разводе</option>
-                    <option value="widowed">Вдовец / Вдова</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="demo-children">Количество детей (от 0):</label>
-                <input type="number" id="demo-children" min="0" placeholder="Например, 0">
-            </div>
-
-            <div class="form-group">
-                <label for="demo-education">Образование:</label>
-                <select id="demo-education">
-                    <option value="">Выберите...</option>
-                    <option value="secondary">Среднее / Среднее специальное</option>
-                    <option value="bachelor">Высшее (Бакалавр/Специалист)</option>
-                    <option value="master">Высшее (Магистр)</option>
-                    <option value="phd">Ученая степень</option>
                 </select>
             </div>
 
@@ -108,7 +81,7 @@
 
         <div class="card examples-card">
             <h3>Примеры ваших задач (необязательно)</h3>
-            <p class="subtitle">Приведите 1-2 примера задач из вашего опыта для каждой зоны, чтобы мы лучше поняли ваш контекст.</p>
+            <p class="subtitle">Приведите 1-2 примера задач из вашего опыта для каждой зоны, чтобы мы лучше поняли ваш контекст. Это не обязательно, но очень нам поможет 😉</p>
             
             <div class="examples-grid">
                 <div class="eg-item">
@@ -131,6 +104,7 @@
         </div>
 
         <div class="actions">
+            <button id="btn-prev-1" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-1" class="btn btn-primary">Продолжить</button>
         </div>
     </section>
@@ -170,6 +144,7 @@
         </div>
 
         <div class="actions">
+            <button id="btn-prev-2" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-2" class="btn btn-primary">Продолжить</button>
         </div>
     </section>
@@ -178,36 +153,106 @@
     <section id="page3" class="page">
         <h1>Общая самооценка</h1>
         <div class="card">
-            <p>Сдвиньте бегунки так, чтобы они отражали ваше ощущение от последних двух недель.</p>
+            <p>Отметьте на шкале значения, которые отражают ваше ощущение от последних двух недель.</p>
 
-            <div class="control-slider-group">
+            <div class="likert-scale-group">
                 <label>Баланс ресурсов (время, силы)</label>
-                <div class="slider-wrapper">
-                    <span class="left-label">Всё на работу</span>
-                    <input type="range" id="slider-balance" min="0" max="100" value="50">
-                    <span class="right-label">Всё на личную жизнь</span>
+                <div class="likert-7-scale">
+                    <span class="likert-7-label left">Всё на работу</span>
+                    
+                    <input type="radio" name="balance" id="balance-1" value="1">
+                    <label for="balance-1">1</label>
+                    
+                    <input type="radio" name="balance" id="balance-2" value="2">
+                    <label for="balance-2">2</label>
+                    
+                    <input type="radio" name="balance" id="balance-3" value="3">
+                    <label for="balance-3">3</label>
+                    
+                    <input type="radio" name="balance" id="balance-4" value="4">
+                    <label for="balance-4">4</label>
+                    
+                    <input type="radio" name="balance" id="balance-5" value="5">
+                    <label for="balance-5">5</label>
+                    
+                    <input type="radio" name="balance" id="balance-6" value="6">
+                    <label for="balance-6">6</label>
+                    
+                    <input type="radio" name="balance" id="balance-7" value="7">
+                    <label for="balance-7">7</label>
+                    
+                    <span class="likert-7-label right">Всё на личную жизнь</span>
+                    
+                    <span class="likert-7-middle">всё сбалансировано</span>
                 </div>
             </div>
 
-            <div class="control-slider-group">
+            <div class="likert-scale-group">
                 <label>Продуктивность относительно желаемого уровня</label>
-                <div class="slider-wrapper">
-                    <span class="left-label">Почти ничего не успел</span>
-                    <input type="range" id="slider-desired" min="0" max="100" value="50">
-                    <span class="right-label">Успел всё и больше</span>
+                <div class="likert-7-scale">
+                    <span class="likert-7-label left">Почти ничего не успел</span>
+                    
+                    <input type="radio" name="desired" id="desired-1" value="1">
+                    <label for="desired-1">1</label>
+                    
+                    <input type="radio" name="desired" id="desired-2" value="2">
+                    <label for="desired-2">2</label>
+                    
+                    <input type="radio" name="desired" id="desired-3" value="3">
+                    <label for="desired-3">3</label>
+                    
+                    <input type="radio" name="desired" id="desired-4" value="4">
+                    <label for="desired-4">4</label>
+                    
+                    <input type="radio" name="desired" id="desired-5" value="5">
+                    <label for="desired-5">5</label>
+                    
+                    <input type="radio" name="desired" id="desired-6" value="6">
+                    <label for="desired-6">6</label>
+                    
+                    <input type="radio" name="desired" id="desired-7" value="7">
+                    <label for="desired-7">7</label>
+                    
+                    <span class="likert-7-label right">Успел всё и больше</span>
+                    
+                    <span class="likert-7-middle">ровно, как хотел</span>
                 </div>
             </div>
 
-            <div class="control-slider-group">
+            <div class="likert-scale-group">
                 <label>Продуктивность по сравнению с окружающими</label>
-                <div class="slider-wrapper">
-                    <span class="left-label">Намного ниже</span>
-                    <input type="range" id="slider-others" min="0" max="100" value="50">
-                    <span class="right-label">Намного выше</span>
+                <div class="likert-7-scale">
+                    <span class="likert-7-label left">Намного ниже</span>
+                    
+                    <input type="radio" name="others" id="others-1" value="1">
+                    <label for="others-1">1</label>
+                    
+                    <input type="radio" name="others" id="others-2" value="2">
+                    <label for="others-2">2</label>
+                    
+                    <input type="radio" name="others" id="others-3" value="3">
+                    <label for="others-3">3</label>
+                    
+                    <input type="radio" name="others" id="others-4" value="4">
+                    <label for="others-4">4</label>
+                    
+                    <input type="radio" name="others" id="others-5" value="5">
+                    <label for="others-5">5</label>
+                    
+                    <input type="radio" name="others" id="others-6" value="6">
+                    <label for="others-6">6</label>
+                    
+                    <input type="radio" name="others" id="others-7" value="7">
+                    <label for="others-7">7</label>
+                    
+                    <span class="likert-7-label right">Намного выше</span>
+                    
+                    <span class="likert-7-middle">как в среднем у большинства</span>
                 </div>
             </div>
         </div>
         <div class="actions">
+            <button id="btn-prev-3" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-3" class="btn btn-primary">Далее</button>
         </div>
     </section>
@@ -249,23 +294,12 @@
             </div>
 
             <div class="form-group">
-                <label>Сколько времени (по ощущению) заняло заполнение матриц?</label>
-                <select id="rating_time">
-                    <option value="">Выберите...</option>
-                    <option value="1">1 - Слишком долго</option>
-                    <option value="2">2</option>
-                    <option value="3">3 - Нормально, как ожидал</option>
-                    <option value="4">4</option>
-                    <option value="5">5 - Очень быстро</option>
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label>Что было непонятным или неудобным? (необязательно)</label>
                 <textarea id="open_feedback" rows="3" placeholder="Ваши комментарии..."></textarea>
             </div>
         </div>
         <div class="actions">
+            <button id="btn-prev-4" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-4" class="btn btn-primary">Далее</button>
         </div>
     </section>
@@ -311,6 +345,7 @@
         </div>
 
         <div class="actions">
+            <button id="btn-prev-5" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-5" class="btn btn-primary">Завершить исследование</button>
         </div>
     </section>

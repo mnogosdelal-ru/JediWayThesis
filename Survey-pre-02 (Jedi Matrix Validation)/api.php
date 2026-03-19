@@ -1,4 +1,7 @@
 <?php
+// Глобальный параметр отладки
+define('DEBUG_MODE', true); // true = отключить валидацию обязательных полей
+
 require_once 'db_config.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -22,14 +25,15 @@ if ($action === 'init_session') {
         $stmt = $pdo->prepare("SELECT * FROM ab_respondents WHERE session_id = ?");
         $stmt->execute([$session_id]);
         $existing = $stmt->fetch();
-        
+
         if ($existing) {
             echo json_encode([
                 'success' => true,
                 'session_id' => $existing['session_id'],
                 'group_id' => $existing['group_id'],
                 'variant' => $existing['variant'],
-                'order_type' => $existing['order_type']
+                'order_type' => $existing['order_type'],
+                'debug_mode' => isset($existing['debug_mode']) ? (bool)$existing['debug_mode'] : DEBUG_MODE
             ]);
             exit;
         }
@@ -44,17 +48,18 @@ if ($action === 'init_session') {
     // Настройки группы
     $variant = in_array($group_id, [1, 2]) ? 'standard' : 'horizontal';
     $order_type = in_array($group_id, [1, 3]) ? 'life_work' : 'work_life';
-    
+
     try {
-        $stmt = $pdo->prepare("INSERT INTO ab_respondents (session_id, group_id, variant, order_type) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$session_id, $group_id, $variant, $order_type]);
-        
+        $stmt = $pdo->prepare("INSERT INTO ab_respondents (session_id, group_id, variant, order_type, debug_mode) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$session_id, $group_id, $variant, $order_type, DEBUG_MODE ? 1 : 0]);
+
         echo json_encode([
             'success' => true,
             'session_id' => $session_id,
             'group_id' => $group_id,
             'variant' => $variant,
-            'order_type' => $order_type
+            'order_type' => $order_type,
+            'debug_mode' => DEBUG_MODE
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
@@ -79,14 +84,14 @@ if ($action === 'save_page') {
     $updateValues = [];
     
     $allowed_fields = [
-        'status', 'age', 'gender', 'marital_status', 'children', 'education', 'position', 'profession',
+        'status', 'age', 'gender', 'position', 'profession',
         'time_page0_start', 'time_page0_end',
         'time_page1_start', 'time_page1_end', 'time_page1_total',
         'p1_tl', 'p1_tr', 'p1_bl', 'p1_br', 'p1_ex_tl', 'p1_ex_tr', 'p1_ex_bl', 'p1_ex_br',
         'time_page2_start', 'time_page2_end', 'time_page2_total',
         'p2_tl', 'p2_tr', 'p2_bl', 'p2_br', 'p2_ex_tl', 'p2_ex_tr', 'p2_ex_bl', 'p2_ex_br',
         'time_page3_start', 'time_page3_end', 'time_page3_total', 'slider_balance', 'slider_desired', 'slider_others',
-        'time_page4_start', 'time_page4_end', 'time_page4_total', 'rating_understanding', 'rating_ease', 'rating_time', 'open_feedback',
+        'time_page4_start', 'time_page4_end', 'time_page4_total', 'rating_understanding', 'rating_ease', 'open_feedback',
         'time_page5_start', 'time_page5_end', 'time_page5_total', 'alt_understanding', 'preference',
         'time_total'
     ];

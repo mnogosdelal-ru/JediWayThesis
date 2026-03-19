@@ -114,6 +114,19 @@ textarea {
     box-shadow: none;
 }
 
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    box-shadow: 0 4px 6px rgba(149, 165, 166, 0.2);
+    margin-right: 10px;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(149, 165, 166, 0.3);
+}
+
 /* Примеры задач */
 .examples-card {
     margin-top: 40px;
@@ -153,29 +166,98 @@ textarea {
     cursor: pointer;
 }
 
-/* Ползунки на стр 3 */
-.control-slider-group {
-    margin-bottom: 30px;
+/* Шкала Лайкерта 0-10 для страницы 3 */
+.likert-scale-group {
+    margin-bottom: 35px;
 }
-.control-slider-group > label {
+.likert-scale-group > label {
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     display: block;
+    font-size: 1rem;
 }
-.slider-wrapper {
+.likert-7-scale {
+    display: grid;
+    grid-template-columns: auto repeat(7, 1fr) auto;
+    gap: 4px;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 12px 8px;
+    border-radius: 10px;
+    position: relative;
+}
+.likert-7-scale input[type="radio"] {
+    display: none;
+}
+.likert-7-scale label {
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
-    gap: 15px;
-}
-.slider-wrapper input[type="range"] {
-    flex: 1;
-}
-.left-label, .right-label {
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 6px;
     font-size: 0.85rem;
-    color: #6c757d;
-    width: 120px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #495057;
 }
-.right-label { text-align: right; }
+.likert-7-scale label:hover {
+    background: #dee2e6;
+}
+.likert-7-scale input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+.likert-7-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    text-align: center;
+}
+.likert-7-label.left {
+    text-align: right;
+    padding-right: 6px;
+}
+.likert-7-label.right {
+    text-align: left;
+    padding-left: 6px;
+}
+.likert-7-middle {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-top: 6px;
+    line-height: 1.2;
+}
+.likert-side-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    max-width: 25%;
+    text-align: center;
+    line-height: 1.2;
+}
+.likert-side-label.left-endpoint {
+    text-align: right;
+    padding-right: 8px;
+}
+.likert-side-label.right-endpoint {
+    text-align: left;
+    padding-left: 8px;
+}
+.likert-middle-label {
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-top: 6px;
+    line-height: 1.2;
+}
 
 .instruction-block details {
     background: #f1f7fe;
@@ -199,12 +281,66 @@ textarea {
     .card { padding: 15px; border-radius: 0; box-shadow: none; border-bottom: 1px solid #e9ecef; }
     .examples-card { margin-top: 25px; }
     .examples-grid { grid-template-columns: 1fr; }
-    .likert { flex-direction: column; gap: 10px; align-items: flex-start; }
-    .likert span:first-child { order: -1; margin-bottom: 10px; }
-    .likert span:last-child { order: 10; margin-top: 10px; }
-    .likert input { margin: 5px 0; }
     
+    /* Фикс для шкалы Лайкерта на странице оценки инструмента - подписи по бокам */
+    .likert { 
+        display: grid !important;
+        grid-template-columns: auto repeat(7, 1fr) auto !important;
+        gap: 4px !important;
+        align-items: center !important;
+        padding: 10px 4px !important;
+    }
+    .likert span:first-child { 
+        grid-column: 1 !important;
+        font-size: 0.65rem !important;
+        line-height: 1.1 !important;
+        text-align: right !important;
+        padding-right: 4px !important;
+    }
+    .likert span:last-child { 
+        grid-column: 9 !important;
+        font-size: 0.65rem !important;
+        line-height: 1.1 !important;
+        text-align: left !important;
+        padding-left: 4px !important;
+    }
+    .likert input { 
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+        transform: scale(0.9) !important;
+    }
+
     .slider-wrapper { flex-direction: column; align-items: stretch; gap: 5px; }
     .left-label, .right-label { width: auto; font-size: 0.8rem; }
     .right-label { text-align: left; }
+    
+    /* Шкала 7-балльная: мобильная версия */
+    .likert-7-scale {
+        grid-template-columns: auto repeat(7, 1fr) auto !important;
+        padding: 8px 2px !important;
+    }
+    .likert-7-scale label {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 0.7rem !important;
+    }
+    .likert-7-label {
+        font-size: 0.6rem !important;
+        max-width: 60px !important;
+    }
+    .likert-7-middle {
+        font-size: 0.55rem !important;
+    }
+    
+    .actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    .btn {
+        width: 100%;
+    }
+    .btn-secondary {
+        margin-right: 0;
+    }
 }

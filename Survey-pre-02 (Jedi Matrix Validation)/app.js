@@ -3,6 +3,7 @@ let appState = {
     group_id: null,
     variant: null,
     order_type: null,
+    debug_mode: false,
     time_page0_start: Date.now()
 };
 
@@ -108,7 +109,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         appState.group_id = res.group_id;
         appState.variant = res.variant;
         appState.order_type = res.order_type;
+        appState.debug_mode = res.debug_mode || false;
         localStorage.setItem('ab_session_id', res.session_id);
+        console.log('DEBUG_MODE:', appState.debug_mode);
         setupSurvey();
     } else {
         alert("Не удалось инициализировать сессию. Пожалуйста, обновите страницу.");
@@ -119,36 +122,42 @@ const setupSurvey = () => {
     // Настраиваем тексты 1 и 2 страницы
     const p1Type = appState.order_type === 'life_work' ? 'life' : 'work';
     const p2Type = appState.order_type === 'life_work' ? 'work' : 'life';
-    
+
     document.getElementById('p1-title').innerHTML = texts[p1Type].title;
     document.getElementById('p1-instructions').innerHTML = texts[p1Type].instruction;
-    
+
     document.getElementById('p2-title').innerHTML = texts[p2Type].title;
     document.getElementById('p2-instructions').innerHTML = texts[p2Type].instruction;
-    
+
     // Инициализация контролов
     // Внимание: ProductivityControl должен быть доступен глобально
     control1 = new ProductivityControl(document.getElementById('matrix-container-1'), { size: 450, mode: appState.variant });
     control2 = new ProductivityControl(document.getElementById('matrix-container-2'), { size: 450, mode: appState.variant });
-    
+
     // Альтернативный контрол (Стр 5)
     controlAlt = new ProductivityControl(
-        document.getElementById('matrix-container-alt'), 
+        document.getElementById('matrix-container-alt'),
         { size: 450, mode: appState.variant === 'standard' ? 'horizontal' : 'standard' }
     );
+
+    // Визуальный индикатор DEBUG_MODE
+    if (appState.debug_mode) {
+        console.warn('DEBUG_MODE активен - валидация отключена');
+        const debugBadge = document.createElement('div');
+        debugBadge.style.cssText = 'position:fixed;top:10px;right:10px;background:#e74c3c;color:white;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+        debugBadge.textContent = 'DEBUG MODE';
+        document.body.appendChild(debugBadge);
+    }
 };
 
 // Page 0 -> 1
 document.getElementById('btn-next-0').addEventListener('click', async () => {
     const age = document.getElementById('demo-age').value;
     const gender = document.getElementById('demo-gender').value;
-    const marital_status = document.getElementById('demo-marital-status').value;
-    const children = document.getElementById('demo-children').value;
-    const education = document.getElementById('demo-education').value;
     const position = document.getElementById('demo-position').value;
     const profession = document.getElementById('demo-profession').value;
-    
-    if(!age || !gender || !marital_status || !children || !education || !position || !profession) {
+
+    if(!appState.debug_mode && (!age || !gender || !position || !profession)) {
         alert("Пожалуйста, заполните все поля.");
         return;
     }
@@ -156,17 +165,14 @@ document.getElementById('btn-next-0').addEventListener('click', async () => {
     appState.time_page0_end = Date.now();
     await apiCall('save_page', {
         status: 'page1',
-        age: parseInt(age),
-        gender, 
-        marital_status,
-        children: parseInt(children),
-        education, 
-        position,
-        profession,
+        age: parseInt(age) || null,
+        gender: gender || null,
+        position: position || null,
+        profession: profession || null,
         time_page0_start: appState.time_page0_start,
         time_page0_end: appState.time_page0_end
     });
-    
+
     showPage(1);
 });
 
@@ -214,15 +220,24 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
 document.getElementById('btn-next-3').addEventListener('click', async () => {
     appState.time_page3_end = Date.now();
     const totalTimeSec = Math.round((appState.time_page3_end - appState.time_page3_start) / 1000);
-    
+
+    const balanceVal = document.querySelector('input[name="balance"]:checked');
+    const desiredVal = document.querySelector('input[name="desired"]:checked');
+    const othersVal = document.querySelector('input[name="others"]:checked');
+
+    if(!appState.debug_mode && (!balanceVal || !desiredVal || !othersVal)) {
+        alert("Пожалуйста, отметьте значения на всех трёх шкалах.");
+        return;
+    }
+
     await apiCall('save_page', {
         status: 'page4',
         time_page3_start: appState.time_page3_start,
         time_page3_end: appState.time_page3_end,
         time_page3_total: totalTimeSec,
-        slider_balance: parseFloat(document.getElementById('slider-balance').value),
-        slider_desired: parseFloat(document.getElementById('slider-desired').value),
-        slider_others: parseFloat(document.getElementById('slider-others').value)
+        slider_balance: balanceVal ? parseFloat(balanceVal.value) : null,
+        slider_desired: desiredVal ? parseFloat(desiredVal.value) : null,
+        slider_others: othersVal ? parseFloat(othersVal.value) : null
     });
     showPage(4);
 });
@@ -231,12 +246,11 @@ document.getElementById('btn-next-3').addEventListener('click', async () => {
 document.getElementById('btn-next-4').addEventListener('click', async () => {
     appState.time_page4_end = Date.now();
     const totalTimeSec = Math.round((appState.time_page4_end - appState.time_page4_start) / 1000);
-    
+
     const und = document.querySelector('input[name="rating_understanding"]:checked');
     const ease = document.querySelector('input[name="rating_ease"]:checked');
-    const timeVal = document.getElementById('rating_time').value;
-    
-    if(!und || !ease || !timeVal) {
+
+    if(!appState.debug_mode && (!und || !ease)) {
         alert("Пожалуйста, ответьте на все обязательные вопросы с оценками.");
         return;
     }
@@ -246,9 +260,8 @@ document.getElementById('btn-next-4').addEventListener('click', async () => {
         time_page4_start: appState.time_page4_start,
         time_page4_end: appState.time_page4_end,
         time_page4_total: totalTimeSec,
-        rating_understanding: parseInt(und.value),
-        rating_ease: parseInt(ease.value),
-        rating_time: parseInt(timeVal),
+        rating_understanding: und ? parseInt(und.value) : null,
+        rating_ease: ease ? parseInt(ease.value) : null,
         open_feedback: document.getElementById('open_feedback').value
     });
     showPage(5);
@@ -259,11 +272,11 @@ document.getElementById('btn-next-5').addEventListener('click', async () => {
     appState.time_page5_end = Date.now();
     const totalTimeSec = Math.round((appState.time_page5_end - appState.time_page5_start) / 1000);
     const overallTotal = Math.round((appState.time_page5_end - appState.time_page0_start) / 1000);
-    
+
     const altUnd = document.querySelector('input[name="alt_understanding"]:checked');
     const pref = document.getElementById('preference').value;
-    
-    if(!altUnd || !pref) {
+
+    if(!appState.debug_mode && (!altUnd || !pref)) {
         alert("Пожалуйста, ответьте на вопросы.");
         return;
     }
@@ -274,10 +287,17 @@ document.getElementById('btn-next-5').addEventListener('click', async () => {
         time_page5_end: appState.time_page5_end,
         time_page5_total: totalTimeSec,
         time_total: overallTotal,
-        alt_understanding: parseInt(altUnd.value),
-        preference: pref
+        alt_understanding: altUnd ? parseInt(altUnd.value) : null,
+        preference: pref || null
     });
-    
+
     localStorage.removeItem('ab_session_id'); // Очищаем кеш, чтобы респондент не перепрошел случайно
     showPage(6);
 });
+
+// Обработчики кнопок "Назад"
+document.getElementById('btn-prev-1')?.addEventListener('click', () => showPage(0));
+document.getElementById('btn-prev-2')?.addEventListener('click', () => showPage(1));
+document.getElementById('btn-prev-3')?.addEventListener('click', () => showPage(2));
+document.getElementById('btn-prev-4')?.addEventListener('click', () => showPage(3));
+document.getElementById('btn-prev-5')?.addEventListener('click', () => showPage(4));

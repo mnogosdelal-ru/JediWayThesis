@@ -8,18 +8,16 @@ CREATE TABLE IF NOT EXISTS ab_respondents (
     variant VARCHAR(20) NOT NULL,
     order_type VARCHAR(20) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'started',
-    
+    debug_mode TINYINT(1) DEFAULT 0,
+
     -- Demographics (Page 0)
     age INT,
     gender VARCHAR(20),
-    marital_status VARCHAR(30),
-    children INT,
-    education VARCHAR(50),
     position VARCHAR(100),
     profession VARCHAR(150),
     time_page0_start BIGINT,
     time_page0_end BIGINT,
-    
+
     -- Page 1
     time_page1_start BIGINT,
     time_page1_end BIGINT,
@@ -32,7 +30,7 @@ CREATE TABLE IF NOT EXISTS ab_respondents (
     p1_ex_tr TEXT,
     p1_ex_bl TEXT,
     p1_ex_br TEXT,
-    
+
     -- Page 2
     time_page2_start BIGINT,
     time_page2_end BIGINT,
@@ -45,7 +43,7 @@ CREATE TABLE IF NOT EXISTS ab_respondents (
     p2_ex_tr TEXT,
     p2_ex_bl TEXT,
     p2_ex_br TEXT,
-    
+
     -- Page 3
     time_page3_start BIGINT,
     time_page3_end BIGINT,
@@ -53,24 +51,26 @@ CREATE TABLE IF NOT EXISTS ab_respondents (
     slider_balance FLOAT,
     slider_desired FLOAT,
     slider_others FLOAT,
-    
+
     -- Page 4
     time_page4_start BIGINT,
     time_page4_end BIGINT,
     time_page4_total INT,
     rating_understanding INT,
     rating_ease INT,
-    rating_time INT,
     open_feedback TEXT,
-    
+
     -- Page 5
     time_page5_start BIGINT,
     time_page5_end BIGINT,
     time_page5_total INT,
     alt_understanding INT,
     preference VARCHAR(30),
-    
+
     -- Meta
     time_total INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Добавить поле debug_mode, если таблица уже существует
+ALTER TABLE ab_respondents ADD COLUMN IF NOT EXISTS debug_mode TINYINT(1) DEFAULT 0;
