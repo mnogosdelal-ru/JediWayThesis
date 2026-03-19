@@ -49,7 +49,7 @@ class ProductivityControl {
     render() {
         const size = this.options.size;
         const mode = this.options.mode;
-        
+
         // Инъекция стилей (только один раз)
         if (!document.getElementById('productivity-control-styles')) {
             const style = document.createElement('style');
@@ -74,23 +74,9 @@ class ProductivityControl {
 
         // Основной контейнер
         this.container.innerHTML = `
-            <div class="pc-widget" style="--pc-size: ${size}px;">
+            <div class="pc-widget" style="--pc-max-width: ${size}px;">
                 <!-- Основной layout -->
                 <div class="pc-layout">
-                    <!-- Контейнер для вертикальной подписи и бегунка -->
-                    <div class="pc-v-container">
-                        <!-- Подпись к вертикальному бегунку -->
-                        <div class="pc-v-slider-label">
-                            <span>← Больше не срочного | Больше срочного →</span>
-                        </div>
-
-                        <!-- Вертикальный бегунок -->
-                        <div class="pc-v-slider" id="pc-v-slider">
-                            <div class="pc-v-track"></div>
-                            <div class="pc-v-handle" id="pc-v-handle"></div>
-                        </div>
-                    </div>
-
                     <!-- Матрица -->
                     <div class="pc-matrix-wrapper">
                         <!-- Подписи к верхнему бегунку -->
@@ -98,7 +84,7 @@ class ProductivityControl {
                             <span>Среди не срочного</span>
                         </div>
                         <div class="pc-h-label-axis">
-                            <span>← Больше повседневного | Больше стратегического →</span>
+                            <span>← Операционное | Стратегическое →</span>
                         </div>
                         <!-- Горизонтальный бегунок сверху -->
                         <div class="pc-h-slider-top" id="pc-h-slider-top">
@@ -107,12 +93,28 @@ class ProductivityControl {
                             </div>
                         </div>
 
-                        <!-- Квадрат матрицы -->
-                        <div class="pc-matrix" id="pc-matrix">
-                            <div class="pc-zone pc-zone-tl" id="pc-zone-tl"></div>
-                            <div class="pc-zone pc-zone-tr" id="pc-zone-tr"></div>
-                            <div class="pc-zone pc-zone-bl" id="pc-zone-bl"></div>
-                            <div class="pc-zone pc-zone-br" id="pc-zone-br"></div>
+                        <div class="pc-matrix-row">
+                            <!-- Контейнер для вертикальной подписи и бегунка -->
+                            <div class="pc-v-container">
+                                <!-- Подпись к вертикальному бегунку -->
+                                <div class="pc-v-slider-label">
+                                    <span>← Не срочное | Срочное →</span>
+                                </div>
+
+                                <!-- Вертикальный бегунок -->
+                                <div class="pc-v-slider" id="pc-v-slider">
+                                    <div class="pc-v-track"></div>
+                                    <div class="pc-v-handle" id="pc-v-handle"></div>
+                                </div>
+                            </div>
+
+                            <!-- Квадрат матрицы -->
+                            <div class="pc-matrix" id="pc-matrix">
+                                <div class="pc-zone pc-zone-tl" id="pc-zone-tl"></div>
+                                <div class="pc-zone pc-zone-tr" id="pc-zone-tr"></div>
+                                <div class="pc-zone pc-zone-bl" id="pc-zone-bl"></div>
+                                <div class="pc-zone pc-zone-br" id="pc-zone-br"></div>
+                            </div>
                         </div>
 
                         <!-- Горизонтальный бегунок снизу -->
@@ -123,7 +125,7 @@ class ProductivityControl {
                         </div>
                         <!-- Подписи к нижнему бегунку -->
                         <div class="pc-h-label-axis">
-                            <span>← Больше повседневного | Больше стратегического →</span>
+                            <span>← Операционное | Стратегическое →</span>
                         </div>
                         <div class="pc-h-label-bottom">
                             <span>Среди срочного</span>
@@ -135,22 +137,22 @@ class ProductivityControl {
                 <div class="pc-legend">
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tl"></span>
-                        <span>Не срочное, операционное</span>
+                        <span class="pc-legend-label">Не срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-tl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tr"></span>
-                        <span>Не срочное, стратегическое</span>
+                        <span class="pc-legend-label">Не срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-tr">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-bl"></span>
-                        <span>Срочное, операционное</span>
+                        <span class="pc-legend-label">Срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-bl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-br"></span>
-                        <span>Срочное, стратегическое</span>
+                        <span class="pc-legend-label">Срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-br">0%</span>
                     </div>
                 </div>
@@ -160,10 +162,13 @@ class ProductivityControl {
         // Сохраняем ссылки на элементы
         this.elements = {
             vSlider: this.container.querySelector('#pc-v-slider'),
+            vTrack: this.container.querySelector('#pc-v-slider .pc-v-track'),
             vHandle: this.container.querySelector('#pc-v-handle'),
             hSliderTop: this.container.querySelector('#pc-h-slider-top'),
+            hTrackTop: this.container.querySelector('#pc-h-slider-top .pc-h-track'),
             hThumbTop: this.container.querySelector('#pc-h-thumb-top'),
             hSliderBottom: this.container.querySelector('#pc-h-slider-bottom'),
+            hTrackBottom: this.container.querySelector('#pc-h-slider-bottom .pc-h-track'),
             hThumbBottom: this.container.querySelector('#pc-h-thumb-bottom'),
             matrix: this.container.querySelector('#pc-matrix'),
             zones: {
@@ -189,11 +194,11 @@ class ProductivityControl {
 
         // Основной контейнер
         this.container.innerHTML = `
-            <div class="pc-widget pc-horizontal" style="--pc-size: ${size}px;">
+            <div class="pc-widget pc-horizontal" style="--pc-max-width: ${size}px;">
                 <!-- Подписи сверху -->
                 <div class="pc-labels-top-h">
                     <span>Стратегическое</span>
-                    <span>Повседневное</span>
+                    <span>Операционное</span>
                 </div>
 
                 <!-- Матрица -->
@@ -225,12 +230,12 @@ class ProductivityControl {
                         </div>
                     </div>
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-bottom">Разделение матрицы по срочности</span>
+                        <span class="pc-slider-h-label-bottom">Разделение по срочности</span>
                     </div>
                 </div>
                 <div class="pc-slider-h-container">
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-left">Повседневное</span>
+                        <span class="pc-slider-h-label-left">Операционное</span>
                         <span class="pc-slider-h-label-right">Стратегическое</span>
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-top">
@@ -244,7 +249,7 @@ class ProductivityControl {
                 </div>
                 <div class="pc-slider-h-container">
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-left">Повседневное</span>
+                        <span class="pc-slider-h-label-left">Операционное</span>
                         <span class="pc-slider-h-label-right">Стратегическое</span>
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-bottom">
@@ -261,22 +266,22 @@ class ProductivityControl {
                 <div class="pc-legend">
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tl"></span>
-                        <span>Не срочное, операционное</span>
+                        <span class="pc-legend-label">Не срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-tl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tr"></span>
-                        <span>Не срочное, стратегическое</span>
+                        <span class="pc-legend-label">Не срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-tr">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-bl"></span>
-                        <span>Срочное, операционное</span>
+                        <span class="pc-legend-label">Срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-bl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-br"></span>
-                        <span>Срочное, стратегическое</span>
+                        <span class="pc-legend-label">Срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-br">0%</span>
                     </div>
                 </div>
@@ -286,10 +291,13 @@ class ProductivityControl {
         // Сохраняем ссылки на элементы
         this.elements = {
             vSlider: this.container.querySelector('#pc-v-slider-h'),
+            vTrack: this.container.querySelector('#pc-v-slider-h .pc-h-track'),
             vHandle: this.container.querySelector('#pc-v-thumb-h'),
             hSliderTop: this.container.querySelector('#pc-h-slider-top'),
+            hTrackTop: this.container.querySelector('#pc-h-slider-top .pc-h-track'),
             hThumbTop: this.container.querySelector('#pc-h-thumb-top'),
             hSliderBottom: this.container.querySelector('#pc-h-slider-bottom'),
+            hTrackBottom: this.container.querySelector('#pc-h-slider-bottom .pc-h-track'),
             hThumbBottom: this.container.querySelector('#pc-h-thumb-bottom'),
             matrix: this.container.querySelector('#pc-matrix'),
             zones: {
@@ -314,67 +322,87 @@ class ProductivityControl {
         return `
             /* === Переменные по умолчанию === */
             .pc-widget {
-                --pc-size: 300px;
-                --pc-v-slider-width: 30px;
-                --pc-h-slider-height: 25px;
-                --pc-handle-size: 20px;
+                --pc-size: 100%;
+                --pc-max-width: 450px;
+                --pc-v-slider-width: 36px;
+                --pc-h-slider-height: 28px;
+                --pc-handle-size: 24px;
+                
+                /* Цвета зон */
                 --pc-color-tl: #e2e3e5;
                 --pc-color-tr: #a8e6cf;
                 --pc-color-bl: #ffb3ba;
                 --pc-color-br: #ffcba4;
-            }
+                
+                /* Градиенты для премиального вида */
+                --pc-grad-tl: linear-gradient(135deg, #f8f9fa 0%, #e2e3e5 100%);
+                --pc-grad-tr: linear-gradient(135deg, #e0f7fa 0%, #a8e6cf 100%);
+                --pc-grad-bl: linear-gradient(135deg, #fff0f0 0%, #ffb3ba 100%);
+                --pc-grad-br: linear-gradient(135deg, #fff4e5 0%, #ffcba4 100%);
 
-            .pc-widget {
+                width: 100%;
+                max-width: var(--pc-max-width);
+                margin: 0 auto;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                box-sizing: border-box;
             }
 
             /* Основной layout */
             .pc-layout {
+                width: 100%;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
+            }
+
+            .pc-matrix-wrapper {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pc-matrix-row {
+                display: flex;
+                align-items: stretch;
+                width: 100%;
+                gap: 10px;
             }
 
             /* Подписи к горизонтальным бегункам */
             .pc-h-label-top, .pc-h-label-bottom, .pc-h-label-axis {
                 display: flex;
-                width: var(--pc-size);
+                width: calc(100% - 60px);
+                margin-left: 60px; /* Offset for vertical slider (50px) + gap (10px) */
                 font-size: 11px;
                 color: #495057;
-                font-weight: 500;
+                font-weight: 600;
                 justify-content: center;
-            }
-
-            .pc-h-label-top {
-                margin-bottom: 1px;
+                text-align: center;
             }
 
             .pc-h-label-axis {
                 font-size: 10px;
-                color: #868e96;
-                margin: 2px 0 1px 0;
-            }
-
-            .pc-h-label-bottom {
-                margin-top: 1px;
+                color: #adb5bd;
+                margin: 4px 0 4px 60px; /* Preserve the 60px left offset */
+                font-weight: normal;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
 
             /* Матрица */
-            .pc-matrix-wrapper {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
             .pc-matrix {
                 position: relative;
-                width: var(--pc-size);
-                height: var(--pc-size);
+                flex: 1 1 0;
+                aspect-ratio: 1 / 1;
                 background-color: #f8f9fa;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                border-radius: 12px;
+                box-shadow: inset 0 2px 8px rgba(0,0,0,0.05), 0 10px 25px rgba(0,0,0,0.08);
+                overflow: hidden;
+                border: 1px solid rgba(0,0,0,0.05);
             }
 
             /* Контейнер для вертикального бегунка и подписи */
@@ -383,44 +411,51 @@ class ProductivityControl {
                 flex-direction: row;
                 align-items: center;
                 justify-content: center;
-                height: var(--pc-size);
-                margin: 25px 0;
+                width: 50px;
+                margin: 0;
             }
 
             /* Подпись к вертикальному бегунку */
             .pc-v-slider-label {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-right: 10px;
-                writing-mode: vertical-rl;
-                transform: rotate(180deg);
+                position: relative;
+                width: 14px;
+                height: 100%;
+                margin-right: 8px;
             }
 
             .pc-v-slider-label span {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(180deg);
                 font-size: 10px;
-                color: #868e96;
+                color: #adb5bd;
                 font-weight: 500;
                 white-space: nowrap;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                writing-mode: vertical-rl;
             }
 
             /* Вертикальный бегунок */
             .pc-v-slider {
                 position: relative;
                 width: var(--pc-v-slider-width);
-                height: var(--pc-size);
+                height: 100%;
                 cursor: ns-resize;
+                touch-action: none;
             }
 
             .pc-v-track {
                 position: absolute;
                 left: 50%;
-                top: 0;
-                bottom: 0;
-                width: 4px;
-                background: rgba(0,0,0,0.2);
-                border-radius: 2px;
+                top: 8px;
+                bottom: 8px;
+                width: 6px;
+                background: #e9ecef;
+                border-radius: 3px;
                 transform: translateX(-50%);
+                box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
             }
 
             .pc-v-handle {
@@ -429,46 +464,52 @@ class ProductivityControl {
                 top: 50%;
                 width: var(--pc-handle-size);
                 height: var(--pc-handle-size);
-                background: #333;
-                border: 2px solid #fff;
+                background: #495057;
+                border: 3px solid #fff;
                 border-radius: 50%;
                 transform: translate(-50%, -50%);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.25);
                 pointer-events: none;
+                transition: transform 0.1s;
             }
 
             /* Зоны */
             .pc-zone {
                 position: absolute;
-                transition: background-color 0.3s, width 0.1s, height 0.1s, top 0.1s, left 0.1s;
-                border: 1px solid rgba(0,0,0,0.4);
+                border: 1px solid rgba(0,0,0,0.05);
                 box-sizing: border-box;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.3s ease;
             }
 
-            .pc-zone-tl { background-color: var(--pc-color-tl); }
-            .pc-zone-tr { background-color: var(--pc-color-tr); }
-            .pc-zone-bl { background-color: var(--pc-color-bl); }
-            .pc-zone-br { background-color: var(--pc-color-br); }
+            .pc-zone-tl { background: var(--pc-grad-tl); }
+            .pc-zone-tr { background: var(--pc-grad-tr); }
+            .pc-zone-bl { background: var(--pc-grad-bl); }
+            .pc-zone-br { background: var(--pc-grad-br); }
 
             /* Горизонтальные бегунки */
             .pc-h-slider-top, .pc-h-slider-bottom {
                 position: relative;
-                height: 20px;
+                height: var(--pc-h-slider-height);
+                width: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: ew-resize;
+                touch-action: none;
+                margin: 4px 0;
             }
-
-            .pc-h-slider-top { margin-bottom: 3px; }
-            .pc-h-slider-bottom { margin-top: 3px; }
 
             .pc-h-track {
                 position: relative;
-                width: var(--pc-size);
-                height: 4px;
-                background: rgba(0,0,0,0.2);
-                border-radius: 2px;
+                width: calc(100% - 50px - 10px); /* Adjust for vertical slider width + gap */
+                margin-left: auto;
+                height: 6px;
+                background: #e9ecef;
+                border-radius: 3px;
+                box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
             }
 
             .pc-h-thumb {
@@ -476,21 +517,29 @@ class ProductivityControl {
                 top: 50%;
                 width: var(--pc-handle-size);
                 height: var(--pc-handle-size);
-                background: #333;
-                border: 2px solid #fff;
+                background: #495057;
+                border: 3px solid #fff;
                 border-radius: 50%;
                 transform: translate(-50%, -50%);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.25);
                 pointer-events: none;
+                transition: transform 0.1s;
             }
 
             /* Легенда */
             .pc-legend {
-                margin-top: 20px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                width: var(--pc-size);
+                margin-top: 30px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                width: 100%;
+            }
+
+            @media (max-width: 400px) {
+                .pc-legend {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
             }
 
             .pc-legend-item {
@@ -499,41 +548,70 @@ class ProductivityControl {
                 gap: 10px;
                 font-size: 13px;
                 color: #495057;
+                background: #fff;
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                border: 1px solid #f1f3f5;
             }
 
             .pc-legend-color {
-                width: 20px;
-                height: 20px;
-                border-radius: 4px;
-                border: 1px solid rgba(0,0,0,0.1);
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                border: 1px solid rgba(0,0,0,0.05);
                 flex-shrink: 0;
             }
 
-            .pc-color-tl { background-color: var(--pc-color-tl); }
-            .pc-color-tr { background-color: var(--pc-color-tr); }
-            .pc-color-bl { background-color: var(--pc-color-bl); }
-            .pc-color-br { background-color: var(--pc-color-br); }
+            .pc-color-tl { background: var(--pc-grad-tl); }
+            .pc-color-tr { background: var(--pc-grad-tr); }
+            .pc-color-bl { background: var(--pc-grad-bl); }
+            .pc-color-br { background: var(--pc-grad-br); }
+
+            .pc-legend-label {
+                line-height: 1.3;
+                font-weight: 500;
+            }
 
             .pc-legend-value {
                 margin-left: auto;
-                font-weight: 600;
+                font-weight: 700;
                 font-size: 14px;
+                color: #212529;
+                background: #f8f9fa;
+                padding: 2px 6px;
+                border-radius: 4px;
+                min-width: 40px; /* Предотвращает скачки макета при изменении чисел */
+                text-align: right;
+                font-variant-numeric: tabular-nums;
             }
 
-            /* Отключение выделения текста при перетаскивании */
+            /* Эффекты перетаскивания (только для активного) */
+            .pc-active-slider .pc-v-handle, .pc-active-slider .pc-h-thumb {
+                transform: translate(-50%, -50%) scale(1.15);
+                background: #212529;
+            }
+
             .pc-dragging {
                 user-select: none;
+                cursor: grabbing !important;
             }
 
             /* === Горизонтальный режим === */
+            .pc-horizontal {
+                max-width: 500px;
+            }
+
             .pc-horizontal .pc-labels-top-h {
                 display: flex;
                 justify-content: space-between;
-                width: var(--pc-size);
+                width: 100%;
                 font-size: 12px;
-                color: #495057;
-                font-weight: 500;
-                margin-bottom: 5px;
+                color: #adb5bd;
+                font-weight: 600;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
 
             .pc-horizontal .pc-labels-top-h span {
@@ -541,29 +619,22 @@ class ProductivityControl {
                 text-align: center;
             }
 
-            .pc-horizontal .pc-labels-top-h span:first-child {
-                text-align: left;
-            }
-
-            .pc-horizontal .pc-labels-top-h span:last-child {
-                text-align: right;
-            }
-
             .pc-horizontal .pc-matrix-h {
                 display: flex;
                 align-items: stretch;
+                width: 100%;
+                gap: 10px;
             }
 
             .pc-horizontal .pc-v-labels-h {
                 display: flex;
                 flex-direction: column;
-                width: 40px;
+                width: 30px;
             }
 
             .pc-horizontal .pc-v-label-h-top,
             .pc-horizontal .pc-v-label-h-bottom {
-                width: 40px;
-                height: calc(var(--pc-size) / 2);
+                flex: 1;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -575,98 +646,75 @@ class ProductivityControl {
                 transform: rotate(180deg);
                 text-align: center;
                 font-size: 11px;
-                color: #495057;
-                font-weight: 500;
+                color: #adb5bd;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
 
             .pc-horizontal .pc-matrix {
-                border-radius: 8px;
+                border-radius: 12px;
             }
 
             .pc-horizontal .pc-slider-h-container {
-                margin-top: 20px;
+                margin-top: 15px;
                 display: flex;
                 flex-direction: column;
                 align-items: stretch;
-                gap: 4px;
-                padding: 12px;
+                gap: 6px;
+                padding: 15px;
                 background: #fff;
-                border-radius: 6px;
-                border: 1px solid #e0e0e0;
-                width: var(--pc-size);
+                border-radius: 12px;
+                border: 1px solid #e9ecef;
+                width: 100%;
                 box-sizing: border-box;
-            }
-
-            .pc-horizontal .pc-slider-h-container:first-child {
-                margin-top: 25px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             }
 
             .pc-horizontal .pc-slider-h-labels {
                 display: flex;
                 justify-content: space-between;
-                padding: 0 2px;
+                padding: 0 4px;
             }
 
             .pc-horizontal .pc-slider-h-label-left,
             .pc-horizontal .pc-slider-h-label-right {
-                font-size: 12px;
-                color: #495057;
-                font-weight: 500;
-            }
-
-            .pc-horizontal .pc-slider-h-label-left {
-                text-align: left;
-            }
-
-            .pc-horizontal .pc-slider-h-label-right {
-                text-align: right;
-            }
-
-            .pc-horizontal .pc-slider-h-label-top {
-                width: 100%;
-                text-align: center;
                 font-size: 11px;
                 color: #495057;
-                font-weight: 500;
-                white-space: nowrap;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
 
             .pc-horizontal .pc-slider-h-label-bottom {
                 width: 100%;
                 text-align: center;
                 font-size: 11px;
-                color: #868e96;
+                color: #adb5bd;
+                margin-top: 2px;
             }
 
             .pc-horizontal .pc-h-slider {
                 position: relative;
                 width: 100%;
-                height: 24px;
+                height: 32px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: ew-resize;
+                touch-action: none;
             }
 
             .pc-horizontal .pc-h-track {
-                position: relative;
                 width: 100%;
-                height: 6px;
-                background: rgba(0,0,0,0.15);
-                border-radius: 3px;
+                height: 8px;
+                background: #f1f3f5;
+                margin: 0;
             }
 
             .pc-horizontal .pc-h-thumb {
-                position: absolute;
-                top: 50%;
-                width: 22px;
-                height: 22px;
-                background: #333;
-                border: 3px solid #fff;
-                border-radius: 50%;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                pointer-events: none;
+                width: 26px;
+                height: 26px;
             }
         `;
     }
@@ -685,7 +733,7 @@ class ProductivityControl {
             this.updateUI();
             this.emitChange();
         }, this.options.mode === 'horizontal' ? false : true,
-           this.elements.vSlider);
+            this.elements.vTrack);
 
         // Горизонтальный бегунок сверху
         this.setupDrag(this.elements.hSliderTop, (val) => {
@@ -693,7 +741,7 @@ class ProductivityControl {
             this.state.hSplitTop = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, false, this.elements.hSliderTop);
+        }, false, this.elements.hTrackTop);
 
         // Горизонтальный бегунок снизу
         this.setupDrag(this.elements.hSliderBottom, (val) => {
@@ -701,7 +749,7 @@ class ProductivityControl {
             this.state.hSplitBottom = inverted ? (100 - val) : val;
             this.updateUI();
             this.emitChange();
-        }, false, this.elements.hSliderBottom);
+        }, false, this.elements.hTrackBottom);
     }
 
     /**
@@ -714,6 +762,7 @@ class ProductivityControl {
         const startDrag = (e) => {
             isDragging = true;
             document.body.classList.add('pc-dragging');
+            element.classList.add('pc-active-slider'); // Добавляем класс только активному бегунку
             element.setPointerCapture(e.pointerId);
             // Кэшируем rect один раз при начале перетаскивания
             rect = referenceElement.getBoundingClientRect();
@@ -723,6 +772,7 @@ class ProductivityControl {
         const stopDrag = (e) => {
             isDragging = false;
             document.body.classList.remove('pc-dragging');
+            element.classList.remove('pc-active-slider');
             element.releasePointerCapture(e.pointerId);
             rect = null;
         };
