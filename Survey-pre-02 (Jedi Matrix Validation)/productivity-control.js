@@ -343,6 +343,7 @@ class ProductivityControl {
                 width: 100%;
                 max-width: var(--pc-max-width);
                 margin: 0 auto;
+                padding: 0 15px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Исследование восприятия продуктивности</title>
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- СТРАНИЦА 0: Согласие и Демография -->
+    <section id="page0" class="page active">
+        <h1>Добро пожаловать в исследование</h1>
+        
+        <div class="card info-card">
+            <p>Вы приглашены к участию в исследовании, посвящённом восприятию людьми своей продуктивности.</p>
+            <p>Участие анонимно, данные будут использованы исключительно в научных целях. Вы можете прекратить участие в любой момент. Заполнение займет около 10 минут.</p>
+        </div>
+
+        <div class="card form-card">
+            <h2>Расскажите немного о себе</h2>
+            
+            <div class="form-group">
+                <label for="demo-age">Полных лет:</label>
+                <input type="number" id="demo-age" min="18" max="100" placeholder="Например, 30">
+            </div>
+
+            <div class="form-group">
+                <label for="demo-gender">Пол:</label>
+                <select id="demo-gender">
+                    <option value="">Выберите...</option>
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="demo-marital-status">Семейное положение:</label>
+                <select id="demo-marital-status">
+                    <option value="">Выберите...</option>
+                    <option value="single">Холост / Не замужем</option>
+                    <option value="married">В браке</option>
+                    <option value="divorced">В разводе</option>
+                    <option value="widowed">Вдовец / Вдова</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="demo-children">Количество детей (от 0):</label>
+                <input type="number" id="demo-children" min="0" placeholder="Например, 0">
+            </div>
+
+            <div class="form-group">
+                <label for="demo-education">Образование:</label>
+                <select id="demo-education">
+                    <option value="">Выберите...</option>
+                    <option value="secondary">Среднее / Среднее специальное</option>
+                    <option value="bachelor">Высшее (Бакалавр/Специалист)</option>
+                    <option value="master">Высшее (Магистр)</option>
+                    <option value="phd">Ученая степень</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="demo-position">Вид должности:</label>
+                <select id="demo-position">
+                    <option value="">Выберите...</option>
+                    <option value="Владелец бизнеса">Владелец бизнеса</option>
+                    <option value="Фрилансер">Фрилансер</option>
+                    <option value="Высший менеджер">Высший менеджер</option>
+                    <option value="Менеджер среднего звена">Менеджер среднего звена</option>
+                    <option value="Тимлид">Тимлид</option>
+                    <option value="Старший специалист">Старший специалист</option>
+                    <option value="Специалист">Специалист</option>
+                    <option value="Младший специалист">Младший специалист</option>
+                    <option value="Школьник / Студент">Школьник / Студент</option>
+                    <option value="Домохозяйка / домохозяин">Домохозяйка / домохозяин</option>
+                    <option value="Пенсионер">Пенсионер</option>
+                    <option value="Безработный">Безработный</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="demo-profession">Сфера деятельности / Профессия:</label>
+                <input type="text" id="demo-profession" placeholder="Например: IT, Дизайн, Торговля...">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-next-0" class="btn btn-primary">Начать исследование (Даю согласие)</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 1: Матрица 1 -->
+    <section id="page1" class="page">
+        <h1 id="p1-title">Оценка продуктивности</h1>
+        <div class="card instruction-card" id="p1-instructions">
+            <!-- Инструкции подставятся из JS -->
+        </div>
+
+        <div class="matrix-app-container">
+            <div id="matrix-container-1"></div>
+        </div>
+
+        <div class="card examples-card">
+            <h3>Примеры ваших задач (необязательно)</h3>
+            <p class="subtitle">Приведите 1-2 примера задач из вашего опыта для каждой зоны, чтобы мы лучше поняли ваш контекст.</p>
+            
+            <div class="examples-grid">
+                <div class="eg-item">
+                    <label>🟢 Стратегическое, не срочное:</label>
+                    <input type="text" id="p1-ex-tr" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>🟠 Стратегическое, срочное:</label>
+                    <input type="text" id="p1-ex-br" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>⬜ Операционное, не срочное:</label>
+                    <input type="text" id="p1-ex-tl" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>🔴 Операционное, срочное:</label>
+                    <input type="text" id="p1-ex-bl" placeholder="Пример...">
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-next-1" class="btn btn-primary">Продолжить</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 2: Матрица 2 -->
+    <section id="page2" class="page">
+        <h1 id="p2-title">Оценка продуктивности (Другая сфера)</h1>
+        <div class="card instruction-card" id="p2-instructions">
+            <!-- Инструкции подставятся из JS -->
+        </div>
+
+        <div class="matrix-app-container">
+            <div id="matrix-container-2"></div>
+        </div>
+
+        <div class="card examples-card">
+            <h3>Примеры ваших задач (необязательно)</h3>
+            
+            <div class="examples-grid">
+                <div class="eg-item">
+                    <label>🟢 Стратегическое, не срочное:</label>
+                    <input type="text" id="p2-ex-tr" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>🟠 Стратегическое, срочное:</label>
+                    <input type="text" id="p2-ex-br" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>⬜ Операционное, не срочное:</label>
+                    <input type="text" id="p2-ex-tl" placeholder="Пример...">
+                </div>
+                <div class="eg-item">
+                    <label>🔴 Операционное, срочное:</label>
+                    <input type="text" id="p2-ex-bl" placeholder="Пример...">
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-next-2" class="btn btn-primary">Продолжить</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 3: Контрольные бегунки -->
+    <section id="page3" class="page">
+        <h1>Общая самооценка</h1>
+        <div class="card">
+            <p>Сдвиньте бегунки так, чтобы они отражали ваше ощущение от последних двух недель.</p>
+
+            <div class="control-slider-group">
+                <label>Баланс ресурсов (время, силы)</label>
+                <div class="slider-wrapper">
+                    <span class="left-label">Всё на работу</span>
+                    <input type="range" id="slider-balance" min="0" max="100" value="50">
+                    <span class="right-label">Всё на личную жизнь</span>
+                </div>
+            </div>
+
+            <div class="control-slider-group">
+                <label>Продуктивность относительно желаемого уровня</label>
+                <div class="slider-wrapper">
+                    <span class="left-label">Почти ничего не успел</span>
+                    <input type="range" id="slider-desired" min="0" max="100" value="50">
+                    <span class="right-label">Успел всё и больше</span>
+                </div>
+            </div>
+
+            <div class="control-slider-group">
+                <label>Продуктивность по сравнению с окружающими</label>
+                <div class="slider-wrapper">
+                    <span class="left-label">Намного ниже</span>
+                    <input type="range" id="slider-others" min="0" max="100" value="50">
+                    <span class="right-label">Намного выше</span>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button id="btn-next-3" class="btn btn-primary">Далее</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 4: Оценка инструмента -->
+    <section id="page4" class="page">
+        <h1>Оценка инструмента</h1>
+        <div class="card form-card">
+            <p>Нам важно понять, насколько удобными были матрицы, которые вы только что заполняли.</p>
+
+            <div class="form-group radio-group">
+                <label>Оцените, насколько сами матрицы (квадраты и ползунки) были вам понятны:</label>
+                <div class="likert">
+                    <span>1 (Совершенно непонятны)</span>
+                    <input type="radio" name="rating_understanding" value="1">
+                    <input type="radio" name="rating_understanding" value="2">
+                    <input type="radio" name="rating_understanding" value="3">
+                    <input type="radio" name="rating_understanding" value="4">
+                    <input type="radio" name="rating_understanding" value="5">
+                    <input type="radio" name="rating_understanding" value="6">
+                    <input type="radio" name="rating_understanding" value="7">
+                    <span>7 (Абсолютно понятны)</span>
+                </div>
+            </div>
+
+            <div class="form-group radio-group">
+                <label>Насколько легко вам было вспомнить свои задачи и соотнести их с матрицей?</label>
+                <div class="likert">
+                    <span>1 (Очень трудно)</span>
+                    <input type="radio" name="rating_ease" value="1">
+                    <input type="radio" name="rating_ease" value="2">
+                    <input type="radio" name="rating_ease" value="3">
+                    <input type="radio" name="rating_ease" value="4">
+                    <input type="radio" name="rating_ease" value="5">
+                    <input type="radio" name="rating_ease" value="6">
+                    <input type="radio" name="rating_ease" value="7">
+                    <span>7 (Очень легко)</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Сколько времени (по ощущению) заняло заполнение матриц?</label>
+                <select id="rating_time">
+                    <option value="">Выберите...</option>
+                    <option value="1">1 - Слишком долго</option>
+                    <option value="2">2</option>
+                    <option value="3">3 - Нормально, как ожидал</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Очень быстро</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Что было непонятным или неудобным? (необязательно)</label>
+                <textarea id="open_feedback" rows="3" placeholder="Ваши комментарии..."></textarea>
+            </div>
+        </div>
+        <div class="actions">
+            <button id="btn-next-4" class="btn btn-primary">Далее</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 5: А/В Сравнение -->
+    <section id="page5" class="page">
+        <h1>Сравнение вариантов</h1>
+        <div class="card instruction-card">
+            <p>Вы заполняли один из двух возможных вариантов визуального интерфейса. Ниже представлен <strong>альтернативный вариант</strong>.</p>
+            <p>Пожалуйста, попробуйте подвигать ползунки в этой альтернативной матрице, чтобы понять, как она работает.</p>
+        </div>
+
+        <div class="matrix-app-container">
+            <div id="matrix-container-alt"></div>
+        </div>
+
+        <div class="card form-card">
+            <div class="form-group radio-group">
+                <label>Насколько вам понятен <strong>этот (альтернативный)</strong> вариант?</label>
+                <div class="likert">
+                    <span>1 (Совершенно непонятен)</span>
+                    <input type="radio" name="alt_understanding" value="1">
+                    <input type="radio" name="alt_understanding" value="2">
+                    <input type="radio" name="alt_understanding" value="3">
+                    <input type="radio" name="alt_understanding" value="4">
+                    <input type="radio" name="alt_understanding" value="5">
+                    <input type="radio" name="alt_understanding" value="6">
+                    <input type="radio" name="alt_understanding" value="7">
+                    <span>7 (Абсолютно понятен)</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Какой из двух вариантов интерфейса вам понравился больше?</label>
+                <select id="preference">
+                    <option value="">Выберите...</option>
+                    <option value="first">Первый (который я заполнял изначально)</option>
+                    <option value="second">Второй (который показан сейчас на этой странице)</option>
+                    <option value="equal">Оба одинаково понятны/удобны</option>
+                    <option value="unsure">Затрудняюсь ответить</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-next-5" class="btn btn-primary">Завершить исследование</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 6: Финал -->
+    <section id="page6" class="page">
+        <div class="card final-card">
+            <h1>Спасибо за участие!</h1>
+            <p>Ваши ответы успешно сохранены и очень помогут нам в исследовании методов оценки человеческой продуктивности.</p>
+            <p>Вы можете закрыть эту вкладку.</p>
+        </div>
+    </section>
+
+</div>
+
+<!-- Скрипт контрола и логика приложения -->
+<script src="productivity-control.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
