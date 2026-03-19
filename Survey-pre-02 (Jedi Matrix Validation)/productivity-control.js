@@ -75,33 +75,31 @@ class ProductivityControl {
         // Основной контейнер
         this.container.innerHTML = `
             <div class="pc-widget" style="--pc-size: ${size}px;">
-                <!-- Подписи сверху -->
-                <div class="pc-labels-top">
-                    <span>приблизило меня к моим целям</span>
-                    <span>ни на что не повлияло</span>
-                </div>
-
                 <!-- Основной layout -->
                 <div class="pc-layout">
-                    <!-- Левая вертикальная надпись -->
-                    <div class="pc-v-title">
-                        <span>Если бы я это не сделал(а), то ...</span>
-                    </div>
+                    <!-- Контейнер для вертикальной подписи и бегунка -->
+                    <div class="pc-v-container">
+                        <!-- Подпись к вертикальному бегунку -->
+                        <div class="pc-v-slider-label">
+                            <span>← Больше не срочного | Больше срочного →</span>
+                        </div>
 
-                    <!-- Вертикальные подписи -->
-                    <div class="pc-v-labels">
-                        <div class="pc-v-label-top"><span>ничего бы не поменялось</span></div>
-                        <div class="pc-v-label-bottom"><span>произошло бы что-то плохое</span></div>
-                    </div>
-
-                    <!-- Вертикальный бегунок -->
-                    <div class="pc-v-slider" id="pc-v-slider">
-                        <div class="pc-v-track"></div>
-                        <div class="pc-v-handle" id="pc-v-handle"></div>
+                        <!-- Вертикальный бегунок -->
+                        <div class="pc-v-slider" id="pc-v-slider">
+                            <div class="pc-v-track"></div>
+                            <div class="pc-v-handle" id="pc-v-handle"></div>
+                        </div>
                     </div>
 
                     <!-- Матрица -->
                     <div class="pc-matrix-wrapper">
+                        <!-- Подписи к верхнему бегунку -->
+                        <div class="pc-h-label-top">
+                            <span>Среди не срочного</span>
+                        </div>
+                        <div class="pc-h-label-axis">
+                            <span>← Больше повседневного | Больше стратегического →</span>
+                        </div>
                         <!-- Горизонтальный бегунок сверху -->
                         <div class="pc-h-slider-top" id="pc-h-slider-top">
                             <div class="pc-h-track">
@@ -123,35 +121,36 @@ class ProductivityControl {
                                 <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
                             </div>
                         </div>
+                        <!-- Подписи к нижнему бегунку -->
+                        <div class="pc-h-label-axis">
+                            <span>← Больше повседневного | Больше стратегического →</span>
+                        </div>
+                        <div class="pc-h-label-bottom">
+                            <span>Среди срочного</span>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Подписи снизу -->
-                <div class="pc-labels-bottom">
-                    <span>приблизило меня к моим целям</span>
-                    <span>ни на что не повлияло</span>
                 </div>
 
                 <!-- Легенда -->
                 <div class="pc-legend">
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tl"></span>
-                        <span>Рутина, «убийство» времени</span>
+                        <span>Не срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-tl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tr"></span>
-                        <span>Приближает к важным целям</span>
+                        <span>Не срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-tr">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-bl"></span>
-                        <span>Задачи для избегания проблем</span>
+                        <span>Срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-bl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-br"></span>
-                        <span>«Через угрозы к целям»</span>
+                        <span>Срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-br">0%</span>
                     </div>
                 </div>
@@ -193,16 +192,16 @@ class ProductivityControl {
             <div class="pc-widget pc-horizontal" style="--pc-size: ${size}px;">
                 <!-- Подписи сверху -->
                 <div class="pc-labels-top-h">
-                    <span>приблизило меня к моим целям</span>
-                    <span>ни на что не повлияло</span>
+                    <span>Стратегическое</span>
+                    <span>Повседневное</span>
                 </div>
 
                 <!-- Матрица -->
                 <div class="pc-matrix-h">
                     <!-- Подписи слева -->
                     <div class="pc-v-labels-h">
-                        <div class="pc-v-label-h-top"><span>ничего бы не поменялось</span></div>
-                        <div class="pc-v-label-h-bottom"><span>произошло бы что-то плохое</span></div>
+                        <div class="pc-v-label-h-top"><span>Не срочное</span></div>
+                        <div class="pc-v-label-h-bottom"><span>Срочное</span></div>
                     </div>
                     
                     <!-- Матрица -->
@@ -217,7 +216,8 @@ class ProductivityControl {
                 <!-- Горизонтальные бегунки под матрицей -->
                 <div class="pc-slider-h-container">
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-top">← Больше срочного | Больше не срочного →</span>
+                        <span class="pc-slider-h-label-left">Срочное</span>
+                        <span class="pc-slider-h-label-right">Не срочное</span>
                     </div>
                     <div class="pc-h-slider" id="pc-v-slider-h">
                         <div class="pc-h-track">
@@ -225,12 +225,13 @@ class ProductivityControl {
                         </div>
                     </div>
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-bottom">Горизонтальное разделение матрицы</span>
+                        <span class="pc-slider-h-label-bottom">Разделение матрицы по срочности</span>
                     </div>
                 </div>
                 <div class="pc-slider-h-container">
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-top">← Меньше важного | Больше важного →</span>
+                        <span class="pc-slider-h-label-left">Повседневное</span>
+                        <span class="pc-slider-h-label-right">Стратегическое</span>
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-top">
                         <div class="pc-h-track">
@@ -243,7 +244,8 @@ class ProductivityControl {
                 </div>
                 <div class="pc-slider-h-container">
                     <div class="pc-slider-h-labels">
-                        <span class="pc-slider-h-label-top">← Меньше важного | Больше важного →</span>
+                        <span class="pc-slider-h-label-left">Повседневное</span>
+                        <span class="pc-slider-h-label-right">Стратегическое</span>
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-bottom">
                         <div class="pc-h-track">
@@ -259,22 +261,22 @@ class ProductivityControl {
                 <div class="pc-legend">
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tl"></span>
-                        <span>Рутина, «убийство» времени</span>
+                        <span>Не срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-tl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-tr"></span>
-                        <span>Приближает к важным целям</span>
+                        <span>Не срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-tr">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-bl"></span>
-                        <span>Задачи для избегания проблем</span>
+                        <span>Срочное, операционное</span>
                         <span class="pc-legend-value" id="pc-val-bl">0%</span>
                     </div>
                     <div class="pc-legend-item">
                         <span class="pc-legend-color pc-color-br"></span>
-                        <span>«Через угрозы к целям»</span>
+                        <span>Срочное, стратегическое</span>
                         <span class="pc-legend-value" id="pc-val-br">0%</span>
                     </div>
                 </div>
@@ -313,8 +315,6 @@ class ProductivityControl {
             /* === Переменные по умолчанию === */
             .pc-widget {
                 --pc-size: 300px;
-                --pc-v-title-width: 50px;
-                --pc-v-labels-width: 40px;
                 --pc-v-slider-width: 30px;
                 --pc-h-slider-height: 25px;
                 --pc-handle-size: 20px;
@@ -331,97 +331,77 @@ class ProductivityControl {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             }
 
-            /* Подписи сверху */
-            .pc-labels-top {
-                display: flex;
-                width: var(--pc-size);
-                margin-left: calc(var(--pc-v-title-width) + var(--pc-v-labels-width) + var(--pc-v-slider-width));
-                font-size: 12px;
-                color: #495057;
-                font-weight: 500;
-                margin-bottom: 2px;
-            }
-
-            .pc-labels-top span {
-                width: 50%;
-                text-align: center;
-            }
-
-            /* Подписи снизу */
-            .pc-labels-bottom {
-                display: flex;
-                width: var(--pc-size);
-                margin-left: calc(var(--pc-v-title-width) + var(--pc-v-labels-width) + var(--pc-v-slider-width));
-                font-size: 12px;
-                color: #495057;
-                font-weight: 500;
-                margin-top: 2px;
-            }
-
-            .pc-labels-bottom span {
-                width: 50%;
-                text-align: center;
-            }
-
             /* Основной layout */
             .pc-layout {
                 display: flex;
-                align-items: stretch;
-            }
-
-            /* Левая вертикальная надпись */
-            .pc-v-title {
-                position: relative;
-                width: var(--pc-v-title-width);
-                height: var(--pc-size);
-                margin-top: var(--pc-h-slider-height);
-                display: flex;
                 align-items: center;
-                justify-content: center;
             }
 
-            .pc-v-title span {
-                writing-mode: vertical-rl;
-                transform: rotate(180deg);
-                text-align: center;
-                font-size: 12px;
+            /* Подписи к горизонтальным бегункам */
+            .pc-h-label-top, .pc-h-label-bottom, .pc-h-label-axis {
+                display: flex;
+                width: var(--pc-size);
+                font-size: 11px;
                 color: #495057;
                 font-weight: 500;
+                justify-content: center;
             }
 
-            /* Вертикальные подписи */
-            .pc-v-labels {
+            .pc-h-label-top {
+                margin-bottom: 1px;
+            }
+
+            .pc-h-label-axis {
+                font-size: 10px;
+                color: #868e96;
+                margin: 2px 0 1px 0;
+            }
+
+            .pc-h-label-bottom {
+                margin-top: 1px;
+            }
+
+            /* Матрица */
+            .pc-matrix-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pc-matrix {
                 position: relative;
-                width: var(--pc-v-labels-width);
+                width: var(--pc-size);
                 height: var(--pc-size);
-                margin-top: var(--pc-h-slider-height);
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
 
-            .pc-v-label-top, .pc-v-label-bottom {
-                position: absolute;
-                left: 0;
-                width: var(--pc-v-labels-width);
-                height: 50%;
+            /* Контейнер для вертикального бегунка и подписи */
+            .pc-v-container {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                height: var(--pc-size);
+                margin: 25px 0;
+            }
+
+            /* Подпись к вертикальному бегунку */
+            .pc-v-slider-label {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-sizing: border-box;
-            }
-
-            .pc-v-label-top { top: 0; }
-            .pc-v-label-bottom { top: 50%; }
-
-            .pc-v-label-top span, .pc-v-label-bottom span {
+                margin-right: 10px;
                 writing-mode: vertical-rl;
                 transform: rotate(180deg);
-                text-align: center;
-                font-size: 12px;
-                color: #495057;
+            }
+
+            .pc-v-slider-label span {
+                font-size: 10px;
+                color: #868e96;
                 font-weight: 500;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                white-space: nowrap;
             }
 
             /* Вертикальный бегунок */
@@ -429,7 +409,6 @@ class ProductivityControl {
                 position: relative;
                 width: var(--pc-v-slider-width);
                 height: var(--pc-size);
-                margin-top: var(--pc-h-slider-height);
                 cursor: ns-resize;
             }
 
@@ -454,23 +433,8 @@ class ProductivityControl {
                 border: 2px solid #fff;
                 border-radius: 50%;
                 transform: translate(-50%, -50%);
-                box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.4);
                 pointer-events: none;
-            }
-
-            /* Матрица */
-            .pc-matrix-wrapper {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .pc-matrix {
-                position: relative;
-                width: var(--pc-size);
-                height: var(--pc-size);
-                background-color: #f8f9fa;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
 
             /* Зоны */
@@ -496,8 +460,8 @@ class ProductivityControl {
                 cursor: ew-resize;
             }
 
-            .pc-h-slider-top { margin-bottom: 5px; }
-            .pc-h-slider-bottom { margin-top: 5px; }
+            .pc-h-slider-top { margin-bottom: 3px; }
+            .pc-h-slider-bottom { margin-top: 3px; }
 
             .pc-h-track {
                 position: relative;
@@ -564,6 +528,7 @@ class ProductivityControl {
             /* === Горизонтальный режим === */
             .pc-horizontal .pc-labels-top-h {
                 display: flex;
+                justify-content: space-between;
                 width: var(--pc-size);
                 font-size: 12px;
                 color: #495057;
@@ -574,6 +539,14 @@ class ProductivityControl {
             .pc-horizontal .pc-labels-top-h span {
                 width: 50%;
                 text-align: center;
+            }
+
+            .pc-horizontal .pc-labels-top-h span:first-child {
+                text-align: left;
+            }
+
+            .pc-horizontal .pc-labels-top-h span:last-child {
+                text-align: right;
             }
 
             .pc-horizontal .pc-matrix-h {
@@ -631,7 +604,22 @@ class ProductivityControl {
             .pc-horizontal .pc-slider-h-labels {
                 display: flex;
                 justify-content: space-between;
-                padding: 0 5px;
+                padding: 0 2px;
+            }
+
+            .pc-horizontal .pc-slider-h-label-left,
+            .pc-horizontal .pc-slider-h-label-right {
+                font-size: 12px;
+                color: #495057;
+                font-weight: 500;
+            }
+
+            .pc-horizontal .pc-slider-h-label-left {
+                text-align: left;
+            }
+
+            .pc-horizontal .pc-slider-h-label-right {
+                text-align: right;
             }
 
             .pc-horizontal .pc-slider-h-label-top {
