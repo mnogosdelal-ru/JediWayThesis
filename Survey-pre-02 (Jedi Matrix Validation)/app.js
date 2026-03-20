@@ -189,6 +189,19 @@ const setupSurvey = () => {
             </div>
         `;
         document.body.appendChild(debugInfo);
+    } else {
+        // Индикатор нормального режима
+        /*const modeInfo = document.createElement('div');
+        modeInfo.style.cssText = 'position:fixed;top:10px;right:10px;background:#27ae60;color:white;padding:10px 14px;border-radius:8px;font-size:11px;font-weight:bold;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:200px;line-height:1.4;';
+        modeInfo.innerHTML = `
+            <div style="margin-bottom:4px;">✓ ПРОДАКШН</div>
+            <div style="font-weight:normal;font-size:10px;">
+                Группа: ${appState.group_id}<br>
+                Вариант: ${appState.variant}<br>
+                Проверка: ВКЛ
+            </div>
+        `;
+        document.body.appendChild(modeInfo);*/
     }
 };
 
@@ -220,6 +233,12 @@ document.getElementById('btn-next-0').addEventListener('click', async () => {
 
 // Page 1 -> 2
 document.getElementById('btn-next-1').addEventListener('click', async () => {
+    // Проверка: если не DEBUG_MODE и бегунки не тронуты - показать предупреждение
+    if (!appState.debug_mode && !control1.wasModified()) {
+        const proceed = confirm("Вы не потрогали ни одного бегунка... Наверное, вы просто не праспределили свои ресурсы?");
+        return;
+    }
+
     appState.time_page1_end = Date.now();
     const vals = control1.getValues();
     const totalTimeSec = Math.round((appState.time_page1_end - appState.time_page1_start) / 1000);
@@ -240,6 +259,12 @@ document.getElementById('btn-next-1').addEventListener('click', async () => {
 
 // Page 2 -> 3
 document.getElementById('btn-next-2').addEventListener('click', async () => {
+    // Проверка: если не DEBUG_MODE и бегунки не тронуты - показать предупреждение
+    if (!appState.debug_mode && !control2.wasModified()) {
+        const proceed = confirm("Вы не потрогали ни одного бегунка... Наверное, вы просто не праспределили свои ресурсы?");
+        return;
+    }
+
     appState.time_page2_end = Date.now();
     const vals = control2.getValues();
     const totalTimeSec = Math.round((appState.time_page2_end - appState.time_page2_start) / 1000);

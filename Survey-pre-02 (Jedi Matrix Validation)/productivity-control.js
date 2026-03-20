@@ -35,6 +35,9 @@ class ProductivityControl {
         // Состояние (в процентах 0-100)
         this.state = { ...this.options.initialValues };
 
+        // Флаг: были ли изменены бегунки пользователем
+        this.hasBeenModified = false;
+
         // DOM элементы (будут созданы в render)
         this.elements = {};
 
@@ -731,6 +734,7 @@ class ProductivityControl {
         this.setupDrag(this.elements.vSlider, (val) => {
             // В инвертированном режиме: тянешь вверх → граница идёт вниз
             this.state.vSplit = inverted ? (100 - val) : val;
+            this.hasBeenModified = true; // Отмечаем, что бегунок был изменён
             this.updateUI();
             this.emitChange();
         }, this.options.mode === 'horizontal' ? false : true,
@@ -740,6 +744,7 @@ class ProductivityControl {
         this.setupDrag(this.elements.hSliderTop, (val) => {
             // В инвертированном режиме: тянешь вправо → граница идёт влево
             this.state.hSplitTop = inverted ? (100 - val) : val;
+            this.hasBeenModified = true; // Отмечаем, что бегунок был изменён
             this.updateUI();
             this.emitChange();
         }, false, this.elements.hTrackTop);
@@ -748,6 +753,7 @@ class ProductivityControl {
         this.setupDrag(this.elements.hSliderBottom, (val) => {
             // В инвертированном режиме: тянешь вправо → граница идёт влево
             this.state.hSplitBottom = inverted ? (100 - val) : val;
+            this.hasBeenModified = true; // Отмечаем, что бегунок был изменён
             this.updateUI();
             this.emitChange();
         }, false, this.elements.hTrackBottom);
@@ -920,6 +926,21 @@ class ProductivityControl {
         if (state.hSplitBottom !== undefined) this.state.hSplitBottom = state.hSplitBottom;
         this.updateUI();
         this.emitChange();
+    }
+
+    /**
+     * Проверяет, были ли изменены бегунки пользователем
+     * @returns {boolean}
+     */
+    wasModified() {
+        return this.hasBeenModified;
+    }
+
+    /**
+     * Сбрасывает флаг изменений (например, при сбросе значений)
+     */
+    resetModifiedFlag() {
+        this.hasBeenModified = false;
     }
 }
 

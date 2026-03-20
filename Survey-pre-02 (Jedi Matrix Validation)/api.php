@@ -30,13 +30,14 @@ if ($action === 'init_session') {
         $existing = $stmt->fetch();
 
         if ($existing) {
+            // Всегда используем текущее значение DEBUG_MODE, а не из БД
             echo json_encode([
                 'success' => true,
                 'session_id' => $existing['session_id'],
                 'group_id' => $existing['group_id'],
                 'variant' => $existing['variant'],
                 'order_type' => $existing['order_type'],
-                'debug_mode' => isset($existing['debug_mode']) ? (bool)$existing['debug_mode'] : DEBUG_MODE
+                'debug_mode' => DEBUG_MODE
             ]);
             exit;
         }
@@ -54,7 +55,7 @@ if ($action === 'init_session') {
 
     try {
         $stmt = $pdo->prepare("INSERT INTO ab_respondents (session_id, group_id, variant, order_type, debug_mode) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$session_id, $group_id, $variant, $order_type, DEBUG_MODE ? 1 : 0]);
+        $stmt->execute([$session_id, $group_id, $variant, $order_type, defined('DEBUG_MODE') && DEBUG_MODE ? 1 : 0]);
 
         echo json_encode([
             'success' => true,
@@ -62,7 +63,7 @@ if ($action === 'init_session') {
             'group_id' => $group_id,
             'variant' => $variant,
             'order_type' => $order_type,
-            'debug_mode' => DEBUG_MODE
+            'debug_mode' => defined('DEBUG_MODE') ? DEBUG_MODE : false
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);

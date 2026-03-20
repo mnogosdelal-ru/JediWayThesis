@@ -79,6 +79,61 @@ A/B тестирование (split testing) — стандартный мето
 
 **Критерий эквивалентности:** Для признания вариантов эквивалентными разница средних должна быть меньше минимально клинически значимой (например, < 5 процентных пунктов для зон) и доверительный интервал разницы не должен включать клинически значимые значения.
 
+### Гипотезы о демографических различиях
+
+Эти гипотезы исследуют, как структура продуктивности связана с демографическими характеристиками респондентов.
+
+| Гипотеза | Описание | Метод проверки |
+|----------|----------|----------------|
+| **H8** | Распределение по зонам в личной жизни отличается для мужчин и женщин | MANOVA/ttest для каждой зоны |
+| **H9** | Распределение по зонам на работе отличается для мужчин и женщин | MANOVA/ttest для каждой зоны |
+| **H10** | Распределение ресурса между работой и личной жизнью отличается для мужчин и женщин, причём возраст является модератором этой связи | Модерация в регрессии |
+| **H11** | У владельцев бизнеса и высших руководителей (топ-менеджмент) распределение по зонам в работе отличается от распределения у наёмных работников | MANOVA/ttest для каждой зоны |
+| **H12** | У владельцев бизнеса и высших руководителей распределение по зонам в личной жизни отличается от распределения у наёмных работников | MANOVA/ttest для каждой зоны |
+| **H13** | Существует отрицательная корреляция между балансом ресурсов (перекос в сторону работы) и продуктивностью относительно желаемого уровня: чем больше перекос в сторону работы, тем ниже субъективная продуктивность | Корреляция Пирсона |
+
+**Теоретическое обоснование:**
+
+**H8-H9 (Гендерные различия в структуре продуктивности):**
+
+Исследования показывают устойчивые гендерные различия в распределении времени между работой и личной жизнью. Согласно данным Jolly et al. (2014), женщины с детьми тратят существенно больше времени на воспитание детей и домашние дела по сравнению с мужчинами, даже при контроле занятости. Это приводит к тому, что у женщин большая часть "личного" времени фактически направлена на обязательные задачи (аналог красной зоны), тогда как у мужчин больше возможностей для проактивной деятельности.
+
+*Jolly, S., Griffith, K. A., DeCastro, R., Stewart, A., Ubel, P., & Jagsi, R. (2014). Gender differences in time spent on parenting and domestic activities by primary caregivers of children with cancer. Pediatric Blood & Cancer, 61(8), 1463-1468. [PDF](https://pmc.ncbi.nlm.nih.gov/articles/PMC4131769/)*
+
+Дополнительно, meta-анализы гендерных различий в производительности труда (Paulsen, 2014) показывают, что женщины в среднем демонстрируют несколько более высокие показатели по некоторым метрикам производительности, что может отражаться в иной структуре распределения задач.
+
+*Paulsen, R. (2014). A Meta-Analysis of Gender Group Differences for Measures of Job Performance in Field Studies. [PDF](https://www.researchgate.net/publication/247570318_A_Meta-Analysis_of_Gender_Group_Differences_for_Measures_of_Job_Performance_in_Field_Studies)*
+
+**H10 (Баланс и возраст как модератор):**
+
+Исследования показывают, что связь между гендером и балансом работа-личная жизнь модерируется возрастом. Yuan et al. (2022) обнаружили, что влияние конфликта работы и семьи на удовлетворённость жизнью усиливается с возрастом, особенно среди женщин среднего возраста. Это объясняется тем, что с возрастом увеличиваются семейные обязательства (уход за детьми, поддержка пожилых родителей), при этом карьерные требования также достигают пика.
+
+*Yuan, T., Liu, Y., & Luo, Z. (2022). Age moderates the effect of work-family conflict on life satisfaction: Based on a cross-sectional study. Personality and Individual Differences, 184, 111190. [PDF](https://www.sciencedirect.com/science/article/abs/pii/S0191886921006589)*
+
+Meta-анализ (Martens et al., 1999) также подтверждает, что гендер выступает модератором связи между рабочим стрессом и производительностью, причём женщины более чувствительны к некоторым типам рабочих требований.
+
+*Martens, R., Nijhuis, F., Van Boxtel, M., & Knottnerus, J. (1999). Gender, age and tenure as moderators of work-related stressors' relationships with job performance: A meta-analysis. [PDF](https://www.researchgate.net/publication/211394019_Gender_age_and_tenure_as_moderators_of_work-related_stressors'_relationships_with_job_performance_A_meta-analysis)*
+
+**H11-H12 (Различия между руководителями и наёмными работниками):**
+
+Предприниматели и высшие руководители сталкиваются с уникальными вызовами в балансе работы и личной жизни. Исследование Work-Life Balance, Entrepreneurial Stress and Work Motivation (2024) показывает, что владельцы малого бизнеса испытывают повышенный уровень стресса из-за необходимости совмещать множество ролей и нести полную ответственность за результаты. Это приводит к специфическому паттерну распределения задач — высокая доля "срочных" задач (красная и оранжевая зоны) как в работе, так и в личной жизни.
+
+*Work-Life Balance, Entrepreneurial Stress, and Work Motivation on Small Business Owners (2024). [PDF](https://www.researchgate.net/publication/393639554_WORK-LIFE_BALANCE_ENTREPRENEURIAL_STRESS_AND_WORK_MOTIVATION_ON_SMALL_BUSINESS_OWNERS)*
+
+Кроме того, исследования показывают, что руководители высшего звена демонстрируют иной профиль выгорания — они чаще испытывают "выгорание успешных" (Pines, 1993), когда высокие достижения сочетаются с нарастающим истощением, что отражается в повышенной доле оранжевой зоны (достижение целей через давление).
+
+*Pines, A. M. (1993). Burnout: An existential perspective. In W. B. Schaufeli, C. Maslach, T. Marek (Eds.), Professional burnout: Recent developments in theory and research. Taylor & Francis.*
+
+**H13 (Баланс и субъективная продуктивность):**
+
+Исследования подтверждают негативную связь между перекосом в сторону работы и субъективной продуктивностью. Исследование "The Impact of Work-Life Balance and Job Satisfaction on Employee Productivity" (2024) показало, что баланс между работой и личной жизнью значимо влияет на продуктивность сотрудников — нарушение баланса приводит к снижению как объективных, так и субъективных показателей эффективности.
+
+*The Impact of Work-Life Balance and Job Satisfaction on Employee Productivity (2024). [PDF](https://www.researchgate.net/publication/393150073_The_Impact_of_Work-Life_Balance_and_Job_Satisfaction_on_Employee_Productivity)*
+
+Теоретическое объяснение: согласно теории сохранения ресурсов (Hobfoll, 1989), чрезмерная нагрузка на работе истощает психологические ресурсы (энергию, внимание, эмоциональный фон), что снижает способность достигать желаемых результатов. Перекос в сторону работы без достаточного восстановления в личной сфере приводит к эффекту "выгорания", при котором человек субъективно ощущает себя менее продуктивным, несмотря на объём затраченных усилий.
+
+*Hobfoll, S. E. (1989). Conservation of resources: A new attempt at conceptualizing stress. American Psychologist, 44(3), 513-524. [PDF](https://www.researchgate.net/profile/Stevan_Hobfoll/publication/20507127_Conservation_of_Resources_A_New_Attempt_at_Conceptualizing_Stress/links/53ed1c190cf2981ada12af0c.pdf)*
+
 ## Дизайн эксперимента
 
 ### Схема
@@ -149,12 +204,9 @@ A/B тестирование (split testing) — стандартный мето
 
 **Демографические вопросы:**
 - Возраст (число)
-- Пол (М/Ж/Другое/Предпочитаю не указывать)
-- Образование (среднее/среднее специальное/высшее бакалавр/высшее магистр/высшее кандидат наук)
-- Профессия/должность (открытый вопрос)
-- Стаж работы (годы)
-- Семейное положение (холост/в браке/в разводе/вдовец)
-- Наличие детей (да/нет)
+- Пол (М/Ж)
+- Вид должности
+- Сфера деятельности (открытый вопрос)
 
 **Логирование:** 
 - `time_page0_start` — время начала страницы
@@ -600,6 +652,28 @@ BinomCI(sum(df$preference == "second"), nrow(df))
 - Norman, K. L. (2013). *Cyberpsychology: An introduction to human-computer interaction*. Cambridge University Press.
 
 - Lazar, J., Feng, J. H., & Hochheiser, H. (2017). *Research methods in human-computer interaction* (2nd ed.). Morgan Kaufmann. [PDF](https://www.staff.ces.funai.edu.ng/papersCollection/virtual-library/fetch.php/Research_Methods_Human_Computer_Interaction_Jonathan.pdf)
+
+### Гендерные различия и баланс работа-личная жизнь
+
+- Jolly, S., Griffith, K. A., DeCastro, R., Stewart, A., Ubel, P., & Jagsi, R. (2014). Gender differences in time spent on parenting and domestic activities by primary caregivers of children with cancer. *Pediatric Blood & Cancer*, 61(8), 1463-1468. [PDF](https://pmc.ncbi.nlm.nih.gov/articles/PMC4131769/)
+
+- Paulsen, R. (2014). A Meta-Analysis of Gender Group Differences for Measures of Job Performance in Field Studies. [PDF](https://www.researchgate.net/publication/247570318_A_Meta-Analysis_of_Gender_Group_Differences_for_Measures_of_Job_Performance_in_Field_Studies)
+
+- Yuan, T., Liu, Y., & Luo, Z. (2022). Age moderates the effect of work-family conflict on life satisfaction: Based on a cross-sectional study. *Personality and Individual Differences*, 184, 111190. [PDF](https://www.sciencedirect.com/science/article/abs/pii/S0191886921006589)
+
+- Martens, R., Nijhuis, F., Van Boxtel, M., & Knottnerus, J. (1999). Gender, age and tenure as moderators of work-related stressors' relationships with job performance: A meta-analysis. [PDF](https://www.researchgate.net/publication/211394019_Gender_age_and_tenure_as_moderators_of_work-related_stressors'_relationships_with_job_performance_A_meta-analysis)
+
+### Предпринимательство и руководители
+
+- Work-Life Balance, Entrepreneurial Stress, and Work Motivation on Small Business Owners (2024). [PDF](https://www.researchgate.net/publication/393639554_WORK-LIFE_BALANCE_ENTREPRENEURIAL_STRESS_AND_WORK_MOTIVATION_ON_SMALL_BUSINESS_OWNERS)
+
+- Pines, A. M. (1993). Burnout: An existential perspective. In W. B. Schaufeli, C. Maslach, T. Marek (Eds.), *Professional burnout: Recent developments in theory and research* (pp. 33-51). Taylor & Francis.
+
+### Продуктивность и баланс
+
+- The Impact of Work-Life Balance and Job Satisfaction on Employee Productivity (2024). [PDF](https://www.researchgate.net/publication/393150073_The_Impact_of_Work-Life_Balance_and_Job_Satisfaction_on_Employee_Productivity)
+
+- Hobfoll, S. E. (1989). Conservation of resources: A new attempt at conceptualizing stress. *American Psychologist*, 44(3), 513-524. [PDF](https://www.researchgate.net/profile/Stevan_Hobfoll/publication/20507127_Conservation_of_Resources_A_New_Attempt_at_Conceptualizing_Stress/links/53ed1c190cf2981ada12af0c.pdf)
 
 ---
 
