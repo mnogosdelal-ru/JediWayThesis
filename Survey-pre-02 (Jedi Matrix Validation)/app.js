@@ -1,5 +1,5 @@
 let appState = {
-    session_id: localStorage.getItem('ab_session_id') || null,
+    session_id: null,
     group_id: null,
     variant: null,
     order_type: null,
@@ -30,6 +30,16 @@ const showPage = (pageNum) => {
     appState[`time_page${pageNum}_start`] = Date.now();
     window.scrollTo(0,0);
 };
+
+// Очистка localStorage при загрузке, если DEBUG_MODE
+const clearDebugSession = () => {
+    const debugParam = new URLSearchParams(window.location.search).get('debug');
+    if (debugParam === 'true') {
+        localStorage.removeItem('ab_session_id');
+        console.log('DEBUG: сессия очищена');
+    }
+};
+clearDebugSession();
 
 // Тексты инструкций
 const texts = {
@@ -103,17 +113,41 @@ const texts = {
 
 // Инициализация при загрузке
 document.addEventListener("DOMContentLoaded", async () => {
-    const res = await apiCall('init_session');
-    if(res && res.success) {
-        appState.session_id = res.session_id;
-        appState.group_id = res.group_id;
-        appState.variant = res.variant;
-        appState.order_type = res.order_type;
-        appState.debug_mode = res.debug_mode || false;
-        localStorage.setItem('ab_session_id', res.session_id);
-        console.log('DEBUG_MODE:', appState.debug_mode);
-        setupSurvey();
-    } else {
+    // При DEBUG_MODE не используем сохранённую сессию — создаём новую каждый раз
+    const existingSessionId = localStorage.getItem('ab_session_id');
+    
+    const initPayload = {
+        action: 'init_session',
+        session_id: existingSessionId
+    };
+    
+    try {
+        const res = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(initPayload)
+        });
+        const data = await res.json();
+        
+        if(data && data.success) {
+            appState.session_id = data.session_id;
+            appState.group_id = data.group_id;
+            appState.variant = data.variant;
+            appState.order_type = data.order_type;
+            appState.debug_mode = data.debug_mode || false;
+            
+            // Сохраняем session_id только если не DEBUG_MODE
+            if (!appState.debug_mode && existingSessionId !== data.session_id) {
+                localStorage.setItem('ab_session_id', data.session_id);
+            }
+            
+            console.log('DEBUG_MODE:', appState.debug_mode, '| Группа:', appState.group_id);
+            setupSurvey();
+        } else {
+            alert("Не удалось инициализировать сессию. Пожалуйста, обновите страницу.");
+        }
+    } catch(e) {
+        console.error("Init failed:", e);
         alert("Не удалось инициализировать сессию. Пожалуйста, обновите страницу.");
     }
 });
@@ -142,11 +176,19 @@ const setupSurvey = () => {
 
     // Визуальный индикатор DEBUG_MODE
     if (appState.debug_mode) {
-        console.warn('DEBUG_MODE активен - валидация отключена');
-        const debugBadge = document.createElement('div');
-        debugBadge.style.cssText = 'position:fixed;top:10px;right:10px;background:#e74c3c;color:white;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
-        debugBadge.textContent = 'DEBUG MODE';
-        document.body.appendChild(debugBadge);
+        console.warn('DEBUG_MODE активен - валидация отключена, группа:', appState.group_id);
+        
+        const debugInfo = document.createElement('div');
+        debugInfo.style.cssText = 'position:fixed;top:10px;right:10px;background:#e74c3c;color:white;padding:10px 14px;border-radius:8px;font-size:11px;font-weight:bold;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:200px;line-height:1.4;';
+        debugInfo.innerHTML = `
+            <div style="margin-bottom:4px;">🐞 DEBUG MODE</div>
+            <div style="font-weight:normal;font-size:10px;">
+                Группа: ${appState.group_id}<br>
+                Вариант: ${appState.variant}<br>
+                Порядок: ${appState.order_type === 'life_work' ? 'Личное → Работа' : 'Работа → Личное'}
+            </div>
+        `;
+        document.body.appendChild(debugInfo);
     }
 };
 
@@ -288,7 +330,8 @@ document.getElementById('btn-next-5').addEventListener('click', async () => {
         time_page5_total: totalTimeSec,
         time_total: overallTotal,
         alt_understanding: altUnd ? parseInt(altUnd.value) : null,
-        preference: pref || null
+        preference: pref || null,
+        alt_comment: document.getElementById('alt_comment').value
     });
 
     localStorage.removeItem('ab_session_id'); // Очищаем кеш, чтобы респондент не перепрошел случайно

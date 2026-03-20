@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS ab_respondents (
     time_page5_total INT,
     alt_understanding INT,
     preference VARCHAR(30),
+    alt_comment TEXT,
 
     -- Meta
     time_total INT,

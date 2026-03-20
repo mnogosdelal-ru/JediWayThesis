@@ -19,8 +19,11 @@ $action = $data['action'];
 
 // 1. Инициализация сессии и рандомизация группы
 if ($action === 'init_session') {
-    // Проверка, есть ли уже сессия в запросе
-    if (isset($data['session_id']) && !empty($data['session_id'])) {
+    // При DEBUG_MODE всегда создаём новую сессию
+    $force_new_session = defined('DEBUG_MODE') && DEBUG_MODE;
+    
+    // Проверка, есть ли уже сессия в запросе (только если не DEBUG_MODE)
+    if (!$force_new_session && isset($data['session_id']) && !empty($data['session_id'])) {
         $session_id = $data['session_id'];
         $stmt = $pdo->prepare("SELECT * FROM ab_respondents WHERE session_id = ?");
         $stmt->execute([$session_id]);
@@ -92,7 +95,7 @@ if ($action === 'save_page') {
         'p2_tl', 'p2_tr', 'p2_bl', 'p2_br', 'p2_ex_tl', 'p2_ex_tr', 'p2_ex_bl', 'p2_ex_br',
         'time_page3_start', 'time_page3_end', 'time_page3_total', 'slider_balance', 'slider_desired', 'slider_others',
         'time_page4_start', 'time_page4_end', 'time_page4_total', 'rating_understanding', 'rating_ease', 'open_feedback',
-        'time_page5_start', 'time_page5_end', 'time_page5_total', 'alt_understanding', 'preference',
+        'time_page5_start', 'time_page5_end', 'time_page5_total', 'alt_understanding', 'preference', 'alt_comment',
         'time_total'
     ];
     
