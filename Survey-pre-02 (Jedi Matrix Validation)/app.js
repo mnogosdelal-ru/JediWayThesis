@@ -29,6 +29,34 @@ const showPage = (pageNum) => {
     document.getElementById(`page${pageNum}`).classList.add('active');
     appState[`time_page${pageNum}_start`] = Date.now();
     window.scrollTo(0,0);
+    
+    // Обновление индикатора прогресса
+    updateProgressIndicator(pageNum);
+};
+
+// Обновление индикатора прогресса
+const updateProgressIndicator = (pageNum) => {
+    const indicator = document.getElementById('progress-indicator');
+    const currentStepEl = document.getElementById('current-step');
+    const progressFill = document.getElementById('progress-fill');
+    
+    // Всего 6 страниц (0-5), страница 6 - финал
+    const totalSteps = 6;
+    
+    if (pageNum >= 0 && pageNum <= 5) {
+        // Показываем индикатор
+        indicator.style.display = 'block';
+        
+        // Текущий шаг (page 0 = шаг 1, page 1 = шаг 2, и т.д.)
+        currentStepEl.textContent = pageNum + 1;
+        
+        // Ширина заполнения
+        const progressPercent = ((pageNum + 1) / totalSteps) * 100;
+        progressFill.style.width = progressPercent + '%';
+    } else {
+        // Страница 6 (финал) - скрываем индикатор
+        indicator.style.display = 'none';
+    }
 };
 
 // Очистка localStorage при загрузке, если DEBUG_MODE
@@ -143,6 +171,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             console.log('DEBUG_MODE:', appState.debug_mode, '| Группа:', appState.group_id);
             setupSurvey();
+            
+            // Показываем прогресс на первом экране
+            updateProgressIndicator(0);
         } else {
             alert("Не удалось инициализировать сессию. Пожалуйста, обновите страницу.");
         }

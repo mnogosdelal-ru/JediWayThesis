@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Исследование восприятия продуктивности</title>
-    <!-- Подключаем стили -->
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Исследование восприятия продуктивности</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+ <!-- Подключаем стили -->
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app-container">
     
+    <!-- Индикатор прогресса -->
+    <div id="progress-indicator" class="progress-indicator" style="display: none;">
+        <span class="progress-text">Шаг <span id="current-step">1</span> из <span id="total-steps">6</span></span>
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+    </div>
+
     <!-- СТРАНИЦА 0: Согласие и Демография -->
     <section id="page0" class="page active">
         <h1>Добро пожаловать в исследование</h1>
@@ -19,6 +28,9 @@
             <p>Вы приглашены к участию в исследовании, посвящённом восприятию людьми своей продуктивности.</p>
             <p>Участие анонимно, данные будут использованы исключительно в научных целях.
                 Вы можете прекратить участие в любой момент. Заполнение займет около 5 минут.</p>
+            <p>
+                В исследовании всего 6 страниц. Самые сложные - это страницы 2 и 3, остальные даже проще, чем вот эта страница.
+            </p>
         </div>
 
         <div class="card form-card">

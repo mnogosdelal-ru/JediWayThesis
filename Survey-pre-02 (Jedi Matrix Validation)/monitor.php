@@ -89,9 +89,10 @@ function downloadCSV($pdo) {
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мониторинг A/B теста</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мониторинг A/B теста</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         * {
             box-sizing: border-box;

@@ -132,7 +132,7 @@ if ($action === 'finish_survey') {
     $updateFields = ['status = ?'];
     $updateValues = ['completed'];
     
-    $allowed_fields = ['time_total', 'time_page5_end', 'time_page5_total'];
+    $allowed_fields = ['time_total', 'time_page5_end', 'time_page5_total', 'alt_understanding', 'preference', 'alt_comment'];
     foreach ($pageData as $key => $value) {
         if (in_array($key, $allowed_fields)) {
             $updateFields[] = "$key = ?";
