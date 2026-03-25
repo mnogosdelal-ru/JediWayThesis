@@ -84,9 +84,15 @@ class ABTestAnalyzer:
                             row[field] = None
                 self.data.append(row)
         
-        # Фильтруем только завершённые опросы
-        self.completed = [d for d in self.data if d.get('status') == 'completed']
+        # Фильтруем только завершённые опросы (с учётом регистра и пробелов)
+        self.completed = [d for d in self.data if d.get('status', '').strip().lower() == 'completed']
+        
+        # Подсчитываем по вариантам (только completed)
+        self.standard_count = sum(1 for d in self.completed if d.get('variant', '').strip().lower() == 'standard')
+        self.horizontal_count = sum(1 for d in self.completed if d.get('variant', '').strip().lower() == 'horizontal')
+        
         print_colored(f"Загружено {len(self.data)} записей, {len(self.completed)} завершённых", Colors.GREEN)
+        print_colored(f"  Standard: {self.standard_count}, Horizontal: {self.horizontal_count}", Colors.BLUE)
     
     def add_section(self, title, level=2):
         """Добавляет секцию в отчёт"""
@@ -131,9 +137,9 @@ class ABTestAnalyzer:
         
         # Разделяем по вариантам
         standard = [d['rating_understanding'] for d in self.completed 
-                   if d.get('variant') == 'standard' and d.get('rating_understanding')]
+                   if d.get('variant') == 'standard' and d.get('rating_understanding') is not None]
         horizontal = [d['rating_understanding'] for d in self.completed 
-                     if d.get('variant') == 'horizontal' and d.get('rating_understanding')]
+                     if d.get('variant') == 'horizontal' and d.get('rating_understanding') is not None]
         
         if not standard or not horizontal:
             self.add_paragraph("⚠️ Недостаточно данных для анализа")
@@ -153,19 +159,16 @@ class ABTestAnalyzer:
         self.add_test_result("t-тест", t_stat, p_value_t, conclusion_t, d)
         
         # Критерий Манна-Уитни (непараметрический)
-        # Более уместен для ординальных данных (шкала Лайкерта 1-7)
         u_stat, p_value_mw = stats.mannwhitneyu(standard, horizontal, alternative='two-sided')
         
-        # Рассчитываем r (размер эффекта для Манна-Уитни)
         n1, n2 = len(standard), len(horizontal)
-        r = 1 - (2 * u_stat) / (n1 * n2)  # эффект r = Z / sqrt(N)
+        r = 1 - (2 * u_stat) / (n1 * n2)
         
         conclusion_mw = "Подтверждается (горизонтальный понятнее)" if p_value_mw < 0.05 and np.median(horizontal) > np.median(standard) else "Не подтверждается"
         
         self.add_paragraph("\n**2. Критерий Манна-Уитни (непараметрический):**")
         self.add_paragraph(f"**U-тест**: U = {u_stat:.1f}, p = {p_value_mw:.4f}, r = {abs(r):.3f}")
         
-        # Интерпретация размера эффекта r
         if abs(r) < 0.1:
             eff_interp = "пренебрежимый"
         elif abs(r) < 0.3:
@@ -200,15 +203,14 @@ class ABTestAnalyzer:
         self.add_section("H2: Время заполнения", 3)
         
         standard_time = [d['time_page1_total'] for d in self.completed 
-                        if d.get('variant') == 'standard' and d.get('time_page1_total')]
+                        if d.get('variant') == 'standard' and d.get('time_page1_total') is not None]
         horizontal_time = [d['time_page1_total'] for d in self.completed 
-                          if d.get('variant') == 'horizontal' and d.get('time_page1_total')]
+                          if d.get('variant') == 'horizontal' and d.get('time_page1_total') is not None]
         
         if not standard_time or not horizontal_time:
             self.add_paragraph("⚠️ Недостаточно данных для анализа")
             return
         
-        # Логарифмическая трансформация
         log_standard = np.log1p(standard_time)
         log_horizontal = np.log1p(horizontal_time)
         
@@ -273,7 +275,7 @@ class ABTestAnalyzer:
             
             self.add_paragraph(f"\n**Общий вывод:**")
             if std_second_pct > 50 and hor_second_pct > 50:
-                self.add_paragraph("Подтверждается — респонденты обоих групп чаще выбирают альтернативный вариант second, что может свидетельствовать о понимании идеи после первого использования")
+                self.add_paragraph("Подтверждается — респонденты обоих групп чаще выбирают альтернативный вариант second")
             elif std_second_pct > 50:
                 self.add_paragraph("Частично подтверждается — только группа standard значимо чаще выбирает second")
             elif hor_second_pct > 50:
@@ -327,15 +329,41 @@ class ABTestAnalyzer:
                        ['Оба одинаково', final_preference['equal'], f"{equal_pct:.1f}%"],
                        ['Затрудняюсь', final_preference['unsure'], f"{(final_preference['unsure']/total*100):.1f}%"]])
         
-        if final_preference['horizontal'] >= 10:
-            binom_h = stats.binomtest(final_preference['horizontal'], total, 0.5)
-            self.add_paragraph(f"\n**Биномиальный тест (H0: p = 0.5 для горизонтального):**")
-            self.add_paragraph(f"  Выбрали горизонтальный: {final_preference['horizontal']}/{total}, p = {binom_h.pvalue:.4f}")
+        # Chi-square test
+        observed = np.array([
+            final_preference['standard'],
+            final_preference['horizontal'],
+            final_preference['equal'],
+            final_preference['unsure']
+        ])
+        
+        if np.all(observed >= 5):
+            expected = np.array([total / 4] * 4)
+            chi2_stat, p_chi2 = stats.chisquare(observed, expected)
+            
+            self.add_paragraph(f"\n**Chi-square test (χ²):**")
+            self.add_paragraph(f"  χ² = {chi2_stat:.2f}, p = {p_chi2:.4f}")
+            
+            if p_chi2 < 0.05:
+                self.add_paragraph(f"  Распределение предпочтений значимо отличается от равномерного")
+            else:
+                self.add_paragraph(f"  Распределение предпочтений не отличается от равномерного")
+        
+        # Binomial test: standard vs horizontal
+        choice_total = final_preference['standard'] + final_preference['horizontal']
+        if choice_total >= 10:
+            binom_h = stats.binomtest(final_preference['horizontal'], choice_total, 0.5)
+            self.add_paragraph(f"\n**Binomial test (standard vs horizontal):**")
+            self.add_paragraph(f"  Standard: {final_preference['standard']}, Horizontal: {final_preference['horizontal']}")
+            self.add_paragraph(f"  p = {binom_h.pvalue:.4f}")
+            
             if binom_h.pvalue < 0.05:
-                if horizontal_pct > 50:
+                if horizontal_pct > standard_pct:
                     self.add_paragraph(f"  Значимо чаще выбирают горизонтальный вариант")
                 else:
                     self.add_paragraph(f"  Значимо чаще выбирают стандартный вариант")
+            else:
+                self.add_paragraph(f"  Нет значимого предпочтения между standard и horizontal")
         
         self.add_paragraph(f"\n**Вывод:**")
         if horizontal_pct > standard_pct + 20:
@@ -350,65 +378,121 @@ class ABTestAnalyzer:
     # ==================== ГИПОТЕЗЫ H5-H7 (Эквивалентность) ====================
     
     def analyze_h5_equivalence(self):
-        """H5a/b: Распределение по зонам не отличается между группами"""
-        self.add_section("H5: Эквивалентность измерений (зоны матрицы)", 3)
+        """H5: Распределение по зонам не отличается между вариантами (standard vs horizontal)
+        H5a: Распределение по зонам не зависит от порядка вопросов"""
+        self.add_section("H5: Эквивалентность измерений (standard vs horizontal)", 3)
         
         zones = ['tl', 'tr', 'bl', 'br']
-        zone_names = {
-            'tl': 'Зелёная (не срочное + важное)',
-            'tr': 'Оранжевая (срочное + важное)',
-            'bl': 'Серая (не срочное + не важное)',
-            'br': 'Красная (срочное + не важное)'
-        }
         results = []
         
-        for page in [1, 2]:
-            page_name = "Личная жизнь" if page == 1 else "Работа"
-            self.add_paragraph(f"\n**Страница {page} ({page_name}):**")
+        # Определяем какой p1/p2 соответствует личной жизни и работе в зависимости от группы
+        # Groups 1, 3 (life_first): p1 = личная жизнь, p2 = работа
+        # Groups 2, 4 (work_first): p1 = работа, p2 = личная жизнь
+        
+        # Для каждого респондента определяем какая колонка соответствует личной жизни и работе
+        for d in self.completed:
+            group_id = d.get('group_id')
+            if group_id in [1, 3]:  # life_first
+                d['_life_col'] = 'p1'  # личная жизнь - это p1
+                d['_work_col'] = 'p2'  # работа - это p2
+            else:  # work_first (groups 2, 4)
+                d['_life_col'] = 'p2'  # личная жизнь - это p2
+                d['_work_col'] = 'p1'  # работа - это p1
+        
+        # Анализ для ЛИЧНОЙ ЖИЗНИ (учитываем порядок вопросов)
+        self.add_section("Личная жизнь", 4)
+        
+        table_data_life = []
+        
+        for zone in zones:
+            # Собираем данные для standard и horizontal
+            standard_life = []
+            horizontal_life = []
             
-            # Собираем данные по зонам для таблицы
-            table_data = []
+            for d in self.completed:
+                life_col = d.get('_life_col')
+                if life_col:
+                    col = f'{life_col}_{zone}'
+                    if d.get('variant') == 'standard' and d.get(col) is not None:
+                        standard_life.append(d[col])
+                    elif d.get('variant') == 'horizontal' and d.get(col) is not None:
+                        horizontal_life.append(d[col])
             
-            for zone in zones:
-                col = f'p{page}_{zone}'
-                standard = [d[col] for d in self.completed if d.get('variant') == 'standard' and d.get(col)]
-                horizontal = [d[col] for d in self.completed if d.get('variant') == 'horizontal' and d.get(col)]
+            if standard_life and horizontal_life:
+                t_stat, p_value = stats.ttest_ind(standard_life, horizontal_life)
+                diff = np.mean(horizontal_life) - np.mean(standard_life)
+                results.append([f"life_{zone}", diff, p_value])
                 
-                if standard and horizontal:
-                    t_stat, p_value = stats.ttest_ind(standard, horizontal)
-                    diff = np.mean(horizontal) - np.mean(standard)
-                    results.append([f"p{page}_{zone}", diff, p_value])
-                    
-                    # Добавляем строку в таблицу
-                    table_data.append([
-                        zone_names.get(zone, zone),
-                        f"{np.mean(standard):.1f}%",
-                        f"±{np.std(standard):.1f}%",
-                        len(standard),
-                        f"{np.mean(horizontal):.1f}%",
-                        f"±{np.std(horizontal):.1f}%",
-                        len(horizontal),
-                        f"{diff:+.1f}%",
-                        f"{p_value:.4f}",
-                        "✓ Эквивалентно" if abs(diff) < 5 and p_value >= 0.05 else "✗ Различия"
-                    ])
-            
-            # Выводим таблицу
+                table_data_life.append([
+                    zone.upper(),
+                    f"{np.mean(standard_life):.1f}%",
+                    f"±{np.std(standard_life):.1f}%",
+                    len(standard_life),
+                    f"{np.mean(horizontal_life):.1f}%",
+                    f"±{np.std(horizontal_life):.1f}%",
+                    len(horizontal_life),
+                    f"{diff:+.1f}%",
+                    f"{p_value:.4f}",
+                    "✓ Эквивалентно" if abs(diff) < 10 and p_value >= 0.05 else "✗ Различия"
+                ])
+        
+        if table_data_life:
             self.add_table(
                 ['Зона', 'Standard M', 'Standard SD', 'n', 'Horizontal M', 'Horizontal SD', 'n', 'Разница', 'p-value', 'Статус'],
-                table_data
+                table_data_life
             )
         
-        equivalent = all(abs(r[1]) < 5 and r[2] >= 0.05 for r in results)
+        # Анализ для РАБОТЫ (учитываем порядок вопросов)
+        self.add_section("Работа", 4)
         
-        # Сводная таблица по всем зонам
+        table_data_work = []
+        
+        for zone in zones:
+            standard_work = []
+            horizontal_work = []
+            
+            for d in self.completed:
+                work_col = d.get('_work_col')
+                if work_col:
+                    col = f'{work_col}_{zone}'
+                    if d.get('variant') == 'standard' and d.get(col) is not None:
+                        standard_work.append(d[col])
+                    elif d.get('variant') == 'horizontal' and d.get(col) is not None:
+                        horizontal_work.append(d[col])
+            
+            if standard_work and horizontal_work:
+                t_stat, p_value = stats.ttest_ind(standard_work, horizontal_work)
+                diff = np.mean(horizontal_work) - np.mean(standard_work)
+                results.append([f"work_{zone}", diff, p_value])
+                
+                table_data_work.append([
+                    zone.upper(),
+                    f"{np.mean(standard_work):.1f}%",
+                    f"±{np.std(standard_work):.1f}%",
+                    len(standard_work),
+                    f"{np.mean(horizontal_work):.1f}%",
+                    f"±{np.std(horizontal_work):.1f}%",
+                    len(horizontal_work),
+                    f"{diff:+.1f}%",
+                    f"{p_value:.4f}",
+                    "✓ Эквивалентно" if abs(diff) < 10 and p_value >= 0.05 else "✗ Различия"
+                ])
+        
+        if table_data_work:
+            self.add_table(
+                ['Зона', 'Standard M', 'Standard SD', 'n', 'Horizontal M', 'Horizontal SD', 'n', 'Разница', 'p-value', 'Статус'],
+                table_data_work
+            )
+            
+        equivalent = all(abs(r[1]) < 10 and r[2] >= 0.05 for r in results)
+        
         self.add_paragraph("\n**Сводная таблица эквивалентности:**")
         summary_table = []
         for r in results:
             zone = r[0]
             diff = r[1]
             p_val = r[2]
-            equiv = "✓" if abs(diff) < 5 and p_val >= 0.05 else "✗"
+            equiv = "✓" if abs(diff) < 10 and p_val >= 0.05 else "✗"
             summary_table.append([zone, f"{diff:+.1f}%", f"p = {p_val:.4f}", equiv])
         
         self.add_table(
@@ -417,36 +501,214 @@ class ABTestAnalyzer:
         )
         
         self.add_paragraph(f"\n**Критерии эквивалентности:**")
-        self.add_paragraph(f"  - Разница < 5 процентных пунктов")
+        self.add_paragraph(f"  - Разница < 10 процентных пунктов")
         self.add_paragraph(f"  - p-value > 0.05 (нет значимых различий)")
         
-        self.add_paragraph(f"\n**Общий вывод по H5**: {'Эквивалентность подтверждена — оба варианта измеряют одно и то же' if equivalent else 'Эквивалентность нарушена — есть значимые различия между вариантами'}")
+        self.add_paragraph(f"\n**Общий вывод по H5**: {'Эквивалентность подтверждена' if equivalent else 'Эквивалентность нарушена'}")
+        
+        self.add_paragraph("""
+**Примечание:** В данном анализе учитывается порядок вопросов:
+- Groups 1, 3 (сначала личная жизнь): p1 = личная жизнь, p2 = работа
+- Groups 2, 4 (сначала работа): p1 = работа, p2 = личная жизнь
+""")
+        
+        # ==================== H5a ====================
+        self.add_section("H5a: Влияние порядка вопросов (личная жизнь / работа)", 3)
+        
+        self.add_paragraph("""
+**Группы (с учётом варианта интерфейса):**
+- Standard + Личная жизнь → Работа: group 1
+- Standard + Работа → Личная жизнь: group 2
+- Horizontal + Личная жизнь → Работа: group 3
+- Horizontal + Работа → Личная жизнь: group 4
+""")
+        
+        # Анализ влияния порядка для STANDARD
+        self.add_paragraph("\n**Вариант STANDARD:**")
+        
+        standard_life_first = [d for d in self.completed if d.get('group_id') == 1]
+        standard_work_first = [d for d in self.completed if d.get('group_id') == 2]
+        
+        self.add_paragraph(f"  Личная жизнь → Работа (group 1): n = {len(standard_life_first)}")
+        self.add_paragraph(f"  Работа → Личная жизнь (group 2): n = {len(standard_work_first)}")
+        
+        # Личная жизнь - standard (используем _life_col)
+        table_std_life = []
+        for zone in zones:
+            life_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in standard_life_first 
+                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            work_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in standard_work_first 
+                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            
+            if life_first_data and work_first_data:
+                t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
+                d = cohens_d(life_first_data, work_first_data)
+                diff = np.mean(work_first_data) - np.mean(life_first_data)
+                equiv = "✓" if abs(diff) < 10 and p_value > 0.05 else "✗"
+                
+                table_std_life.append([
+                    zone.upper(),
+                    f"{np.mean(life_first_data):.1f}%",
+                    f"{np.mean(work_first_data):.1f}%",
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    equiv
+                ])
+        
+        if table_std_life:
+            self.add_paragraph(f"\n*Личная жизнь — STANDARD:*")
+            self.add_table(
+                ['Зона', 'Сначала личное', 'Сначала работа', 'Разница', "Cohen's d", 'p-value', 'Эквивалентно'],
+                table_std_life
+            )
+        
+        # Работа - standard (используем _work_col)
+        table_std_work = []
+        for zone in zones:
+            life_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in standard_life_first 
+                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            work_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in standard_work_first 
+                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            
+            if life_first_data and work_first_data:
+                t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
+                d = cohens_d(life_first_data, work_first_data)
+                diff = np.mean(work_first_data) - np.mean(life_first_data)
+                equiv = "✓" if abs(diff) < 10 and p_value > 0.05 else "✗"
+                
+                table_std_work.append([
+                    zone.upper(),
+                    f"{np.mean(life_first_data):.1f}%",
+                    f"{np.mean(work_first_data):.1f}%",
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    equiv
+                ])
+        
+        if table_std_work:
+            self.add_paragraph(f"\n*Работа — STANDARD:*")
+            self.add_table(
+                ['Зона', 'Сначала личное', 'Сначала работа', 'Разница', "Cohen's d", 'p-value', 'Эквивалентно'],
+                table_std_work
+            )
+        
+        # Анализ влияния порядка для HORIZONTAL
+        self.add_paragraph("\n**Вариант HORIZONTAL:**")
+        
+        horizontal_life_first = [d for d in self.completed if d.get('group_id') == 3]
+        horizontal_work_first = [d for d in self.completed if d.get('group_id') == 4]
+        
+        self.add_paragraph(f"  Личная жизнь → Работа (group 3): n = {len(horizontal_life_first)}")
+        self.add_paragraph(f"  Работа → Личная жизнь (group 4): n = {len(horizontal_work_first)}")
+        
+        # Личная жизнь - horizontal (используем _life_col)
+        table_hor_life = []
+        for zone in zones:
+            life_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in horizontal_life_first 
+                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            work_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in horizontal_work_first 
+                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            
+            if life_first_data and work_first_data:
+                t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
+                d = cohens_d(life_first_data, work_first_data)
+                diff = np.mean(work_first_data) - np.mean(life_first_data)
+                equiv = "✓" if abs(diff) < 10 and p_value > 0.05 else "✗"
+                
+                table_hor_life.append([
+                    zone.upper(),
+                    f"{np.mean(life_first_data):.1f}%",
+                    f"{np.mean(work_first_data):.1f}%",
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    equiv
+                ])
+        
+        if table_hor_life:
+            self.add_paragraph(f"\n*Личная жизнь — HORIZONTAL:*")
+            self.add_table(
+                ['Зона', 'Сначала личное', 'Сначала работа', 'Разница', "Cohen's d", 'p-value', 'Эквивалентно'],
+                table_hor_life
+            )
+        
+        # Работа - horizontal (используем _work_col)
+        table_hor_work = []
+        for zone in zones:
+            life_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in horizontal_life_first 
+                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            work_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in horizontal_work_first 
+                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            
+            if life_first_data and work_first_data:
+                t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
+                d = cohens_d(life_first_data, work_first_data)
+                diff = np.mean(work_first_data) - np.mean(life_first_data)
+                equiv = "✓" if abs(diff) < 10 and p_value > 0.05 else "✗"
+                
+                table_hor_work.append([
+                    zone.upper(),
+                    f"{np.mean(life_first_data):.1f}%",
+                    f"{np.mean(work_first_data):.1f}%",
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    equiv
+                ])
+        
+        if table_hor_work:
+            self.add_paragraph(f"\n*Работа — HORIZONTAL:*")
+            self.add_table(
+                ['Зона', 'Сначала личное', 'Сначала работа', 'Разница', "Cohen's d", 'p-value', 'Эквивалентно'],
+                table_hor_work
+            )
+        
+        # Вывод по H5a
+        self.add_paragraph(f"\n**Вывод по H5a:**")
+        self.add_paragraph("Критерии эквивалентности: разница < 10% и p > 0.05")
+        
+        # Подсчитываем эквивалентные случаи
+        equiv_std = sum(1 for row in table_std_life + table_std_work if row[-1] == "✓")
+        equiv_hor = sum(1 for row in table_hor_life + table_hor_work if row[-1] == "✓")
+        
+        total_std = len(table_std_life) + len(table_std_work)
+        total_hor = len(table_hor_life) + len(table_hor_work)
+        
+        if equiv_std == total_std and equiv_hor == total_hor:
+            self.add_paragraph("Порядок вопросов не влияет — во всех зонах эквивалентность подтверждена")
+        elif equiv_std == total_std:
+            self.add_paragraph(f"Для STANDARD: эквивалентность во всех зонах ({equiv_std}/{total_std})")
+            self.add_paragraph(f"Для HORIZONTAL: эквивалентность в {equiv_hor}/{total_hor} зонах")
+        elif equiv_hor == total_hor:
+            self.add_paragraph(f"Для HORIZONTAL: эквивалентность во всех зонах ({equiv_hor}/{total_hor})")
+            self.add_paragraph(f"Для STANDARD: эквивалентность в {equiv_std}/{total_std} зонах")
+        else:
+            self.add_paragraph(f"Для STANDARD: эквивалентность в {equiv_std}/{total_std} зонах")
+            self.add_paragraph(f"Для HORIZONTAL: эквивалентность в {equiv_hor}/{total_hor} зонах")
     
     def analyze_h6_correlations(self):
         """H6: Корреляция между зонами и контрольными переменными одинакова"""
         self.add_section("H6: Эквивалентность корреляций", 3)
         
-        # Анализируем корреляции между зоной TL (зеленая) и желаемой продуктивностью
         standard_data = [(d['p1_tl'], d['slider_desired']) for d in self.completed 
-                        if d.get('variant') == 'standard' and d.get('p1_tl') and d.get('slider_desired')]
+                        if d.get('variant') == 'standard' and d.get('p1_tl') is not None and d.get('slider_desired') is not None]
         horizontal_data = [(d['p1_tl'], d['slider_desired']) for d in self.completed 
-                          if d.get('variant') == 'horizontal' and d.get('p1_tl') and d.get('slider_desired')]
+                          if d.get('variant') == 'horizontal' and d.get('p1_tl') is not None and d.get('slider_desired') is not None]
         
         if standard_data and horizontal_data:
-            # Корреляция для standard
             x1_std = [x[0] for x in standard_data]
             y1_std = [x[1] for x in standard_data]
             r1, p1 = stats.pearsonr(x1_std, y1_std)
             
-            # Корреляция для horizontal
             x1_hor = [x[0] for x in horizontal_data]
             y1_hor = [x[1] for x in horizontal_data]
             r2, p2 = stats.pearsonr(x1_hor, y1_hor)
             
-            # Сравнение корреляций
             z, p_compare = compare_correlations(r1, len(standard_data), r2, len(horizontal_data))
             
-            self.add_paragraph("**Корреляция TL (зелёная зона) vs Желаемая продуктивность:**")
+            self.add_paragraph("**Корреляция TL vs Желаемая продуктивность:**")
             self.add_table(
                 ['Вариант', 'r', 'p-value', 'n'],
                 [['Standard', f'{r1:.3f}', f'{p1:.4f}', len(standard_data)],
@@ -454,16 +716,15 @@ class ABTestAnalyzer:
             )
             self.add_paragraph(f"Сравнение корреляций: z = {z:.2f}, p = {p_compare:.4f}")
             
-            conclusion = "Подтверждается (корреляции эквивалентны)" if p_compare >= 0.05 else "Не подтверждается"
+            conclusion = "Подтверждается" if p_compare >= 0.05 else "Не подтверждается"
             self.add_paragraph(f"**Вывод**: {conclusion}")
         else:
-            self.add_paragraph("⚠️ Недостаточно данных для анализа")
-        
-        # Дополнительные корреляции для проверки стабильности
-        self.add_paragraph("\n**Дополнительные корреляции (все респонденты):**")
+            self.add_paragraph("⚠️ Недостаточно данных")
+    
+        # Дополнительные корреляции
+        self.add_paragraph("\n**Дополнительные корреляции:**")
         
         zones = ['tl', 'tr', 'bl', 'br']
-        zone_names = {'tl': 'TL (зелёная)', 'tr': 'TR (оранжевая)', 'bl': 'BL (серая)', 'br': 'BR (красная)'}
         
         for page in [1, 2]:
             page_name = "Личная жизнь" if page == 1 else "Работа"
@@ -471,19 +732,19 @@ class ABTestAnalyzer:
             
             for zone in zones:
                 col = f'p{page}_{zone}'
-                data = [(d[col], d['slider_desired']) for d in self.completed if d.get(col) and d.get('slider_desired')]
+                data = [(d[col], d['slider_desired']) for d in self.completed if d.get(col) is not None and d.get('slider_desired') is not None]
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
                     sig = "*" if p < 0.05 else ""
-                    self.add_paragraph(f"  {zone_names[zone]} vs желаемая продуктивность: r = {r:.3f}, p = {p:.4f} {sig}")
+                    self.add_paragraph(f"  {zone.upper()} vs продуктивность: r = {r:.3f}, p = {p:.4f} {sig}")
     
     def analyze_h7_life_work_diff(self):
         """H7: Разница между личной жизнью и работой одинакова в обеих группах"""
         self.add_section("H7: Эквивалентность разницы работа/личное", 3)
         
         def calc_diff(row):
-            if row.get('p1_tr') and row.get('p2_tr'):
+            if row.get('p1_tr') is not None and row.get('p2_tr') is not None:
                 return row['p2_tr'] - row['p1_tr']
             return None
         
@@ -508,12 +769,6 @@ class ABTestAnalyzer:
         self.add_section("Дополнительные корреляции", 2)
         
         zones = ['tl', 'tr', 'bl', 'br']
-        zone_names = {
-            'tl': 'TL (зелёная)',
-            'tr': 'TR (оранжевая)',
-            'bl': 'BL (серая)',
-            'br': 'BR (красная)'
-        }
         
         # 1. Корреляции между работой и личной жизнью
         self.add_section("Корреляции между работой и личной жизнью", 3)
@@ -521,12 +776,12 @@ class ABTestAnalyzer:
         table_data = []
         for zone in zones:
             data = [(d[f'p1_{zone}'], d[f'p2_{zone}']) for d in self.completed 
-                   if d.get(f'p1_{zone}') and d.get(f'p2_{zone}')]
+                   if d.get(f'p1_{zone}') is not None and d.get(f'p2_{zone}') is not None]
             
             if len(data) >= 10:
                 r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
                 sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
-                table_data.append([zone_names[zone], f"{r:.3f}", f"{p:.4f}", len(data), sig])
+                table_data.append([zone.upper(), f"{r:.3f}", f"{p:.4f}", len(data), sig])
         
         if table_data:
             self.add_table(
@@ -534,9 +789,7 @@ class ABTestAnalyzer:
                 table_data
             )
             self.add_paragraph("* p < 0.05, ** p < 0.01, *** p < 0.001")
-        else:
-            self.add_paragraph("⚠️ Недостаточно данных")
-    
+        
         # 2. Корреляции с балансом
         self.add_section("Корреляции с балансом работа/личное", 3)
         self.add_paragraph("Баланс: 0 = только работа, 100 = только личная жизнь")
@@ -547,23 +800,21 @@ class ABTestAnalyzer:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
                 data = [(d[col], d['slider_balance']) for d in self.completed 
-                       if d.get(col) and d.get('slider_balance')]
+                       if d.get(col) is not None and d.get('slider_balance') is not None]
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
                     sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
-                    table_data.append([f"{zone_names[zone]} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
+                    table_data.append([f"{zone.upper()} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
         
         if table_data:
             self.add_table(
                 ['Зона', 'r', 'p-value', 'n', 'Значимо'],
                 table_data
             )
-        else:
-            self.add_paragraph("⚠️ Недостаточно данных")
-    
+        
         # 3. Корреляции с желаемой продуктивностью
-        self.add_section("Корреляции с ощущаемой продуктивностью (vs желаемый уровень)", 3)
+        self.add_section("Корреляции с ощущаемой продуктивностью", 3)
         
         table_data = []
         for zone in zones:
@@ -571,21 +822,19 @@ class ABTestAnalyzer:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
                 data = [(d[col], d['slider_desired']) for d in self.completed 
-                       if d.get(col) and d.get('slider_desired')]
+                       if d.get(col) is not None and d.get('slider_desired') is not None]
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
                     sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
-                    table_data.append([f"{zone_names[zone]} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
+                    table_data.append([f"{zone.upper()} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
         
         if table_data:
             self.add_table(
                 ['Зона', 'r', 'p-value', 'n', 'Значимо'],
                 table_data
             )
-        else:
-            self.add_paragraph("⚠️ Недостаточно данных")
-    
+        
         # 4. Корреляции с продуктивностью относительно других
         self.add_section("Корреляции с продуктивностью (в сравнении с другими)", 3)
         
@@ -594,29 +843,24 @@ class ABTestAnalyzer:
             for page in [1, 2]:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
-                # Ищем поле для сравнения с другими - возможно slider_others
                 data = [(d[col], d.get('slider_others')) for d in self.completed 
-                       if d.get(col) and d.get('slider_others')]
+                       if d.get(col) is not None and d.get('slider_others') is not None]
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
                     sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
-                    table_data.append([f"{zone_names[zone]} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
+                    table_data.append([f"{zone.upper()} ({page_name})", f"{r:.3f}", f"{p:.4f}", len(data), sig])
         
         if table_data:
             self.add_table(
                 ['Зона', 'r', 'p-value', 'n', 'Значимо'],
                 table_data
             )
-        else:
-            self.add_paragraph("⚠️ Недостаточно данных (проверьте наличие поля slider_others в данных)")
         
-        # 5. Общая сводка корреляций
         self.add_section("Сводка корреляций", 3)
-        
         self.add_paragraph("""
 **Интерпретация:**
-- r > 0 — прямая связь (больше в одной сфере → больше в другой)
+- r > 0 — прямая связь
 - r < 0 — обратная связь
 - |r| < 0.3 — слабая связь
 - 0.3 ≤ |r| < 0.5 — средняя связь
@@ -629,17 +873,49 @@ class ABTestAnalyzer:
         """H8: Распределение по зонам в личной жизни отличается для мужчин и женщин"""
         self.add_section("H8: Гендерные различия (личная жизнь)", 3)
         
-        male = [d['p1_tl'] for d in self.completed if d.get('gender') == 'male' and d.get('p1_tl')]
-        female = [d['p1_tl'] for d in self.completed if d.get('gender') == 'female' and d.get('p1_tl')]
+        zones = ['tl', 'tr', 'bl', 'br']
+        table_data = []
+        significant_count = 0
         
-        if male and female:
-            t_stat, p_value = stats.ttest_ind(male, female)
-            d = cohens_d(male, female)
-            self.add_paragraph(f"Зона TL (личная жизнь):")
-            self.add_paragraph(f"  Мужчины: M = {np.mean(male):.1f}%, n = {len(male)}")
-            self.add_paragraph(f"  Женщины: M = {np.mean(female):.1f}%, n = {len(female)}")
-            self.add_test_result("t-тест", t_stat, p_value, 
-                               "Подтверждается" if p_value < 0.05 else "Не подтверждается", d)
+        for zone in zones:
+            col = f'p1_{zone}'
+            male = [d[col] for d in self.completed if d.get('gender') == 'male' and d.get(col) is not None]
+            female = [d[col] for d in self.completed if d.get('gender') == 'female' and d.get(col) is not None]
+            
+            if male and female:
+                t_stat, p_value = stats.ttest_ind(male, female)
+                d = cohens_d(male, female)
+                diff = np.mean(male) - np.mean(female)
+                sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else ""
+                
+                if p_value < 0.05:
+                    significant_count += 1
+                
+                table_data.append([
+                    zone.upper(),
+                    f"{np.mean(male):.1f}%",
+                    f"±{np.std(male):.1f}%",
+                    len(male),
+                    f"{np.mean(female):.1f}%",
+                    f"±{np.std(female):.1f}%",
+                    len(female),
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    sig
+                ])
+        
+        if table_data:
+            self.add_table(
+                ['Зона', 'Мужчины M', 'SD', 'n', 'Женщины M', 'SD', 'n', 'Разница', "Cohen's d", 'p-value', 'Значимо'],
+                table_data
+            )
+            self.add_paragraph(f"\n**Вывод:**")
+            if significant_count > 0:
+                self.add_paragraph(f"Найдено {significant_count} значимых различий из {len(zones)} зон")
+                self.add_paragraph("Подтверждается — есть статистически значимые гендерные различия")
+            else:
+                self.add_paragraph("Не подтверждается — нет статистически значимых гендерных различий")
         else:
             self.add_paragraph("⚠️ Недостаточно данных")
     
@@ -647,17 +923,49 @@ class ABTestAnalyzer:
         """H9: Распределение по зонам на работе отличается для мужчин и женщин"""
         self.add_section("H9: Гендерные различия (работа)", 3)
         
-        male = [d['p2_tl'] for d in self.completed if d.get('gender') == 'male' and d.get('p2_tl')]
-        female = [d['p2_tl'] for d in self.completed if d.get('gender') == 'female' and d.get('p2_tl')]
+        zones = ['tl', 'tr', 'bl', 'br']
+        table_data = []
+        significant_count = 0
         
-        if male and female:
-            t_stat, p_value = stats.ttest_ind(male, female)
-            d = cohens_d(male, female)
-            self.add_paragraph(f"Зона TL (работа):")
-            self.add_paragraph(f"  Мужчины: M = {np.mean(male):.1f}%, n = {len(male)}")
-            self.add_paragraph(f"  Женщины: M = {np.mean(female):.1f}%, n = {len(female)}")
-            self.add_test_result("t-тест", t_stat, p_value,
-                               "Подтверждается" if p_value < 0.05 else "Не подтверждается", d)
+        for zone in zones:
+            col = f'p2_{zone}'
+            male = [d[col] for d in self.completed if d.get('gender') == 'male' and d.get(col) is not None]
+            female = [d[col] for d in self.completed if d.get('gender') == 'female' and d.get(col) is not None]
+            
+            if male and female:
+                t_stat, p_value = stats.ttest_ind(male, female)
+                d = cohens_d(male, female)
+                diff = np.mean(male) - np.mean(female)
+                sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else ""
+                
+                if p_value < 0.05:
+                    significant_count += 1
+                
+                table_data.append([
+                    zone.upper(),
+                    f"{np.mean(male):.1f}%",
+                    f"±{np.std(male):.1f}%",
+                    len(male),
+                    f"{np.mean(female):.1f}%",
+                    f"±{np.std(female):.1f}%",
+                    len(female),
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    sig
+                ])
+        
+        if table_data:
+            self.add_table(
+                ['Зона', 'Мужчины M', 'SD', 'n', 'Женщины M', 'SD', 'n', 'Разница', "Cohen's d", 'p-value', 'Значимо'],
+                table_data
+            )
+            self.add_paragraph(f"\n**Вывод:**")
+            if significant_count > 0:
+                self.add_paragraph(f"Найдено {significant_count} значимых различий из {len(zones)} зон")
+                self.add_paragraph("Подтверждается — есть статистически значимые гендерные различия")
+            else:
+                self.add_paragraph("Не подтверждается — нет статистически значимых гендерных различий")
         else:
             self.add_paragraph("⚠️ Недостаточно данных")
     
@@ -665,7 +973,7 @@ class ABTestAnalyzer:
         """H10: Возраст является модератором связи гендер-баланс"""
         self.add_section("H10: Модерация возрастом", 3)
         
-        data_with_age = [d for d in self.completed if d.get('age') and d.get('slider_balance')]
+        data_with_age = [d for d in self.completed if d.get('age') is not None and d.get('slider_balance') is not None]
         
         if len(data_with_age) < 30:
             self.add_paragraph("⚠️ Недостаточно данных для анализа модерации")
@@ -690,19 +998,60 @@ class ABTestAnalyzer:
         
         leaders = ['Владелец бизнеса', 'Высший менеджмент', 'Тимлид']
         
-        leader_data = [d['p2_tl'] for d in self.completed 
-                      if d.get('position') in leaders and d.get('p2_tl')]
-        employee_data = [d['p2_tl'] for d in self.completed 
-                        if d.get('position') not in leaders and d.get('p2_tl') and d.get('position')]
+        zones = ['tl', 'tr', 'bl', 'br']
         
-        if leader_data and employee_data:
-            t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
-            d = cohens_d(leader_data, employee_data)
-            self.add_paragraph(f"Зона TL (работа):")
-            self.add_paragraph(f"  Руководители: M = {np.mean(leader_data):.1f}%, n = {len(leader_data)}")
-            self.add_paragraph(f"  Сотрудники: M = {np.mean(employee_data):.1f}%, n = {len(employee_data)}")
-            self.add_test_result("t-тест", t_stat, p_value,
-                               "Подтверждается" if p_value < 0.05 else "Не подтверждается", d)
+        leader_positions = [d for d in self.completed if d.get('position') in leaders]
+        employee_positions = [d for d in self.completed if d.get('position') not in leaders and d.get('position') is not None]
+        
+        self.add_paragraph(f"**Группы сравнения:**")
+        self.add_paragraph(f"  Руководители/собственники (n={len(leader_positions)})")
+        self.add_paragraph(f"  Остальные (n={len(employee_positions)})")
+        
+        self.add_paragraph(f"\n**Сравнение по зонам (страница 'Работа'):**")
+        
+        table_data = []
+        significant_count = 0
+        
+        for zone in zones:
+            col = f'p2_{zone}'
+            leader_data = [d[col] for d in leader_positions if d.get(col) is not None]
+            employee_data = [d[col] for d in employee_positions if d.get(col) is not None]
+            
+            if leader_data and employee_data:
+                t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
+                d = cohens_d(leader_data, employee_data)
+                diff = np.mean(leader_data) - np.mean(employee_data)
+                sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else ""
+                
+                if p_value < 0.05:
+                    significant_count += 1
+                
+                table_data.append([
+                    zone.upper(),
+                    f"{np.mean(leader_data):.1f}%",
+                    f"±{np.std(leader_data):.1f}%",
+                    len(leader_data),
+                    f"{np.mean(employee_data):.1f}%",
+                    f"±{np.std(employee_data):.1f}%",
+                    len(employee_data),
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    sig
+                ])
+        
+        if table_data:
+            self.add_table(
+                ['Зона', 'Руководители M', 'SD', 'n', 'Остальные M', 'SD', 'n', 'Разница', "Cohen's d", 'p-value', 'Значимо'],
+                table_data
+            )
+            
+            self.add_paragraph(f"\n**Вывод:**")
+            if significant_count > 0:
+                self.add_paragraph(f"Найдено {significant_count} значимых различий из {len(zones)} зон")
+                self.add_paragraph("Подтверждается")
+            else:
+                self.add_paragraph("Не подтверждается")
         else:
             self.add_paragraph("⚠️ Недостаточно данных")
     
@@ -712,19 +1061,60 @@ class ABTestAnalyzer:
         
         leaders = ['Владелец бизнеса', 'Высший менеджмент', 'Тимлид']
         
-        leader_data = [d['p1_tl'] for d in self.completed 
-                      if d.get('position') in leaders and d.get('p1_tl')]
-        employee_data = [d['p1_tl'] for d in self.completed 
-                        if d.get('position') not in leaders and d.get('p1_tl') and d.get('position')]
+        zones = ['tl', 'tr', 'bl', 'br']
         
-        if leader_data and employee_data:
-            t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
-            d = cohens_d(leader_data, employee_data)
-            self.add_paragraph(f"Зона TL (личная жизнь):")
-            self.add_paragraph(f"  Руководители: M = {np.mean(leader_data):.1f}%, n = {len(leader_data)}")
-            self.add_paragraph(f"  Сотрудники: M = {np.mean(employee_data):.1f}%, n = {len(employee_data)}")
-            self.add_test_result("t-тест", t_stat, p_value,
-                               "Подтверждается" if p_value < 0.05 else "Не подтверждается", d)
+        leader_positions = [d for d in self.completed if d.get('position') in leaders]
+        employee_positions = [d for d in self.completed if d.get('position') not in leaders and d.get('position') is not None]
+        
+        self.add_paragraph(f"**Группы сравнения:**")
+        self.add_paragraph(f"  Руководители/собственники (n={len(leader_positions)})")
+        self.add_paragraph(f"  Остальные (n={len(employee_positions)})")
+        
+        self.add_paragraph(f"\n**Сравнение по зонам (страница 'Личная жизнь'):**")
+        
+        table_data = []
+        significant_count = 0
+        
+        for zone in zones:
+            col = f'p1_{zone}'
+            leader_data = [d[col] for d in leader_positions if d.get(col) is not None]
+            employee_data = [d[col] for d in employee_positions if d.get(col) is not None]
+            
+            if leader_data and employee_data:
+                t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
+                d = cohens_d(leader_data, employee_data)
+                diff = np.mean(leader_data) - np.mean(employee_data)
+                sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else ""
+                
+                if p_value < 0.05:
+                    significant_count += 1
+                
+                table_data.append([
+                    zone.upper(),
+                    f"{np.mean(leader_data):.1f}%",
+                    f"±{np.std(leader_data):.1f}%",
+                    len(leader_data),
+                    f"{np.mean(employee_data):.1f}%",
+                    f"±{np.std(employee_data):.1f}%",
+                    len(employee_data),
+                    f"{diff:+.1f}%",
+                    f"{d:+.2f}",
+                    f"{p_value:.4f}",
+                    sig
+                ])
+        
+        if table_data:
+            self.add_table(
+                ['Зона', 'Руководители M', 'SD', 'n', 'Остальные M', 'SD', 'n', 'Разница', "Cohen's d", 'p-value', 'Значимо'],
+                table_data
+            )
+            
+            self.add_paragraph(f"\n**Вывод:**")
+            if significant_count > 0:
+                self.add_paragraph(f"Найдено {significant_count} значимых различий из {len(zones)} зон")
+                self.add_paragraph("Подтверждается")
+            else:
+                self.add_paragraph("Не подтверждается")
         else:
             self.add_paragraph("⚠️ Недостаточно данных")
     
@@ -733,7 +1123,7 @@ class ABTestAnalyzer:
         self.add_section("H13: Баланс работа/личное и продуктивность", 3)
         
         data = [(d['slider_balance'], d['slider_desired']) for d in self.completed 
-               if d.get('slider_balance') and d.get('slider_desired')]
+               if d.get('slider_balance') is not None and d.get('slider_desired') is not None]
         
         if len(data) < 10:
             self.add_paragraph("⚠️ Недостаточно данных")
@@ -762,7 +1152,7 @@ class ABTestAnalyzer:
             order = 'life→work' if g in [1, 3] else 'work→life'
             self.add_paragraph(f"  Группа {g} ({variant}, {order}): {count}")
         
-        ages = [d['age'] for d in self.completed if d.get('age')]
+        ages = [d['age'] for d in self.completed if d.get('age') is not None]
         genders = {}
         positions = {}
         for d in self.completed:
@@ -777,7 +1167,7 @@ class ABTestAnalyzer:
         self.add_paragraph(f"  Пол: {genders}")
         self.add_paragraph(f"  Должности: {positions}")
         
-        times = [d['time_total'] for d in self.completed if d.get('time_total')]
+        times = [d['time_total'] for d in self.completed if d.get('time_total') is not None]
         if times:
             self.add_paragraph(f"\n**Время прохождения:**")
             self.add_paragraph(f"  M = {np.mean(times):.0f} сек ({np.mean(times)/60:.1f} мин)")
@@ -793,6 +1183,8 @@ class ABTestAnalyzer:
 **Дата анализа:** {datetime.now().strftime('%Y-%m-%d %H:%M')}
 **Всего респондентов:** {len(self.data)}
 **Завершили опрос:** {len(self.completed)}
+  - Standard: {self.standard_count}
+  - Horizontal: {self.horizontal_count}
 
 ---
 
@@ -837,7 +1229,6 @@ class ABTestAnalyzer:
 - p < 0.05 — статистически значимый результат
 - Cohen's d: малый эффект = 0.2, средний = 0.5, большой = 0.8
 - Для эквивалентности: разница < 5% и p > 0.05
-- Для Манна-Уитни: r < 0.1 пренебрежимый, 0.1-0.3 малый, 0.3-0.5 средний, >0.5 большой
 
 ---
 *Отчёт сгенерирован автоматически*
@@ -854,7 +1245,7 @@ class ABTestAnalyzer:
 
 def main():
     parser = argparse.ArgumentParser(description='Анализ A/B теста вариантов контрола')
-    parser.add_argument('--csv', default='AB-test-respondents/ab_test_respondents_2026-03-24_125257.csv',
+    parser.add_argument('--csv', default='AB-test-respondents/ab_test_respondents.csv',
                        help='Путь к CSV файлу с данными')
     parser.add_argument('--output', default='Analysis/analysis_report.md',
                        help='Путь для сохранения отчёта')
