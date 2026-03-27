@@ -252,6 +252,9 @@ header h1 {
     box-shadow: var(--shadow);
     transition: var(--transition);
     border: 3px solid transparent;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
 }
 
 .zone:hover {
@@ -265,22 +268,26 @@ header h1 {
 
 .zone-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
     margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .zone-header h3 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--color-text);
+    text-align: center;
 }
 
 .zone-icon {
     font-size: 1.5rem;
+    line-height: 1;
 }
 
 .zone-drop-area {
-    min-height: 120px;
+    min-height: 80px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: var(--radius-sm);
     padding: 10px;
@@ -290,6 +297,7 @@ header h1 {
     align-items: flex-start;
     justify-content: center;
     transition: var(--transition);
+    flex: 1;
 }
 
 .zone-drop-area.drag-over {
@@ -575,27 +583,27 @@ footer {
     .pool-slots {
         gap: 8px;
     }
-    
+
     /* Легенда в 1 колонку на мобильных */
     .zones-legend {
         grid-template-columns: 1fr;
         padding: 15px;
         gap: 10px;
     }
-    
+
     .legend-item {
         padding: 12px;
         gap: 10px;
     }
-    
+
     .legend-icon {
         font-size: 1.5rem;
     }
-    
+
     .legend-item strong {
         font-size: 0.95rem;
     }
-    
+
     .legend-item p {
         font-size: 0.8rem;
     }
@@ -604,9 +612,10 @@ footer {
     .zones-container {
         gap: 10px;
     }
-    
+
     .zone {
         padding: 15px 10px;
+        flex: 1;
     }
     
     .zone-header {
@@ -615,34 +624,40 @@ footer {
     }
     
     .zone-header h3 {
-        font-size: 1rem;
+        font-size: 0.8rem;
     }
     
     .zone-icon {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
     
     .zone-drop-area {
-        min-height: 60px;
+        min-height: 50px;
         padding: 8px;
         gap: 6px;
+        flex: 1;
     }
-    
+
+    .zone {
+        min-height: 150px;
+        padding: 10px;
+    }
+
     .zone-counter {
         font-size: 0.85rem;
         margin-top: 10px;
     }
-    
+
     .zone-counter span {
         font-size: 1.1rem;
     }
-    
+
     /* Уменьшаем кубики в зонах */
     .zone-cubes .energy-cube {
         width: 35px;
         height: 35px;
     }
-    
+
     .zone-cubes .energy-cube span {
         font-size: 1rem;
     }

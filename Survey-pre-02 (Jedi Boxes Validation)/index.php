@@ -81,11 +81,11 @@ function saveResult($result) {
                 <h2>Ваш результат:</h2>
                 <div class="result-grid">
                     <div class="result-item urgent">
-                        <span class="label">Срочное</span>
+                        <span class="label">Реактивное</span>
                         <span class="value"><?= $result['urgent'] ?></span>
                     </div>
                     <div class="result-item main">
-                        <span class="label">Главное</span>
+                        <span class="label">Проактивное</span>
                         <span class="value"><?= $result['main'] ?></span>
                     </div>
                     <div class="result-item background">
@@ -101,8 +101,8 @@ function saveResult($result) {
                 <?php endif; ?>
                 <p class="result-text">
                     Из <?= ENERGY_UNITS ?> единиц энергии:
-                    <strong><?= $result['urgent'] ?> в срочном</strong>,
-                    <strong><?= $result['main'] ?> в главном</strong>,
+                    <strong><?= $result['urgent'] ?> в реактивном</strong>,
+                    <strong><?= $result['main'] ?> в проактивном</strong>,
                     <strong><?= $result['background'] ?> в фоновом</strong>
                     <?php if (isset($result['pool']) && $result['pool'] > 0): ?>
                     , <strong><?= $result['pool'] ?> не распределено</strong>
@@ -123,14 +123,14 @@ function saveResult($result) {
                 <div class="legend-item urgent">
                     <span class="legend-icon">🔴</span>
                     <div>
-                        <strong>Срочное</strong>
+                        <strong>Реактивное</strong>
                         <p>Задачи, которые требовали немедленного решения (дедлайны, проблемы, «тушение пожаров»)</p>
                     </div>
                 </div>
                 <div class="legend-item main">
                     <span class="legend-icon">🟢</span>
                     <div>
-                        <strong>Главное</strong>
+                        <strong>Проактивное</strong>
                         <p>Задачи, приближающие к долгосрочным целям (развитие, планирование, обучение, стратегия)</p>
                     </div>
                 </div>
@@ -166,11 +166,11 @@ function saveResult($result) {
 
                 <!-- Три ёмкости -->
                 <div class="zones-container">
-                    <!-- Зона 1: Срочное -->
+                    <!-- Зона 1: Реактивное -->
                     <div class="zone urgent-zone" data-zone="urgent">
                         <div class="zone-header">
                             <span class="zone-icon">🔴</span>
-                            <h3>Срочное</h3>
+                            <h3>Реактивное</h3>
                         </div>
                         <div class="zone-drop-area" id="urgent-zone">
                             <div class="zone-cubes" id="urgent-cubes"></div>
@@ -180,11 +180,11 @@ function saveResult($result) {
                         </div>
                     </div>
 
-                    <!-- Зона 2: Главное -->
+                    <!-- Зона 2: Проактивное -->
                     <div class="zone main-zone" data-zone="main">
                         <div class="zone-header">
                             <span class="zone-icon">🟢</span>
-                            <h3>Главное</h3>
+                            <h3>Проактивное</h3>
                         </div>
                         <div class="zone-drop-area" id="main-zone">
                             <div class="zone-cubes" id="main-cubes"></div>

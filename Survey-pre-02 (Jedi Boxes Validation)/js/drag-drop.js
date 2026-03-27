@@ -24,9 +24,9 @@
         poolSlots: document.querySelector('.pool-slots'),
         poolCount: document.getElementById('pool-count'),
         zones: {
-            urgent: document.getElementById('urgent-zone'),
-            main: document.getElementById('main-zone'),
-            background: document.getElementById('background-zone')
+            urgent: document.querySelector('.zone[data-zone="urgent"]'),
+            main: document.querySelector('.zone[data-zone="main"]'),
+            background: document.querySelector('.zone[data-zone="background"]')
         },
         cubes: {
             urgent: document.getElementById('urgent-cubes'),
@@ -206,23 +206,32 @@
         const dropArea = e.target.closest('.zone-drop-area') || e.target.closest('.pool-slots');
         if (!dropArea || !draggedElement) return;
 
-        // Убираем подсветку
+        // Убираем подсветку со всех зон
+        Object.values(elements.zones).forEach(zone => {
+            zone.classList.remove('drag-over');
+            zone.querySelector('.zone-drop-area')?.classList.remove('drag-over');
+        });
+        elements.poolSlots.classList.remove('drag-over');
         dropArea.classList.remove('drag-over');
-        e.target.closest('.zone')?.classList.remove('drag-over');
 
-        // Восстанавливаем оригинальный элемент
-        draggedElement.style.visibility = '';
+        // Определяем source зону
+        const sourceZoneEl = draggedElement.closest('.zone');
+        const sourceZoneName = sourceZoneEl ? sourceZoneEl.dataset.zone : 'pool';
+        
+        // Определяем целевую зону
+        const zone = dropArea.closest('.zone');
+        const zoneName = zone ? zone.dataset.zone : 'pool';
 
-        // Если отпустили в той же зоне - ничего не делаем
-        const sourceZone = draggedElement.closest('.zone-drop-area') || elements.poolSlots;
-        if (dropArea === sourceZone) {
+        // Если отпустили в той же зоне - восстанавливаем видимость
+        if (zoneName === sourceZoneName) {
+            draggedElement.style.visibility = '';
+            draggedElement.classList.remove('dragging');
             draggedElement = null;
             return;
         }
 
-        // Определяем целевую зону
-        const zone = dropArea.closest('.zone');
-        const zoneName = zone ? zone.dataset.zone : 'pool';
+        // Восстанавливаем видимость перед перемещением
+        draggedElement.style.visibility = '';
 
         // Перемещаем кубик
         moveCube(draggedElement, zoneName);
@@ -240,11 +249,27 @@
 
         e.preventDefault(); // Важно для предотвращения скролла
         
+        // Сбрасываем подсветку от предыдущего перетаскивания
+        Object.values(elements.zones).forEach(zone => {
+            zone.classList.remove('drag-over');
+            zone.style.borderColor = '';
+            zone.style.transform = '';
+            const dropArea = zone.querySelector('.zone-drop-area');
+            if (dropArea) {
+                dropArea.classList.remove('drag-over');
+                dropArea.style.border = '';
+                dropArea.style.background = '';
+            }
+        });
+        elements.poolSlots.classList.remove('drag-over');
+        
         const touch = e.touches[0];
-        console.log('touchstart:', touch.clientX, touch.clientY);
         
         draggedElement = cube;
-        touchStartZone = cube.closest('.zone-drop-area') || elements.poolSlots;
+        
+        // Запоминаем исходную зону (любой элемент внутри зоны)
+        const sourceZone = cube.closest('.zone');
+        touchStartZone = sourceZone ? sourceZone.dataset.zone : 'pool';
 
         // Скрываем оригинальный элемент
         draggedElement.style.visibility = 'hidden';
@@ -277,7 +302,7 @@
         // Подсвечиваем текущую зону
         highlightZoneUnderTouch(touch.clientX, touch.clientY);
     }
-
+        
     /**
      * Обработчик touchmove
      */
@@ -286,9 +311,6 @@
 
         e.preventDefault(); // Предотвращаем скролл только во время перетаскивания
         const touch = e.touches[0];
-        
-        // Отладка
-        console.log('touchmove:', touch.clientX, touch.clientY);
         
         // Быстрое обновление позиции клона
         updateClonePosition(touch.clientX, touch.clientY);
@@ -311,27 +333,48 @@
         const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
         touchClone.style.visibility = 'visible';
 
-        const dropArea = dropTarget?.closest('.zone-drop-area') || dropTarget?.closest('.pool-slots');
+        // Ищем зону (любой элемент внутри зоны) или пул
+        const zone = dropTarget?.closest('.zone');
+        const poolArea = dropTarget?.closest('.pool-slots');
 
-        if (dropArea) {
-            const zone = dropArea.closest('.zone');
-            const zoneName = zone ? zone.dataset.zone : 'pool';
+        // Определяем исходную зону (уже сохранена в touchStartZone)
+        const sourceZoneName = touchStartZone;
+
+        if (zone) {
+            const zoneName = zone.dataset.zone;
             
-            // Если переместили в другую зону (или в пул) - перемещаем кубик
-            if (dropArea !== touchStartZone) {
+            // Если переместили в другую зону - перемещаем кубик
+            if (zoneName !== sourceZoneName) {
+                draggedElement.style.visibility = '';
                 moveCube(draggedElement, zoneName);
             } else {
                 // Возвращаем в ту же зону - восстанавливаем видимость
                 draggedElement.style.visibility = '';
                 draggedElement.style.pointerEvents = '';
             }
+        } else if (poolArea) {
+            // Переместили в пул
+            if (sourceZoneName !== 'pool') {
+                draggedElement.style.visibility = '';
+                moveCube(draggedElement, 'pool');
+            } else {
+                draggedElement.style.visibility = '';
+                draggedElement.style.pointerEvents = '';
+            }
         } else {
-            // Возвращаем оригинальный элемент
+            // Бросили вне зон - возвращаем кубик
             draggedElement.style.visibility = '';
             draggedElement.style.pointerEvents = '';
         }
         
-        // Убираем клон и подсветку
+        // Убираем подсветку со всех зон
+        Object.values(elements.zones).forEach(z => {
+            z.classList.remove('drag-over');
+            z.querySelector('.zone-drop-area')?.classList.remove('drag-over');
+        });
+        elements.poolSlots.classList.remove('drag-over');
+        
+        // Убираем клон
         cleanupTouch();
 
         draggedElement = null;
@@ -340,8 +383,12 @@
 
     /**
      * Обработчики для зон (Touch)
+     * Подсвечиваем только если идёт перетаскивание (touchClone существует)
      */
     function handleZoneTouchStart(e) {
+        // Не подсвечиваем если нет перетаскивания
+        if (!touchClone) return;
+        
         const dropArea = e.target.closest('.zone-drop-area');
         if (dropArea) {
             dropArea.classList.add('drag-over');
@@ -350,10 +397,15 @@
     }
 
     function handleZoneTouchMove(e) {
+        // Не обрабатываем если нет перетаскивания
+        if (!touchClone) return;
         e.preventDefault();
     }
 
     function handleZoneTouchEnd(e) {
+        // Не обрабатываем если нет перетаскивания
+        if (!touchClone) return;
+        
         const dropArea = e.target.closest('.zone-drop-area');
         if (dropArea) {
             dropArea.classList.remove('drag-over');
@@ -380,25 +432,36 @@
             zone.classList.remove('drag-over');
             zone.querySelector('.zone-drop-area')?.classList.remove('drag-over');
         });
+        elements.poolSlots.classList.remove('drag-over');
 
         // Временно скрываем клон, чтобы найти элемент под ним
+        const cloneWasVisible = touchClone?.style.visibility;
         if (touchClone) {
             touchClone.style.visibility = 'hidden';
         }
         
-        // Находим элемент под пальцем
+        // Находим элемент под пальцем (немного выше, чтобы палец не перекрывал)
         const dropTarget = document.elementFromPoint(x, y);
-        const dropArea = dropTarget?.closest('.zone-drop-area') || dropTarget?.closest('.pool-slots');
+        
+        // Ищем зону (любой элемент внутри зоны) или пул
+        const zone = dropTarget?.closest('.zone');
+        const poolArea = dropTarget?.closest('.pool-slots');
 
         // Возвращаем видимость клона
         if (touchClone) {
-            touchClone.style.visibility = 'visible';
+            touchClone.style.visibility = cloneWasVisible || 'visible';
         }
 
-        if (dropArea) {
-            dropArea.classList.add('drag-over');
-            dropArea.closest('.zone')?.classList.add('drag-over');
+        if (zone) {
+            zone.classList.add('drag-over');
+            const dropArea = zone.querySelector('.zone-drop-area');
+            if (dropArea) {
+                dropArea.classList.add('drag-over');
+            }
+        } else if (poolArea) {
+            poolArea.classList.add('drag-over');
         }
+        // Если нет ни зоны, ни пула - ничего не подсвечиваем (это правильно)
     }
 
     /**
@@ -409,14 +472,29 @@
             touchClone.remove();
             touchClone = null;
         }
-        // Убираем подсветку
+        
+        // Сбрасываем ВСЕ зоны
         Object.values(elements.zones).forEach(zone => {
             zone.classList.remove('drag-over');
-            zone.querySelector('.zone-drop-area')?.classList.remove('drag-over');
+            // Убираем инлайн стили, чтобы использовался CSS
+            zone.style.borderColor = '';
+            zone.style.transform = '';
+            
+            // Сбрасываем drop-area
+            const dropArea = zone.querySelector('.zone-drop-area');
+            if (dropArea) {
+                dropArea.classList.remove('drag-over');
+                dropArea.style.border = '';
+                dropArea.style.background = '';
+            }
         });
+        
+        // Сбрасываем пул
         elements.poolSlots.classList.remove('drag-over');
+        elements.poolSlots.style.borderColor = '';
+        elements.poolSlots.style.background = '';
     }
-
+        
     /**
      * Перемещение кубика в целевую зону
      */
