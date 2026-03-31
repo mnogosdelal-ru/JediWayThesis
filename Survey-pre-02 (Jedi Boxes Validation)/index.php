@@ -89,7 +89,7 @@ function saveResult($result) {
                         <span class="value"><?= $result['main'] ?></span>
                     </div>
                     <div class="result-item background">
-                        <span class="label">Фоновое</span>
+                        <span class="label">Стабильное</span>
                         <span class="value"><?= $result['background'] ?></span>
                     </div>
                 </div>
@@ -137,7 +137,7 @@ function saveResult($result) {
                 <div class="legend-item background">
                     <span class="legend-icon">⚪</span>
                     <div>
-                        <strong>Фоновое</strong>
+                        <strong>Стабильное</strong>
                         <p>Рутинные задачи, паузы, восстановление, прокрастинация (не вредно, но и не продвигает вперёд)</p>
                     </div>
                 </div>
@@ -198,7 +198,7 @@ function saveResult($result) {
                     <div class="zone background-zone" data-zone="background">
                         <div class="zone-header">
                             <span class="zone-icon">⚪</span>
-                            <h3>Фоновое</h3>
+                            <h3>Стабильное</h3>
                         </div>
                         <div class="zone-drop-area" id="background-zone">
                             <div class="zone-cubes" id="background-cubes"></div>
