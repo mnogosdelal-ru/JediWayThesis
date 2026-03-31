@@ -169,11 +169,9 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
     const representative = document.querySelector('input[name="representative"]:checked');
     const workLife = document.querySelector('input[name="work_life"]:checked');
     const energyDeficit = document.querySelector('input[name="energy_deficit"]:checked');
-    const subjectiveProd = document.querySelector('input[name="subjective_productivity"]:checked');
-    const energyLevel = document.querySelector('input[name="energy_level"]:checked');
-    const memoryRecords = document.querySelector('input[name="memory_vs_records"]:checked');
+    const memoryVsRecords = document.querySelector('input[name="memory_vs_records"]:checked');
 
-    if(!appState.debug_mode && (!representative || !workLife || !energyDeficit || !subjectiveProd || !energyLevel || !memoryRecords)) {
+    if(!appState.debug_mode && (!representative || !workLife || !energyDeficit || !memoryVsRecords)) {
         alert("Пожалуйста, ответьте на все вопросы.");
         return;
     }
@@ -186,9 +184,7 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
         representative: representative ? parseInt(representative.value) : null,
         work_life: workLife ? parseInt(workLife.value) : null,
         energy_deficit: energyDeficit ? parseInt(energyDeficit.value) : null,
-        subjective_productivity: subjectiveProd ? parseInt(subjectiveProd.value) : null,
-        energy_level: energyLevel ? parseInt(energyLevel.value) : null,
-        memory_vs_records: memoryRecords ? parseInt(memoryRecords.value) : null
+        memory_vs_records: memoryVsRecords ? parseInt(memoryVsRecords.value) : null
     });
     showPage(3);
 });
@@ -198,6 +194,7 @@ document.getElementById('btn-next-3').addEventListener('click', async () => {
     appState.time_page3_end = Date.now();
     const totalTimeSec = Math.round((appState.time_page3_end - appState.time_page3_start) / 1000);
 
+    // Сбор данных шкалы прокрастинации
     const procData = {};
     for (let i = 1; i <= 8; i++) {
         const el = document.querySelector(`input[name="proc_${i}"]:checked`);
@@ -251,18 +248,21 @@ document.getElementById('btn-next-5').addEventListener('click', async () => {
     const totalTimeSec = Math.round((appState.time_page5_end - appState.time_page5_start) / 1000);
     const overallTotal = Math.round((appState.time_page5_end - appState.time_page0_start) / 1000);
 
-    // Сбор данных MBI
+    // Сбор данных MBI (9 вопросов субшкалы "Эмоциональное истощение")
+    // Вопросы: 1,2,3,6(обратный),8,13,14,16,20
+    const mbiQuestions = [1, 2, 3, 6, 8, 13, 14, 16, 20];
     const mbiData = {};
-    for (let i = 1; i <= 12; i++) {
-        const el = document.querySelector(`input[name="mbi_${i}"]:checked`);
-        mbiData[`mbi_${i}`] = el ? parseInt(el.value) : null;
+    
+    for (const q of mbiQuestions) {
+        const el = document.querySelector(`input[name="mbi_${q}"]:checked`);
+        mbiData[`mbi_${q}`] = el ? parseInt(el.value) : null;
     }
 
     if(!appState.debug_mode && Object.values(mbiData).some(v => v === null)) {
         alert("Пожалуйста, ответьте на все вопросы шкалы выгорания.");
         return;
     }
-
+    
     await apiCall('finish_survey', {
         time_page5_start: appState.time_page5_start,
         time_page5_end: appState.time_page5_end,
@@ -330,9 +330,9 @@ async function loadResults() {
                         <td><strong>${r.swls_percentile}%</strong></td>
                     </tr>
                     <tr>
-                        <td><strong>Выгорание</strong></td>
+                        <td><strong>Эмоциональное истощение</strong></td>
                         <td>${r.mbi_total}</td>
-                        <td>72</td>
+                        <td>54</td>
                         <td>${r.mbi_below}</td>
                         <td>${r.mbi_equal}</td>
                         <td>${r.mbi_above}</td>
@@ -350,6 +350,7 @@ async function loadResults() {
 }
 
 // Обработчики кнопок "Назад"
+document.getElementById('btn-prev-1')?.addEventListener('click', () => showPage(0));
 document.getElementById('btn-prev-2')?.addEventListener('click', () => showPage(1));
 document.getElementById('btn-prev-3')?.addEventListener('click', () => showPage(2));
 document.getElementById('btn-prev-4')?.addEventListener('click', () => showPage(3));

@@ -424,6 +424,38 @@ input[type="text"], input[type="number"], select, textarea {
     font-size: 1rem;
 }
 
+/* Select для вопроса о памяти/записях */
+.select-scale {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c757d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+
+.select-scale:hover {
+    border-color: #adb5bd;
+    background-color: #fff;
+}
+
+.select-scale:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.select-scale:invalid {
+    color: #adb5bd;
+}
+
 .likert-7-scale {
     display: grid;
     grid-template-columns: auto repeat(7, 28px) auto;
@@ -450,7 +482,7 @@ input[type="text"], input[type="number"], select, textarea {
 
 .likert-mbi-scale {
     display: grid;
-    grid-template-columns: repeat(7, 28px) auto;
+    grid-template-columns: auto repeat(7, 32px) auto;
     gap: 2px;
     align-items: center;
     background: #f1f3f5;
@@ -469,8 +501,8 @@ input[type="text"], input[type="number"], select, textarea {
 .likert-7-scale label,
 .likert-5-scale label,
 .likert-mbi-scale label {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -506,7 +538,7 @@ input[type="text"], input[type="number"], select, textarea {
     text-align: center;
     display: flex;
     align-items: center;
-    height: 28px;
+    height: 32px;
     box-sizing: border-box;
     width: 100px;
     word-wrap: break-word;
@@ -522,6 +554,72 @@ input[type="text"], input[type="number"], select, textarea {
 .likert-7-label.right,
 .likert-5-label.right,
 .likert-mbi-label.right {
+    justify-content: flex-start;
+    padding-left: 8px;
+}
+
+/* Шкала дефицита энергии (-3, -2, -1, 0, 3, 6, 9) */
+.likert-deficit-scale {
+    display: grid;
+    grid-template-columns: auto repeat(7, 32px) auto;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 12px 8px;
+    border-radius: 10px;
+    position: relative;
+    justify-content: center;
+}
+
+.likert-deficit-scale input[type="radio"] {
+    display: none;
+}
+
+.likert-deficit-scale label {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #495057;
+}
+
+.likert-deficit-scale label:hover {
+    background: #dee2e6;
+}
+
+.likert-deficit-scale input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.likert-deficit-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+.likert-deficit-label.left {
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.likert-deficit-label.right {
     justify-content: flex-start;
     padding-left: 8px;
 }
@@ -585,6 +683,246 @@ input[type="text"], input[type="number"], select, textarea {
 .scale-instruction li {
     margin-bottom: 5px;
     line-height: 1.4;
+}
+
+/* Центрированная шкала (-3 до +3) */
+.likert-center-scale {
+    display: grid;
+    grid-template-columns: auto repeat(7, 32px) auto;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 12px 8px;
+    border-radius: 10px;
+    position: relative;
+    justify-content: center;
+}
+
+.likert-center-scale input[type="radio"] {
+    display: none;
+}
+
+.likert-center-scale label {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #495057;
+}
+
+.likert-center-scale label:hover {
+    background: #dee2e6;
+}
+
+.likert-center-scale input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.likert-center-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+.likert-center-label.left {
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.likert-center-label.right {
+    justify-content: flex-start;
+    padding-left: 8px;
+}
+
+.center-scale-note {
+    grid-column: 3 / 8;
+    grid-row: 2;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+}
+
+/* Шкала для прокрастинации (1-5 с нейтрально по центру) */
+.likert-proc-scale {
+    display: grid;
+    grid-template-columns: auto repeat(5, 32px) auto;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 12px 8px;
+    border-radius: 10px;
+    position: relative;
+    justify-content: center;
+}
+
+.likert-proc-scale input[type="radio"] {
+    display: none;
+}
+
+.likert-proc-scale label {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #495057;
+}
+
+.likert-proc-scale label:hover {
+    background: #dee2e6;
+}
+
+.likert-proc-scale input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.likert-proc-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+.likert-proc-label.left {
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.likert-proc-label.right {
+    justify-content: flex-start;
+    padding-left: 8px;
+}
+
+.likert-proc-note {
+    grid-column: 2 / 7;
+    grid-row: 2;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin: 0;
+    padding: 0;
+}
+
+/* Шкала для SWLS (1-7 с "Нечто среднее" под 4) */
+.likert-swls-scale {
+    display: grid;
+    grid-template-columns: auto repeat(7, 32px) auto;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 12px 8px;
+    border-radius: 10px;
+    position: relative;
+    justify-content: center;
+}
+
+.likert-swls-scale input[type="radio"] {
+    display: none;
+}
+
+.likert-swls-scale label {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #495057;
+}
+
+.likert-swls-scale label:hover {
+    background: #dee2e6;
+}
+
+.likert-swls-scale input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.likert-swls-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+.likert-swls-label.left {
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.likert-swls-label.right {
+    justify-content: flex-start;
+    padding-left: 8px;
+}
+
+.likert-swls-note {
+    grid-column: 2 / 9;
+    grid-row: 2;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin: 0;
+    padding: 0;
+}
+
+/* Подпись "Иногда" для MBI шкалы */
+.likert-mbi-note {
+    grid-column: 4 / 5;
+    grid-row: 2;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin: 0;
+    padding: 0;
 }
 
 /* Финальная карточка */
@@ -799,17 +1137,95 @@ input[type="text"], input[type="number"], select, textarea {
     }
     
     .likert-mbi-scale {
-        grid-template-columns: repeat(7, 24px);
+        grid-template-columns: auto repeat(7, 26px) auto;
     }
     
     .likert-mbi-label {
-        display: none;
+        display: flex;
+        font-size: 0.6rem;
+        width: 50px;
     }
     
     .likert-mbi-scale label {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+    
+    /* Центрированная шкала на мобильных */
+    .likert-center-scale {
+        grid-template-columns: auto repeat(7, 26px) auto;
+    }
+    
+    .likert-center-scale label {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+    
+    .likert-center-label {
+        font-size: 0.6rem;
+        width: 70px;
+    }
+    
+    /* Шкала дефицита на мобильных */
+    .likert-deficit-scale {
+        grid-template-columns: auto repeat(7, 26px) auto;
+    }
+    
+    .likert-deficit-scale label {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+    
+    .likert-deficit-label {
+        font-size: 0.6rem;
+        width: 70px;
+    }
+    
+    .center-scale-note {
+        font-size: 0.7rem;
+    }
+    
+    /* Шкала прокрастинации на мобильных */
+    .likert-proc-scale {
+        grid-template-columns: auto repeat(5, 26px) auto;
+    }
+    
+    .likert-proc-scale label {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+    
+    .likert-proc-label {
+        font-size: 0.6rem;
+        width: 70px;
+    }
+    
+    .likert-proc-note {
+        font-size: 0.65rem;
+    }
+    
+    /* Шкала SWLS на мобильных */
+    .likert-swls-scale {
+        grid-template-columns: auto repeat(7, 24px) auto;
+    }
+    
+    .likert-swls-scale label {
         width: 24px;
         height: 24px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+    }
+    
+    .likert-swls-label {
+        font-size: 0.55rem;
+        width: 60px;
+    }
+    
+    .likert-swls-note {
+        font-size: 0.6rem;
     }
     
     .actions {
@@ -824,4 +1240,50 @@ input[type="text"], input[type="number"], select, textarea {
     .btn-secondary {
         margin-right: 0;
     }
+}
+
+/* Вертикальный список radio buttons */
+.radio-vertical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 2px solid transparent;
+}
+
+.radio-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.radio-item input[type="radio"] {
+    display: none;
+}
+
+.radio-item input[type="radio"]:checked + label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.radio-item:has(input[type="radio"]:checked) {
+    background: rgba(52, 152, 219, 0.1);
+    border-color: var(--primary-color);
+}
+
+.radio-item label {
+    cursor: pointer;
+    line-height: 1.4;
+    color: var(--text-main);
+    flex: 1;
 }

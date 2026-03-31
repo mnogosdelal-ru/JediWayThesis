@@ -26,8 +26,9 @@
         <div class="card info-card">
             <p>Вы приглашены к участию в исследовании, посвящённом восприятию людьми своей продуктивности.</p>
             <p>Участие анонимно, данные будут использованы исключительно в научных целях.
-                Вы можете прекратить участие в любой момент. Заполнение займет около 10 минут.</p>
+                Вы можете прекратить участие в любой момент. Заполнение займет около 5 минут.</p>
             <p>В исследовании всего 6 страниц.</p>
+            <p>В конце вы получите сводку по своим ответам и сравнение с другими респондентами.</p>
         </div>
 
         <div class="card form-card">
@@ -35,7 +36,7 @@
 
             <div class="form-group">
                 <label for="demo-age">Полных лет:</label>
-                <input type="number" id="demo-age" min="18" max="100" placeholder="Например, 30">
+                <input type="number" id="demo-age" min="14" max="100" placeholder="Например, 30">
             </div>
 
             <div class="form-group">
@@ -91,22 +92,22 @@
                 <div class="legend-item reactive">
                     <span class="legend-icon">🔴</span>
                     <div>
-                        <strong>Реактивное</strong>
-                        <p>Задачи, которые требовали немедленного решения (дедлайны, проблемы, «тушение пожаров»)</p>
+                        <strong>Срочное</strong>
+                        <p>Задачи, которые требовали немедленного решения (если бы вы их не сделали, то немедленно столкнулись бы с негативом)</p>
                     </div>
                 </div>
                 <div class="legend-item proactive">
                     <span class="legend-icon">🟢</span>
                     <div>
-                        <strong>Проактивное</strong>
-                        <p>Задачи, приближающие к долгосрочным целям (развитие, планирование, обучение, стратегия)</p>
+                        <strong>Важное</strong>
+                        <p>Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей</p>
                     </div>
                 </div>
                 <div class="legend-item operational">
                     <span class="legend-icon">⚪</span>
                     <div>
                         <strong>Операционное</strong>
-                        <p>Рутинные задачи, поддержание текущих процессов</p>
+                        <p>Рутинные задачи, поддержание текущих процессов или просто что-то несрочное без явной цели</p>
                     </div>
                 </div>
             </div>
@@ -127,31 +128,31 @@
 
         <!-- Три зоны -->
         <div class="zones-container">
-            <!-- Зона 1: Реактивное -->
+            <!-- Зона 1: Срочное -->
             <div class="zone reactive-zone" data-zone="reactive">
                 <div class="zone-header">
                     <span class="zone-icon">🔴</span>
-                    <h3>Реактивное</h3>
+                    <h3>Срочное</h3>
                 </div>
                 <div class="zone-drop-area" id="reactive-zone">
                     <div class="zone-cubes" id="reactive-cubes"></div>
                 </div>
                 <div class="zone-counter">
-                    <span class="count-value">0</span> / 7
+                    <span class="count-value">0</span>
                 </div>
             </div>
 
-            <!-- Зона 2: Проактивное -->
+            <!-- Зона 2: Важное -->
             <div class="zone proactive-zone" data-zone="proactive">
                 <div class="zone-header">
                     <span class="zone-icon">🟢</span>
-                    <h3>Проактивное</h3>
+                    <h3>Важное</h3>
                 </div>
                 <div class="zone-drop-area" id="proactive-zone">
                     <div class="zone-cubes" id="proactive-cubes"></div>
                 </div>
                 <div class="zone-counter">
-                    <span class="count-value">0</span> / 7
+                    <span class="count-value">0</span>
                 </div>
             </div>
 
@@ -165,12 +166,13 @@
                     <div class="zone-cubes" id="operational-cubes"></div>
                 </div>
                 <div class="zone-counter">
-                    <span class="count-value">0</span> / 7
+                    <span class="count-value">0</span>
                 </div>
             </div>
         </div>
 
         <div class="actions">
+            <button id="btn-prev-1" class="btn btn-secondary">← Назад</button>
             <button id="btn-next-1" class="btn btn-primary">Продолжить</button>
         </div>
     </section>
@@ -179,13 +181,50 @@
     <section id="page2" class="page">
         <h1>Контекстные вопросы</h1>
         <div class="card">
-            <p>Ответьте на несколько вопросов о прошедшей неделе.</p>
-
-            <!-- Насколько показательная неделя -->
+            <!-- Память vs записи (перемещено вверх) -->
             <div class="likert-scale-group">
-                <label>Насколько прошедшая неделя была показательной для вашего обычного режима работы?</label>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не показательная</span>
+                <label>Когда вы распределяли "энергию" по коробочкам, то какую часть вы восстановили по памяти, а какую по своим записям (дневники, ежедневник, календарь, список задач и т.п.)?</label>
+                <div class="radio-vertical-list">
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-1" value="1">
+                        <label for="mvr-1">Всё восстановил(а) по памяти</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-2" value="2">
+                        <label for="mvr-2">Большую часть восстановил(а) по памяти, и кое-что по записям</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-3" value="3">
+                        <label for="mvr-3">Примерно половину по памяти, половину по записям</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-4" value="4">
+                        <label for="mvr-4">Большую часть по записям и немного откорректировал(а) по памяти</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-5" value="5">
+                        <label for="mvr-5">Практически всё восстановил(а) по записям</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Насколько показательная неделя (-3 до +3) -->
+            <div class="likert-scale-group">
+                <label>Насколько прошедшая неделя отличалась от вашего обычного режима работы?</label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Значительно хуже</span>
+                    
+                    <input type="radio" name="representative" id="rep--3" value="-3">
+                    <label for="rep--3">-3</label>
+                    
+                    <input type="radio" name="representative" id="rep--2" value="-2">
+                    <label for="rep--2">-2</label>
+                    
+                    <input type="radio" name="representative" id="rep--1" value="-1">
+                    <label for="rep--1">-1</label>
+                    
+                    <input type="radio" name="representative" id="rep-0" value="0">
+                    <label for="rep-0">0</label>
                     
                     <input type="radio" name="representative" id="rep-1" value="1">
                     <label for="rep-1">1</label>
@@ -196,27 +235,28 @@
                     <input type="radio" name="representative" id="rep-3" value="3">
                     <label for="rep-3">3</label>
                     
-                    <input type="radio" name="representative" id="rep-4" value="4">
-                    <label for="rep-4">4</label>
-                    
-                    <input type="radio" name="representative" id="rep-5" value="5">
-                    <label for="rep-5">5</label>
-                    
-                    <input type="radio" name="representative" id="rep-6" value="6">
-                    <label for="rep-6">6</label>
-                    
-                    <input type="radio" name="representative" id="rep-7" value="7">
-                    <label for="rep-7">7</label>
-                    
-                    <span class="likert-7-label right">Очень показательная</span>
+                    <span class="likert-center-label right">Значительно лучше</span>
+                    <p class="center-scale-note">Как обычно</p>
                 </div>
             </div>
 
-            <!-- Доля работы -->
+            <!-- Доля работы (-3 до +3) -->
             <div class="likert-scale-group">
-                <label>Какую долю вашего времени и сил в течение недели занимала работа (включая удалённую)?</label>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Только личное</span>
+                <label>Как на прошедшей неделе вы распределили свою энергию между работой и личной жизнью?</label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Всё на личное</span>
+                    
+                    <input type="radio" name="work_life" id="wl--3" value="-3">
+                    <label for="wl--3">-3</label>
+                    
+                    <input type="radio" name="work_life" id="wl--2" value="-2">
+                    <label for="wl--2">-2</label>
+                    
+                    <input type="radio" name="work_life" id="wl--1" value="-1">
+                    <label for="wl--1">-1</label>
+                    
+                    <input type="radio" name="work_life" id="wl-0" value="0">
+                    <label for="wl-0">0</label>
                     
                     <input type="radio" name="work_life" id="wl-1" value="1">
                     <label for="wl-1">1</label>
@@ -227,142 +267,43 @@
                     <input type="radio" name="work_life" id="wl-3" value="3">
                     <label for="wl-3">3</label>
                     
-                    <input type="radio" name="work_life" id="wl-4" value="4">
-                    <label for="wl-4">4</label>
-                    
-                    <input type="radio" name="work_life" id="wl-5" value="5">
-                    <label for="wl-5">5</label>
-                    
-                    <input type="radio" name="work_life" id="wl-6" value="6">
-                    <label for="wl-6">6</label>
-                    
-                    <input type="radio" name="work_life" id="wl-7" value="7">
-                    <label for="wl-7">7</label>
-                    
-                    <span class="likert-7-label right">Только работа</span>
+                    <span class="likert-center-label right">Всё на работу</span>
+                    <p class="center-scale-note">Работа и личное в балансе</p>
                 </div>
             </div>
 
             <!-- Энергетический дефицит -->
             <div class="likert-scale-group">
-                <label>Сколько кубиков энергии вам не хватило (из 7)? Сколько задач вы хотели бы сделать, но не успели/не смогли?</label>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Хватило всего</span>
+                <label>Сколько кубиков энергии на этой неделе вам не хватило, чтобы сделать все, что вы хотели?</label>
+                <div class="likert-deficit-scale">
+                    <span class="likert-deficit-label left">Минимум половина ещё осталась</span>
+                    
+                    <input type="radio" name="energy_deficit" id="def--3" value="-3">
+                    <label for="def--3">-3</label>
+                    
+                    <input type="radio" name="energy_deficit" id="def--2" value="-2">
+                    <label for="def--2">-2</label>
+                    
+                    <input type="radio" name="energy_deficit" id="def--1" value="-1">
+                    <label for="def--1">-1</label>
                     
                     <input type="radio" name="energy_deficit" id="def-0" value="0">
                     <label for="def-0">0</label>
                     
-                    <input type="radio" name="energy_deficit" id="def-1" value="1">
-                    <label for="def-1">1</label>
-                    
-                    <input type="radio" name="energy_deficit" id="def-2" value="2">
-                    <label for="def-2">2</label>
-                    
                     <input type="radio" name="energy_deficit" id="def-3" value="3">
                     <label for="def-3">3</label>
-                    
-                    <input type="radio" name="energy_deficit" id="def-4" value="4">
-                    <label for="def-4">4</label>
-                    
-                    <input type="radio" name="energy_deficit" id="def-5" value="5">
-                    <label for="def-5">5</label>
                     
                     <input type="radio" name="energy_deficit" id="def-6" value="6">
                     <label for="def-6">6</label>
                     
-                    <input type="radio" name="energy_deficit" id="def-7" value="7">
-                    <label for="def-7">7</label>
+                    <input type="radio" name="energy_deficit" id="def-9" value="9">
+                    <label for="def-9">9</label>
                     
-                    <span class="likert-7-label right">Не хватило почти всего</span>
+                    <span class="likert-deficit-label right">Минимум 9 не хватило</span>
+                    <p class="center-scale-note">Точь-в-точь хватило</p>
                 </div>
             </div>
 
-            <!-- Субъективная продуктивность -->
-            <div class="likert-scale-group">
-                <label>Насколько продуктивной была ваша неделя по сравнению с тем, что вы хотели успеть?</label>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Почти ничего не успел</span>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-1" value="1">
-                    <label for="sp-1">1</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-2" value="2">
-                    <label for="sp-2">2</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-3" value="3">
-                    <label for="sp-3">3</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-4" value="4">
-                    <label for="sp-4">4</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-5" value="5">
-                    <label for="sp-5">5</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-6" value="6">
-                    <label for="sp-6">6</label>
-                    
-                    <input type="radio" name="subjective_productivity" id="sp-7" value="7">
-                    <label for="sp-7">7</label>
-                    
-                    <span class="likert-7-label right">Успел намного больше</span>
-                </div>
-            </div>
-
-            <!-- Уровень энергии -->
-            <div class="likert-scale-group">
-                <label>Каким был ваш общий уровень энергии на прошедшей неделе?</label>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Полный упадок сил</span>
-                    
-                    <input type="radio" name="energy_level" id="el-1" value="1">
-                    <label for="el-1">1</label>
-                    
-                    <input type="radio" name="energy_level" id="el-2" value="2">
-                    <label for="el-2">2</label>
-                    
-                    <input type="radio" name="energy_level" id="el-3" value="3">
-                    <label for="el-3">3</label>
-                    
-                    <input type="radio" name="energy_level" id="el-4" value="4">
-                    <label for="el-4">4</label>
-                    
-                    <input type="radio" name="energy_level" id="el-5" value="5">
-                    <label for="el-5">5</label>
-                    
-                    <input type="radio" name="energy_level" id="el-6" value="6">
-                    <label for="el-6">6</label>
-                    
-                    <input type="radio" name="energy_level" id="el-7" value="7">
-                    <label for="el-7">7</label>
-                    
-                    <span class="likert-7-label right">Полон энергии</span>
-                </div>
-            </div>
-
-            <!-- Записи vs память -->
-            <div class="likert-scale-group">
-                <label>Как вы оцениваете точность своих воспоминаний о прошедшей неделе?</label>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Всё придумал / ничего не помню</span>
-                    
-                    <input type="radio" name="memory_vs_records" id="mem-1" value="1">
-                    <label for="mem-1">1</label>
-                    
-                    <input type="radio" name="memory_vs_records" id="mem-2" value="2">
-                    <label for="mem-2">2</label>
-                    
-                    <input type="radio" name="memory_vs_records" id="mem-3" value="3">
-                    <label for="mem-3">3</label>
-                    
-                    <input type="radio" name="memory_vs_records" id="mem-4" value="4">
-                    <label for="mem-4">4</label>
-                    
-                    <input type="radio" name="memory_vs_records" id="mem-5" value="5">
-                    <label for="mem-5">5</label>
-                    
-                    <span class="likert-5-label right">Вёл записи / всё помню точно</span>
-                </div>
-            </div>
         </div>
 
         <div class="actions">
@@ -371,126 +312,126 @@
         </div>
     </section>
 
-    <!-- СТРАНИЦА 3: Шкала прокрастинации -->
+    <!-- СТРАНИЦА 3: Прокрастинация -->
     <section id="page3" class="page">
         <h1>Шкала прокрастинации</h1>
         <div class="card">
             <div class="scale-instruction">
                 <strong>Инструкция для прохождения теста</strong>
                 <p>Для каждого утверждения выберите степень по шкале от 1 до 5, в которой каждое утверждение является характерным или нехарактерным для вас.</p>
-                <p>Степень варьируется следующим образом:</p>
-                <ul>
-                    <li>(1) «Совершенно не характерно» — 1 балл</li>
-                    <li>(2) «Скорее не характерно» — 2 балла</li>
-                    <li>(3) «Нейтрально». Утверждение не является ни характерным, ни нехарактерным для вас — 3 балла</li>
-                    <li>(4) «Порой да, характерно» — 4 балла</li>
-                    <li>(5) «Очень характерно» — 5 баллов</li>
-                </ul>
             </div>
         </div>
 
         <div class="card">
             <div class="scale-item">
-                <p>Я откладываю выполнение важных задач, даже когда знаю, что нужно сделать их сейчас.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>При подготовке ко встрече я часто ловлю себя на том, что делаю что-то в последнюю минуту</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_1" id="proc1-1" value="1"><label for="proc1-1">1</label>
                     <input type="radio" name="proc_1" id="proc1-2" value="2"><label for="proc1-2">2</label>
                     <input type="radio" name="proc_1" id="proc1-3" value="3"><label for="proc1-3">3</label>
                     <input type="radio" name="proc_1" id="proc1-4" value="4"><label for="proc1-4">4</label>
                     <input type="radio" name="proc_1" id="proc1-5" value="5"><label for="proc1-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Когда у меня есть важное дело, я начинаю заниматься им в последний момент.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Когда приближаются сроки завершения работы, я часто теряю время, занимаясь другими делами</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_2" id="proc2-1" value="1"><label for="proc2-1">1</label>
                     <input type="radio" name="proc_2" id="proc2-2" value="2"><label for="proc2-2">2</label>
                     <input type="radio" name="proc_2" id="proc2-3" value="3"><label for="proc2-3">3</label>
                     <input type="radio" name="proc_2" id="proc2-4" value="4"><label for="proc2-4">4</label>
                     <input type="radio" name="proc_2" id="proc2-5" value="5"><label for="proc2-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я часто говорю "сделаю это завтра", хотя мог бы сделать сегодня.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Мне обычно приходится спешить, чтобы выполнить задачи вовремя</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_3" id="proc3-1" value="1"><label for="proc3-1">1</label>
                     <input type="radio" name="proc_3" id="proc3-2" value="2"><label for="proc3-2">2</label>
                     <input type="radio" name="proc_3" id="proc3-3" value="3"><label for="proc3-3">3</label>
                     <input type="radio" name="proc_3" id="proc3-4" value="4"><label for="proc3-4">4</label>
                     <input type="radio" name="proc_3" id="proc3-5" value="5"><label for="proc3-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Мне сложно начать делать то, что не хочется делать, даже если это важно.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Часто я долго не приступаю к выполнению задачи, которую мне нужно решить</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_4" id="proc4-1" value="1"><label for="proc4-1">1</label>
                     <input type="radio" name="proc_4" id="proc4-2" value="2"><label for="proc4-2">2</label>
                     <input type="radio" name="proc_4" id="proc4-3" value="3"><label for="proc4-3">3</label>
                     <input type="radio" name="proc_4" id="proc4-4" value="4"><label for="proc4-4">4</label>
                     <input type="radio" name="proc_4" id="proc4-5" value="5"><label for="proc4-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я часто отвлекаюсь на менее важные дела вместо того, чтобы заниматься главным.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Я часто говорю: «Сделаю это завтра»</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_5" id="proc5-1" value="1"><label for="proc5-1">1</label>
                     <input type="radio" name="proc_5" id="proc5-2" value="2"><label for="proc5-2">2</label>
                     <input type="radio" name="proc_5" id="proc5-3" value="3"><label for="proc5-3">3</label>
                     <input type="radio" name="proc_5" id="proc5-4" value="4"><label for="proc5-4">4</label>
                     <input type="radio" name="proc_5" id="proc5-5" value="5"><label for="proc5-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я испытываю чувство вины, когда откладываю дела.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Когда мне нужно выполнить трудную работу, я жду прилив вдохновения</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_6" id="proc6-1" value="1"><label for="proc6-1">1</label>
                     <input type="radio" name="proc_6" id="proc6-2" value="2"><label for="proc6-2">2</label>
                     <input type="radio" name="proc_6" id="proc6-3" value="3"><label for="proc6-3">3</label>
                     <input type="radio" name="proc_6" id="proc6-4" value="4"><label for="proc6-4">4</label>
                     <input type="radio" name="proc_6" id="proc6-5" value="5"><label for="proc6-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Несмотря на намерения, я часто не выполняю запланированное.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Я замечаю, что работа не выполняется в течение нескольких дней, даже если она не требует большего, чем просто сесть и сделать ее</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_7" id="proc7-1" value="1"><label for="proc7-1">1</label>
                     <input type="radio" name="proc_7" id="proc7-2" value="2"><label for="proc7-2">2</label>
                     <input type="radio" name="proc_7" id="proc7-3" value="3"><label for="proc7-3">3</label>
                     <input type="radio" name="proc_7" id="proc7-4" value="4"><label for="proc7-4">4</label>
                     <input type="radio" name="proc_7" id="proc7-5" value="5"><label for="proc7-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я трачу много времени на подготовку вместо того, чтобы начать действовать.</p>
-                <div class="likert-5-scale">
-                    <span class="likert-5-label left">Совсем не верно</span>
+                <p>Я часто замечаю, что заранее выполняю задачи, которые я собирался сделать в будущем</p>
+                <div class="likert-proc-scale">
+                    <span class="likert-proc-label left">Совершенно не характерно</span>
                     <input type="radio" name="proc_8" id="proc8-1" value="1"><label for="proc8-1">1</label>
                     <input type="radio" name="proc_8" id="proc8-2" value="2"><label for="proc8-2">2</label>
                     <input type="radio" name="proc_8" id="proc8-3" value="3"><label for="proc8-3">3</label>
                     <input type="radio" name="proc_8" id="proc8-4" value="4"><label for="proc8-4">4</label>
                     <input type="radio" name="proc_8" id="proc8-5" value="5"><label for="proc8-5">5</label>
-                    <span class="likert-5-label right">Полностью верно</span>
+                    <span class="likert-proc-label right">Очень характерно</span>
+                    <p class="likert-proc-note">Нейтрально</p>
                 </div>
             </div>
         </div>
@@ -505,14 +446,14 @@
     <section id="page4" class="page">
         <h1>Удовлетворённость жизнью</h1>
         <div class="card">
-            <p>Отвечайте, насколько каждое утверждение верно для вас (1 — совсем не верно, 7 — полностью верно):</p>
+            <p>Отвечайте, насколько каждое утверждение верно для вас:</p>
         </div>
 
         <div class="card">
             <div class="scale-item">
-                <p>В целом, моя жизнь соответствует моим идеалам.</p>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не верно</span>
+                <p>В основном моя жизнь близка к идеалу.</p>
+                <div class="likert-swls-scale">
+                    <span class="likert-swls-label left">Полностью не согласен</span>
                     <input type="radio" name="swls_1" id="swls1-1" value="1"><label for="swls1-1">1</label>
                     <input type="radio" name="swls_1" id="swls1-2" value="2"><label for="swls1-2">2</label>
                     <input type="radio" name="swls_1" id="swls1-3" value="3"><label for="swls1-3">3</label>
@@ -520,14 +461,15 @@
                     <input type="radio" name="swls_1" id="swls1-5" value="5"><label for="swls1-5">5</label>
                     <input type="radio" name="swls_1" id="swls1-6" value="6"><label for="swls1-6">6</label>
                     <input type="radio" name="swls_1" id="swls1-7" value="7"><label for="swls1-7">7</label>
-                    <span class="likert-7-label right">Полностью верно</span>
+                    <span class="likert-swls-label right">Полностью согласен</span>
+                    <p class="likert-swls-note">Нечто среднее</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Мои жизненные условия отличные.</p>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не верно</span>
+                <p>Обстоятельства моей жизни исключительно благоприятны.</p>
+                <div class="likert-swls-scale">
+                    <span class="likert-swls-label left">Полностью не согласен</span>
                     <input type="radio" name="swls_2" id="swls2-1" value="1"><label for="swls2-1">1</label>
                     <input type="radio" name="swls_2" id="swls2-2" value="2"><label for="swls2-2">2</label>
                     <input type="radio" name="swls_2" id="swls2-3" value="3"><label for="swls2-3">3</label>
@@ -535,14 +477,15 @@
                     <input type="radio" name="swls_2" id="swls2-5" value="5"><label for="swls2-5">5</label>
                     <input type="radio" name="swls_2" id="swls2-6" value="6"><label for="swls2-6">6</label>
                     <input type="radio" name="swls_2" id="swls2-7" value="7"><label for="swls2-7">7</label>
-                    <span class="likert-7-label right">Полностью верно</span>
+                    <span class="likert-swls-label right">Полностью согласен</span>
+                    <p class="likert-swls-note">Нечто среднее</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я удовлетворен(а) своей жизнью.</p>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не верно</span>
+                <p>Я полностью удовлетворен моей жизнью.</p>
+                <div class="likert-swls-scale">
+                    <span class="likert-swls-label left">Полностью не согласен</span>
                     <input type="radio" name="swls_3" id="swls3-1" value="1"><label for="swls3-1">1</label>
                     <input type="radio" name="swls_3" id="swls3-2" value="2"><label for="swls3-2">2</label>
                     <input type="radio" name="swls_3" id="swls3-3" value="3"><label for="swls3-3">3</label>
@@ -550,14 +493,15 @@
                     <input type="radio" name="swls_3" id="swls3-5" value="5"><label for="swls3-5">5</label>
                     <input type="radio" name="swls_3" id="swls3-6" value="6"><label for="swls3-6">6</label>
                     <input type="radio" name="swls_3" id="swls3-7" value="7"><label for="swls3-7">7</label>
-                    <span class="likert-7-label right">Полностью верно</span>
+                    <span class="likert-swls-label right">Полностью согласен</span>
+                    <p class="likert-swls-note">Нечто среднее</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>На данный момент я достиг(ла) в жизни всего, чего хотел(а).</p>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не верно</span>
+                <p>У меня есть в жизни то, что мне по-настоящему нужно.</p>
+                <div class="likert-swls-scale">
+                    <span class="likert-swls-label left">Полностью не согласен</span>
                     <input type="radio" name="swls_4" id="swls4-1" value="1"><label for="swls4-1">1</label>
                     <input type="radio" name="swls_4" id="swls4-2" value="2"><label for="swls4-2">2</label>
                     <input type="radio" name="swls_4" id="swls4-3" value="3"><label for="swls4-3">3</label>
@@ -565,14 +509,15 @@
                     <input type="radio" name="swls_4" id="swls4-5" value="5"><label for="swls4-5">5</label>
                     <input type="radio" name="swls_4" id="swls4-6" value="6"><label for="swls4-6">6</label>
                     <input type="radio" name="swls_4" id="swls4-7" value="7"><label for="swls4-7">7</label>
-                    <span class="likert-7-label right">Полностью верно</span>
+                    <span class="likert-swls-label right">Полностью согласен</span>
+                    <p class="likert-swls-note">Нечто среднее</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Если бы я мог(ла) прожить свою жизнь заново, я бы почти ничего не изменил(а).</p>
-                <div class="likert-7-scale">
-                    <span class="likert-7-label left">Совсем не верно</span>
+                <p>Если бы мне пришлось жить еще раз, я бы оставил все как есть.</p>
+                <div class="likert-swls-scale">
+                    <span class="likert-swls-label left">Полностью не согласен</span>
                     <input type="radio" name="swls_5" id="swls5-1" value="1"><label for="swls5-1">1</label>
                     <input type="radio" name="swls_5" id="swls5-2" value="2"><label for="swls5-2">2</label>
                     <input type="radio" name="swls_5" id="swls5-3" value="3"><label for="swls5-3">3</label>
@@ -580,7 +525,8 @@
                     <input type="radio" name="swls_5" id="swls5-5" value="5"><label for="swls5-5">5</label>
                     <input type="radio" name="swls_5" id="swls5-6" value="6"><label for="swls5-6">6</label>
                     <input type="radio" name="swls_5" id="swls5-7" value="7"><label for="swls5-7">7</label>
-                    <span class="likert-7-label right">Полностью верно</span>
+                    <span class="likert-swls-label right">Полностью согласен</span>
+                    <p class="likert-swls-note">Нечто среднее</p>
                 </div>
             </div>
         </div>
@@ -591,16 +537,16 @@
         </div>
     </section>
 
-    <!-- СТРАНИЦА 5: MBI -->
+    <!-- СТРАНИЦА 5: MBI - Эмоциональное истощение -->
     <section id="page5" class="page">
-        <h1>Эмоциональное выгорание</h1>
+        <h1>Эмоциональное истощение</h1>
         <div class="card">
             <p>Как часто вы испытываете следующее? (0 — никогда, 6 — каждый день)</p>
         </div>
 
         <div class="card">
             <div class="scale-item">
-                <p>Я чувствую себя эмоционально истощённым(ой).</p>
+                <p>Я чувствую себя эмоционально опустошённым(ой).</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
                     <input type="radio" name="mbi_1" id="mbi1-0" value="0"><label for="mbi1-0">0</label>
@@ -611,11 +557,12 @@
                     <input type="radio" name="mbi_1" id="mbi1-5" value="5"><label for="mbi1-5">5</label>
                     <input type="radio" name="mbi_1" id="mbi1-6" value="6"><label for="mbi1-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>После работы я чувствую себя как "выжатый лимон".</p>
+                <p>После работы я чувствую себя как «выжатый лимон».</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
                     <input type="radio" name="mbi_2" id="mbi2-0" value="0"><label for="mbi2-0">0</label>
@@ -626,11 +573,12 @@
                     <input type="radio" name="mbi_2" id="mbi2-5" value="5"><label for="mbi2-5">5</label>
                     <input type="radio" name="mbi_2" id="mbi2-6" value="6"><label for="mbi2-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>У меня нет сил на выполнение новых задач.</p>
+                <p>Утром я чувствую усталость и нежелание идти на работу.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
                     <input type="radio" name="mbi_3" id="mbi3-0" value="0"><label for="mbi3-0">0</label>
@@ -641,41 +589,12 @@
                     <input type="radio" name="mbi_3" id="mbi3-5" value="5"><label for="mbi3-5">5</label>
                     <input type="radio" name="mbi_3" id="mbi3-6" value="6"><label for="mbi3-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я понимаю, что мог(ла) бы сделать больше, если бы не уставал(а).</p>
-                <div class="likert-mbi-scale">
-                    <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_4" id="mbi4-0" value="0"><label for="mbi4-0">0</label>
-                    <input type="radio" name="mbi_4" id="mbi4-1" value="1"><label for="mbi4-1">1</label>
-                    <input type="radio" name="mbi_4" id="mbi4-2" value="2"><label for="mbi4-2">2</label>
-                    <input type="radio" name="mbi_4" id="mbi4-3" value="3"><label for="mbi4-3">3</label>
-                    <input type="radio" name="mbi_4" id="mbi4-4" value="4"><label for="mbi4-4">4</label>
-                    <input type="radio" name="mbi_4" id="mbi4-5" value="5"><label for="mbi4-5">5</label>
-                    <input type="radio" name="mbi_4" id="mbi4-6" value="6"><label for="mbi4-6">6</label>
-                    <span class="likert-mbi-label right">Каждый день</span>
-                </div>
-            </div>
-
-            <div class="scale-item">
-                <p>Я стал(а) более циничным(ой) в отношении своей работы.</p>
-                <div class="likert-mbi-scale">
-                    <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_5" id="mbi5-0" value="0"><label for="mbi5-0">0</label>
-                    <input type="radio" name="mbi_5" id="mbi5-1" value="1"><label for="mbi5-1">1</label>
-                    <input type="radio" name="mbi_5" id="mbi5-2" value="2"><label for="mbi5-2">2</label>
-                    <input type="radio" name="mbi_5" id="mbi5-3" value="3"><label for="mbi5-3">3</label>
-                    <input type="radio" name="mbi_5" id="mbi5-4" value="4"><label for="mbi5-4">4</label>
-                    <input type="radio" name="mbi_5" id="mbi5-5" value="5"><label for="mbi5-5">5</label>
-                    <input type="radio" name="mbi_5" id="mbi5-6" value="6"><label for="mbi5-6">6</label>
-                    <span class="likert-mbi-label right">Каждый день</span>
-                </div>
-            </div>
-
-            <div class="scale-item">
-                <p>Я стал(а) менее заинтересованным(ой) в своей работе с течением времени.</p>
+                <p>После работы на некоторое время хочется уединиться от всех и всего.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
                     <input type="radio" name="mbi_6" id="mbi6-0" value="0"><label for="mbi6-0">0</label>
@@ -686,26 +605,12 @@
                     <input type="radio" name="mbi_6" id="mbi6-5" value="5"><label for="mbi6-5">5</label>
                     <input type="radio" name="mbi_6" id="mbi6-6" value="6"><label for="mbi6-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я сомневаюсь в значимости своей работы.</p>
-                <div class="likert-mbi-scale">
-                    <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_7" id="mbi7-0" value="0"><label for="mbi7-0">0</label>
-                    <input type="radio" name="mbi_7" id="mbi7-1" value="1"><label for="mbi7-1">1</label>
-                    <input type="radio" name="mbi_7" id="mbi7-2" value="2"><label for="mbi7-2">2</label>
-                    <input type="radio" name="mbi_7" id="mbi7-3" value="3"><label for="mbi7-3">3</label>
-                    <input type="radio" name="mbi_7" id="mbi7-4" value="4"><label for="mbi7-4">4</label>
-                    <input type="radio" name="mbi_7" id="mbi7-5" value="5"><label for="mbi7-5">5</label>
-                    <input type="radio" name="mbi_7" id="mbi7-6" value="6"><label for="mbi7-6">6</label>
-                    <span class="likert-mbi-label right">Каждый день</span>
-                </div>
-            </div>
-
-            <div class="scale-item">
-                <p>Я не верю в то, что моя работа что-то меняет.</p>
+                <p>Я чувствую угнетённость и апатию.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
                     <input type="radio" name="mbi_8" id="mbi8-0" value="0"><label for="mbi8-0">0</label>
@@ -716,66 +621,71 @@
                     <input type="radio" name="mbi_8" id="mbi8-5" value="5"><label for="mbi8-5">5</label>
                     <input type="radio" name="mbi_8" id="mbi8-6" value="6"><label for="mbi8-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я чувствую себя виноватым(ой) за то, что не могу работать лучше.</p>
+                <p>Моя работа всё больше меня разочаровывает.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_9" id="mbi9-0" value="0"><label for="mbi9-0">0</label>
-                    <input type="radio" name="mbi_9" id="mbi9-1" value="1"><label for="mbi9-1">1</label>
-                    <input type="radio" name="mbi_9" id="mbi9-2" value="2"><label for="mbi9-2">2</label>
-                    <input type="radio" name="mbi_9" id="mbi9-3" value="3"><label for="mbi9-3">3</label>
-                    <input type="radio" name="mbi_9" id="mbi9-4" value="4"><label for="mbi9-4">4</label>
-                    <input type="radio" name="mbi_9" id="mbi9-5" value="5"><label for="mbi9-5">5</label>
-                    <input type="radio" name="mbi_9" id="mbi9-6" value="6"><label for="mbi9-6">6</label>
+                    <input type="radio" name="mbi_13" id="mbi13-0" value="0"><label for="mbi13-0">0</label>
+                    <input type="radio" name="mbi_13" id="mbi13-1" value="1"><label for="mbi13-1">1</label>
+                    <input type="radio" name="mbi_13" id="mbi13-2" value="2"><label for="mbi13-2">2</label>
+                    <input type="radio" name="mbi_13" id="mbi13-3" value="3"><label for="mbi13-3">3</label>
+                    <input type="radio" name="mbi_13" id="mbi13-4" value="4"><label for="mbi13-4">4</label>
+                    <input type="radio" name="mbi_13" id="mbi13-5" value="5"><label for="mbi13-5">5</label>
+                    <input type="radio" name="mbi_13" id="mbi13-6" value="6"><label for="mbi13-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я чувствую, что стал(а) менее компетентным(ой).</p>
+                <p>Мне кажется, что я слишком много работаю.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_10" id="mbi10-0" value="0"><label for="mbi10-0">0</label>
-                    <input type="radio" name="mbi_10" id="mbi10-1" value="1"><label for="mbi10-1">1</label>
-                    <input type="radio" name="mbi_10" id="mbi10-2" value="2"><label for="mbi10-2">2</label>
-                    <input type="radio" name="mbi_10" id="mbi10-3" value="3"><label for="mbi10-3">3</label>
-                    <input type="radio" name="mbi_10" id="mbi10-4" value="4"><label for="mbi10-4">4</label>
-                    <input type="radio" name="mbi_10" id="mbi10-5" value="5"><label for="mbi10-5">5</label>
-                    <input type="radio" name="mbi_10" id="mbi10-6" value="6"><label for="mbi10-6">6</label>
+                    <input type="radio" name="mbi_14" id="mbi14-0" value="0"><label for="mbi14-0">0</label>
+                    <input type="radio" name="mbi_14" id="mbi14-1" value="1"><label for="mbi14-1">1</label>
+                    <input type="radio" name="mbi_14" id="mbi14-2" value="2"><label for="mbi14-2">2</label>
+                    <input type="radio" name="mbi_14" id="mbi14-3" value="3"><label for="mbi14-3">3</label>
+                    <input type="radio" name="mbi_14" id="mbi14-4" value="4"><label for="mbi14-4">4</label>
+                    <input type="radio" name="mbi_14" id="mbi14-5" value="5"><label for="mbi14-5">5</label>
+                    <input type="radio" name="mbi_14" id="mbi14-6" value="6"><label for="mbi14-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я чувствую, что моя работа не соответствует моим ожиданиям.</p>
+                <p>Мне хочется уединиться и отдохнуть от всего и всех.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_11" id="mbi11-0" value="0"><label for="mbi11-0">0</label>
-                    <input type="radio" name="mbi_11" id="mbi11-1" value="1"><label for="mbi11-1">1</label>
-                    <input type="radio" name="mbi_11" id="mbi11-2" value="2"><label for="mbi11-2">2</label>
-                    <input type="radio" name="mbi_11" id="mbi11-3" value="3"><label for="mbi11-3">3</label>
-                    <input type="radio" name="mbi_11" id="mbi11-4" value="4"><label for="mbi11-4">4</label>
-                    <input type="radio" name="mbi_11" id="mbi11-5" value="5"><label for="mbi11-5">5</label>
-                    <input type="radio" name="mbi_11" id="mbi11-6" value="6"><label for="mbi11-6">6</label>
+                    <input type="radio" name="mbi_16" id="mbi16-0" value="0"><label for="mbi16-0">0</label>
+                    <input type="radio" name="mbi_16" id="mbi16-1" value="1"><label for="mbi16-1">1</label>
+                    <input type="radio" name="mbi_16" id="mbi16-2" value="2"><label for="mbi16-2">2</label>
+                    <input type="radio" name="mbi_16" id="mbi16-3" value="3"><label for="mbi16-3">3</label>
+                    <input type="radio" name="mbi_16" id="mbi16-4" value="4"><label for="mbi16-4">4</label>
+                    <input type="radio" name="mbi_16" id="mbi16-5" value="5"><label for="mbi16-5">5</label>
+                    <input type="radio" name="mbi_16" id="mbi16-6" value="6"><label for="mbi16-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
 
             <div class="scale-item">
-                <p>Я разочарован(а) в своей работе.</p>
+                <p>Я чувствую равнодушие и потерю интереса ко многому, что радовало меня в моей работе.</p>
                 <div class="likert-mbi-scale">
                     <span class="likert-mbi-label left">Никогда</span>
-                    <input type="radio" name="mbi_12" id="mbi12-0" value="0"><label for="mbi12-0">0</label>
-                    <input type="radio" name="mbi_12" id="mbi12-1" value="1"><label for="mbi12-1">1</label>
-                    <input type="radio" name="mbi_12" id="mbi12-2" value="2"><label for="mbi12-2">2</label>
-                    <input type="radio" name="mbi_12" id="mbi12-3" value="3"><label for="mbi12-3">3</label>
-                    <input type="radio" name="mbi_12" id="mbi12-4" value="4"><label for="mbi12-4">4</label>
-                    <input type="radio" name="mbi_12" id="mbi12-5" value="5"><label for="mbi12-5">5</label>
-                    <input type="radio" name="mbi_12" id="mbi12-6" value="6"><label for="mbi12-6">6</label>
+                    <input type="radio" name="mbi_20" id="mbi20-0" value="0"><label for="mbi20-0">0</label>
+                    <input type="radio" name="mbi_20" id="mbi20-1" value="1"><label for="mbi20-1">1</label>
+                    <input type="radio" name="mbi_20" id="mbi20-2" value="2"><label for="mbi20-2">2</label>
+                    <input type="radio" name="mbi_20" id="mbi20-3" value="3"><label for="mbi20-3">3</label>
+                    <input type="radio" name="mbi_20" id="mbi20-4" value="4"><label for="mbi20-4">4</label>
+                    <input type="radio" name="mbi_20" id="mbi20-5" value="5"><label for="mbi20-5">5</label>
+                    <input type="radio" name="mbi_20" id="mbi20-6" value="6"><label for="mbi20-6">6</label>
                     <span class="likert-mbi-label right">Каждый день</span>
+                    <p class="likert-mbi-note">Иногда</p>
                 </div>
             </div>
         </div>

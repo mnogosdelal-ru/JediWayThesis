@@ -62,7 +62,7 @@ if (!isset($data['session_id'])) {
 
 $session_id = $data['session_id'];
 
-// 2. Сохранение данных страницы
+// 2. Сохранение данных страницы с расчётом суммарных баллов
 if ($action === 'save_page') {
     $pageData = $data['data'] ?? [];
     
@@ -88,10 +88,9 @@ if ($action === 'save_page') {
         'time_page4_start', 'time_page4_end', 'time_page4_total',
         'swls_1', 'swls_2', 'swls_3', 'swls_4', 'swls_5',
         
-        // Page 5: MBI
+        // Page 5: MBI (только 9 вопросов субшкалы "Эмоциональное истощение")
         'time_page5_start', 'time_page5_end', 'time_page5_total',
-        'mbi_1', 'mbi_2', 'mbi_3', 'mbi_4', 'mbi_5', 'mbi_6', 
-        'mbi_7', 'mbi_8', 'mbi_9', 'mbi_10', 'mbi_11', 'mbi_12'
+        'mbi_1', 'mbi_2', 'mbi_3', 'mbi_6', 'mbi_8', 'mbi_13', 'mbi_14', 'mbi_16', 'mbi_20'
     ];
     
     $updateFields = [];
@@ -104,96 +103,49 @@ if ($action === 'save_page') {
         }
     }
     
-    if (empty($updateFields)) {
-        echo json_encode(['success' => true, 'message' => 'No data to update']);
-        exit;
-    }
-    
-    $updateValues[] = $session_id;
-    $sql = "UPDATE jedi_boxes_respondents SET " . implode(", ", $updateFields) . " WHERE session_id = ?";
-    
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($updateValues);
-        echo json_encode(['success' => true]);
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// 3. Сохранение страницы с расчётом суммарных баллов
-if ($action === 'save_page') {
-    $pageData = $data['data'] ?? [];
-    
-    $allowed_fields = [
-        // Page 0: Демография
-        'status', 'age', 'gender', 'position', 'profession',
-        'time_page0_start', 'time_page0_end',
-        
-        // Page 1: Кубики
-        'time_page1_start', 'time_page1_end', 'time_page1_total',
-        'cubes_reactive', 'cubes_proactive', 'cubes_operational',
-        
-        // Page 2: Контекстные вопросы
-        'time_page2_start', 'time_page2_end', 'time_page2_total',
-        'representative', 'work_life', 'energy_deficit', 
-        'subjective_productivity', 'energy_level', 'memory_vs_records',
-        
-        // Page 3: Прокрастинация
-        'time_page3_start', 'time_page3_end', 'time_page3_total',
-        'proc_1', 'proc_2', 'proc_3', 'proc_4', 'proc_5', 'proc_6', 'proc_7', 'proc_8',
-        
-        // Page 4: SWLS
-        'time_page4_start', 'time_page4_end', 'time_page4_total',
-        'swls_1', 'swls_2', 'swls_3', 'swls_4', 'swls_5',
-        
-        // Page 5: MBI
-        'time_page5_start', 'time_page5_end', 'time_page5_total',
-        'mbi_1', 'mbi_2', 'mbi_3', 'mbi_4', 'mbi_5', 'mbi_6', 
-        'mbi_7', 'mbi_8', 'mbi_9', 'mbi_10', 'mbi_11', 'mbi_12'
-    ];
-    
-    $updateFields = [];
-    $updateValues = [];
-    
-    foreach ($pageData as $key => $value) {
-        if (in_array($key, $allowed_fields)) {
-            $updateFields[] = "$key = ?";
-            $updateValues[] = $value;
-        }
-    }
-    
-    // Расчёт суммарных баллов
+    // Расчёт суммарных баллов (только если есть данные)
+    $has_proc_data = false;
     $proc_total = 0;
     for ($i = 1; $i <= 8; $i++) {
         if (isset($pageData["proc_$i"])) {
             $proc_total += (int)$pageData["proc_$i"];
+            $has_proc_data = true;
         }
     }
-    if ($proc_total > 0) {
+    if ($has_proc_data) {
         $updateFields[] = "proc_total = ?";
         $updateValues[] = $proc_total;
     }
     
+    $has_swls_data = false;
     $swls_total = 0;
     for ($i = 1; $i <= 5; $i++) {
         if (isset($pageData["swls_$i"])) {
             $swls_total += (int)$pageData["swls_$i"];
+            $has_swls_data = true;
         }
     }
-    if ($swls_total > 0) {
+    if ($has_swls_data) {
         $updateFields[] = "swls_total = ?";
         $updateValues[] = $swls_total;
     }
     
+    // Расчёт mbi_total (9 вопросов, вопрос 6 - обратный)
+    $has_mbi_data = false;
     $mbi_total = 0;
-    for ($i = 1; $i <= 12; $i++) {
-        if (isset($pageData["mbi_$i"])) {
-            $mbi_total += (int)$pageData["mbi_$i"];
+    $mbi_questions = [1, 2, 3, 6, 8, 13, 14, 16, 20];
+    foreach ($mbi_questions as $q) {
+        if (isset($pageData["mbi_$q"])) {
+            $value = (int)$pageData["mbi_$q"];
+            // Вопрос 6 обратный: 6 - значение
+            if ($q == 6) {
+                $value = 6 - $value;
+            }
+            $mbi_total += $value;
+            $has_mbi_data = true;
         }
     }
-    if ($mbi_total > 0) {
+    if ($has_mbi_data) {
         $updateFields[] = "mbi_total = ?";
         $updateValues[] = $mbi_total;
     }
@@ -216,7 +168,7 @@ if ($action === 'save_page') {
     exit;
 }
 
-// 4. Завершение опроса
+// 3. Завершение опроса
 if ($action === 'finish_survey') {
     $pageData = $data['data'] ?? [];
     
@@ -225,18 +177,25 @@ if ($action === 'finish_survey') {
     
     $allowed_fields = [
         'time_total', 'time_page5_start', 'time_page5_end', 'time_page5_total',
-        'mbi_1', 'mbi_2', 'mbi_3', 'mbi_4', 'mbi_5', 'mbi_6', 
-        'mbi_7', 'mbi_8', 'mbi_9', 'mbi_10', 'mbi_11', 'mbi_12'
+        'mbi_1', 'mbi_2', 'mbi_3', 'mbi_6', 'mbi_8', 'mbi_13', 'mbi_14', 'mbi_16', 'mbi_20'
     ];
     
-    // Расчёт mbi_total
+    // Расчёт mbi_total (9 вопросов, вопрос 6 - обратный)
+    $has_mbi_data = false;
     $mbi_total = 0;
-    for ($i = 1; $i <= 12; $i++) {
-        if (isset($pageData["mbi_$i"])) {
-            $mbi_total += (int)$pageData["mbi_$i"];
+    $mbi_questions = [1, 2, 3, 6, 8, 13, 14, 16, 20];
+    foreach ($mbi_questions as $q) {
+        if (isset($pageData["mbi_$q"])) {
+            $value = (int)$pageData["mbi_$q"];
+            // Вопрос 6 обратный: 6 - значение
+            if ($q == 6) {
+                $value = 6 - $value;
+            }
+            $mbi_total += $value;
+            $has_mbi_data = true;
         }
     }
-    if ($mbi_total > 0) {
+    if ($has_mbi_data) {
         $updateFields[] = "mbi_total = ?";
         $updateValues[] = $mbi_total;
     }
@@ -276,7 +235,7 @@ if ($action === 'finish_survey') {
     exit;
 }
 
-// 5. Получение результатов с процентами
+// 4. Получение результатов с процентами
 if ($action === 'get_results') {
     try {
         // Получаем данные текущего респондента

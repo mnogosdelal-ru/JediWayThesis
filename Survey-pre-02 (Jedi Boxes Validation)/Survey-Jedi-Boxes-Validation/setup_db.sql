@@ -30,8 +30,6 @@ CREATE TABLE IF NOT EXISTS jedi_boxes_respondents (
     representative INT,
     work_life INT,
     energy_deficit INT,
-    subjective_productivity INT,
-    energy_level INT,
     memory_vs_records INT,
 
     -- Page 3: Прокрастинация
