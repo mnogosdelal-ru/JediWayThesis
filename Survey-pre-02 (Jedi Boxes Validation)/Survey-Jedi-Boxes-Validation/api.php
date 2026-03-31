@@ -1,6 +1,6 @@
 <?php
 // Глобальный параметр отладки
-define('DEBUG_MODE', true);
+define('DEBUG_MODE', false);
 
 require_once 'db_config.php';
 
