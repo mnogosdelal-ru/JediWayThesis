@@ -274,8 +274,18 @@ document.getElementById('btn-next-5').addEventListener('click', async () => {
     localStorage.removeItem('survey_session_id');
     showPage(6);
     
-    // Загружаем и отображаем результаты
-    loadResults();
+    // Показываем сообщение о завершении и перенаправляем на страницу результатов
+    document.getElementById('results-container').innerHTML = `
+        <div class="results-card">
+            <h2>Опрос завершён!</h2>
+            <p>Спасибо за участие. Через момент вы будете перенаправлены на страницу с результатами...</p>
+            <p><a href="result.html?session=${appState.session_id}">Перейти к результатам</a></p>
+        </div>
+    `;
+    
+    setTimeout(() => {
+        window.location.href = 'result.html?session=' + appState.session_id;
+    }, 2000);
 });
 
 // Загрузка и отображение результатов
@@ -293,7 +303,8 @@ async function loadResults() {
     }
     
     const r = result.data;
-    const otherCount = r.other_respondents;
+    const totalRespondents = r.total_respondents || 1;
+    const otherCount = r.other_respondents || 0;
     
     // Функция для форматирования значения (прочерк если undefined/null)
     const fmt = (val) => (val === undefined || val === null || val === '') ? '—' : val;
@@ -301,6 +312,7 @@ async function loadResults() {
     resultsContainer.innerHTML = `
         <div class="results-card">
             <h2>Ваши результаты</h2>
+            <p class="results-summary">Всего в исследовании участвовало <strong>${totalRespondents}</strong> человек${otherCount > 0 ? ` (из них ${otherCount} уже завершили опрос)` : ''}.</p>
             <table class="results-table">
                 <thead>
                     <tr>

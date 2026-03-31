@@ -56,12 +56,16 @@ if ($action === 'init_session') {
 
 // Все последующие действия требуют session_id
 if (!isset($data['session_id'])) {
-    echo json_encode(['success' => false, 'error' => 'Missing session_id']);
-    exit;
+    // Пробуем получить из URL параметра
+    $session_id = $_GET['session'] ?? null;
+    if (!$session_id) {
+        echo json_encode(['success' => false, 'error' => 'Missing session_id']);
+        exit;
+    }
+} else {
+    $session_id = $data['session_id'];
 }
-
-$session_id = $data['session_id'];
-
+    
 // 2. Сохранение данных страницы с расчётом суммарных баллов
 if ($action === 'save_page') {
     $pageData = $data['data'] ?? [];

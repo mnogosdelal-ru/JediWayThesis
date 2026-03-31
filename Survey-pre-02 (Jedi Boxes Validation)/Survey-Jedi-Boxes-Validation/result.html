@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Результаты исследования</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+    
+    <section class="page active">
+        <h1>Результаты исследования</h1>
+        
+        <div id="results-container"></div>
+        
+        <div class="card">
+            <p>Вы можете обновить эту страницу, чтобы увидеть актуальную статистику.</p>
+            <p><a href="index.html">Вернуться к опросу</a></p>
+        </div>
+    </section>
+
+</div>
+
+<script>
+const apiCall = async (action, additionalData = {}) => {
+    const session_id = localStorage.getItem('survey_session_id') || new URLSearchParams(window.location.search).get('session');
+    const payload = { action, session_id, data: additionalData };
+    try {
+        const res = await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    } catch(e) {
+        console.error("API call failed:", e);
+        return { success: false };
+    }
+};
+
+async function loadResults() {
+    const resultsContainer = document.getElementById('results-container');
+    if (!resultsContainer) return;
+    
+    resultsContainer.innerHTML = '<p style="text-align:center;">Загрузка результатов...</p>';
+    
+    const result = await apiCall('get_results', {});
+    
+    if (!result.success || !result.data) {
+        resultsContainer.innerHTML = '<p style="text-align:center;">Результаты недоступны. Возможно, вы ещё не прошли опрос.</p>';
+        return;
+    }
+    
+    const r = result.data;
+    const totalRespondents = r.total_respondents || 1;
+    const otherCount = r.other_respondents || 0;
+    
+    // Функция для форматирования значения (прочерк если undefined/null)
+    const fmt = (val) => (val === undefined || val === null || val === '') ? '—' : val;
+    
+    resultsContainer.innerHTML = `
+        <div class="results-card">
+            <h2>Ваши результаты</h2>
+            <p class="results-summary">Всего в исследовании участвовало <strong>${totalRespondents}</strong> человек${otherCount > 0 ? ` (из них ${otherCount} уже завершили опрос)` : ''}.</p>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Шкала / Параметр</th>
+                        <th rowspan="2">Ваше значение</th>
+                        <th colspan="3">Число респондентов у кого этот параметр</th>
+                    </tr>
+                    <tr>
+                        <th>Ниже</th>
+                        <th>Такой же</th>
+                        <th>Выше</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Возраст</strong></td>
+                        <td>${fmt(r.age)} лет</td>
+                        <td>${fmt(r.age_below)}</td>
+                        <td>${fmt(r.age_equal)}</td>
+                        <td>${fmt(r.age_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Прокрастинация</strong></td>
+                        <td>${fmt(r.proc_total)}</td>
+                        <td>${fmt(r.proc_below)}</td>
+                        <td>${fmt(r.proc_equal)}</td>
+                        <td>${fmt(r.proc_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Удовлетворённость жизнью</strong></td>
+                        <td>${fmt(r.swls_total)}</td>
+                        <td>${fmt(r.swls_below)}</td>
+                        <td>${fmt(r.swls_equal)}</td>
+                        <td>${fmt(r.swls_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Эмоциональное истощение</strong></td>
+                        <td>${fmt(r.mbi_total)}</td>
+                        <td>${fmt(r.mbi_below)}</td>
+                        <td>${fmt(r.mbi_equal)}</td>
+                        <td>${fmt(r.mbi_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в красной зоне</strong></td>
+                        <td>${fmt(r.cubes_reactive)}</td>
+                        <td>${fmt(r.cubes_reactive_below)}</td>
+                        <td>${fmt(r.cubes_reactive_equal)}</td>
+                        <td>${fmt(r.cubes_reactive_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в зелёной зоне</strong></td>
+                        <td>${fmt(r.cubes_proactive)}</td>
+                        <td>${fmt(r.cubes_proactive_below)}</td>
+                        <td>${fmt(r.cubes_proactive_equal)}</td>
+                        <td>${fmt(r.cubes_proactive_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в серой зоне</strong></td>
+                        <td>${fmt(r.cubes_operational)}</td>
+                        <td>${fmt(r.cubes_operational_below)}</td>
+                        <td>${fmt(r.cubes_operational_equal)}</td>
+                        <td>${fmt(r.cubes_operational_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Насколько типичный представитель</strong></td>
+                        <td>${fmt(r.representative)}</td>
+                        <td>${fmt(r.representative_below)}</td>
+                        <td>${fmt(r.representative_equal)}</td>
+                        <td>${fmt(r.representative_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Работа/личная жизнь</strong></td>
+                        <td>${fmt(r.work_life)}</td>
+                        <td>${fmt(r.work_life_below)}</td>
+                        <td>${fmt(r.work_life_equal)}</td>
+                        <td>${fmt(r.work_life_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Дефицит энергии</strong></td>
+                        <td>${fmt(r.energy_deficit)}</td>
+                        <td>${fmt(r.energy_deficit_below)}</td>
+                        <td>${fmt(r.energy_deficit_equal)}</td>
+                        <td>${fmt(r.energy_deficit_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Записи vs память</strong></td>
+                        <td>${fmt(r.memory_vs_records)}</td>
+                        <td>${fmt(r.memory_vs_records_below)}</td>
+                        <td>${fmt(r.memory_vs_records_equal)}</td>
+                        <td>${fmt(r.memory_vs_records_above)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="results-note">
+                ${otherCount > 0 
+                    ? `На основе данных ${otherCount} респондентов. В столбцах "Ниже", "Такой же", "Выше" показано количество респондентов, у которых значение меньше, равно или больше вашего.` 
+                    : 'Вы первый респондент! После накопления данных здесь появится статистика.'}
+            </p>
+        </div>
+    `;
+}
+
+// Загружаем результаты при загрузке страницы
+document.addEventListener('DOMContentLoaded', loadResults);
+</script>
+</body>
+</html>

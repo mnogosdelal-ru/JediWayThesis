@@ -55,22 +55,19 @@ CREATE TABLE IF NOT EXISTS jedi_boxes_respondents (
     swls_4 INT,
     swls_5 INT,
     
-    -- Page 5: MBI
+    -- Page 5: MBI (Эмоциональное истощение) - 9 вопросов
     time_page5_start BIGINT,
     time_page5_end BIGINT,
     time_page5_total INT,
     mbi_1 INT,
     mbi_2 INT,
     mbi_3 INT,
-    mbi_4 INT,
-    mbi_5 INT,
     mbi_6 INT,
-    mbi_7 INT,
     mbi_8 INT,
-    mbi_9 INT,
-    mbi_10 INT,
-    mbi_11 INT,
-    mbi_12 INT,
+    mbi_13 INT,
+    mbi_14 INT,
+    mbi_16 INT,
+    mbi_20 INT,
 
     -- Суммарные баллы шкал
     proc_total INT DEFAULT 0,
