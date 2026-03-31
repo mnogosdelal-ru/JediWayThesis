@@ -295,54 +295,108 @@ async function loadResults() {
     const r = result.data;
     const otherCount = r.other_respondents;
     
+    // Функция для форматирования значения (прочерк если undefined/null)
+    const fmt = (val) => (val === undefined || val === null || val === '') ? '—' : val;
+    
     resultsContainer.innerHTML = `
         <div class="results-card">
             <h2>Ваши результаты</h2>
             <table class="results-table">
                 <thead>
                     <tr>
-                        <th>Шкала</th>
-                        <th>Баллы</th>
-                        <th>Макс.</th>
+                        <th rowspan="2">Шкала / Параметр</th>
+                        <th rowspan="2">Ваше значение</th>
+                        <th colspan="3">Число респондентов у кого этот параметр</th>
+                    </tr>
+                    <tr>
                         <th>Ниже</th>
-                        <th>Столько же</th>
+                        <th>Такой же</th>
                         <th>Выше</th>
-                        <th>Процентиль</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
+                        <td><strong>Возраст</strong></td>
+                        <td>${fmt(r.age)} лет</td>
+                        <td>${fmt(r.age_below)}</td>
+                        <td>${fmt(r.age_equal)}</td>
+                        <td>${fmt(r.age_above)}</td>
+                    </tr>
+                    <tr>
                         <td><strong>Прокрастинация</strong></td>
-                        <td>${r.proc_total}</td>
-                        <td>40</td>
-                        <td>${r.proc_below}</td>
-                        <td>${r.proc_equal}</td>
-                        <td>${r.proc_above}</td>
-                        <td><strong>${r.proc_percentile}%</strong></td>
+                        <td>${fmt(r.proc_total)} (из 40)</td>
+                        <td>${fmt(r.proc_below)}</td>
+                        <td>${fmt(r.proc_equal)}</td>
+                        <td>${fmt(r.proc_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Удовлетворённость жизнью</strong></td>
-                        <td>${r.swls_total}</td>
-                        <td>35</td>
-                        <td>${r.swls_below}</td>
-                        <td>${r.swls_equal}</td>
-                        <td>${r.swls_above}</td>
-                        <td><strong>${r.swls_percentile}%</strong></td>
+                        <td>${fmt(r.swls_total)} (из 35)</td>
+                        <td>${fmt(r.swls_below)}</td>
+                        <td>${fmt(r.swls_equal)}</td>
+                        <td>${fmt(r.swls_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Эмоциональное истощение</strong></td>
-                        <td>${r.mbi_total}</td>
-                        <td>54</td>
-                        <td>${r.mbi_below}</td>
-                        <td>${r.mbi_equal}</td>
-                        <td>${r.mbi_above}</td>
-                        <td><strong>${r.mbi_percentile}%</strong></td>
+                        <td>${fmt(r.mbi_total)} (из 54)</td>
+                        <td>${fmt(r.mbi_below)}</td>
+                        <td>${fmt(r.mbi_equal)}</td>
+                        <td>${fmt(r.mbi_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в красной зоне</strong></td>
+                        <td>${fmt(r.cubes_reactive)} (из 7)</td>
+                        <td>${fmt(r.cubes_reactive_below)}</td>
+                        <td>${fmt(r.cubes_reactive_equal)}</td>
+                        <td>${fmt(r.cubes_reactive_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в зелёной зоне</strong></td>
+                        <td>${fmt(r.cubes_proactive)} (из 7)</td>
+                        <td>${fmt(r.cubes_proactive_below)}</td>
+                        <td>${fmt(r.cubes_proactive_equal)}</td>
+                        <td>${fmt(r.cubes_proactive_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Энергия в серой зоне</strong></td>
+                        <td>${fmt(r.cubes_operational)} (из 7)</td>
+                        <td>${fmt(r.cubes_operational_below)}</td>
+                        <td>${fmt(r.cubes_operational_equal)}</td>
+                        <td>${fmt(r.cubes_operational_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Насколько типичный представитель</strong></td>
+                        <td>${fmt(r.representative)} (от -3 до +3)</td>
+                        <td>${fmt(r.representative_below)}</td>
+                        <td>${fmt(r.representative_equal)}</td>
+                        <td>${fmt(r.representative_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Работа/личная жизнь</strong></td>
+                        <td>${fmt(r.work_life)} (от -3 до +3)</td>
+                        <td>${fmt(r.work_life_below)}</td>
+                        <td>${fmt(r.work_life_equal)}</td>
+                        <td>${fmt(r.work_life_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Дефицит энергии</strong></td>
+                        <td>${fmt(r.energy_deficit)} (от -3 до +3)</td>
+                        <td>${fmt(r.energy_deficit_below)}</td>
+                        <td>${fmt(r.energy_deficit_equal)}</td>
+                        <td>${fmt(r.energy_deficit_above)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Записи vs память</strong></td>
+                        <td>${fmt(r.memory_vs_records)} (от -3 до +3)</td>
+                        <td>${fmt(r.memory_vs_records_below)}</td>
+                        <td>${fmt(r.memory_vs_records_equal)}</td>
+                        <td>${fmt(r.memory_vs_records_above)}</td>
                     </tr>
                 </tbody>
             </table>
             <p class="results-note">
                 ${otherCount > 0 
-                    ? `На основе данных ${otherCount} респондентов. Процентиль показывает, какой процент людей набрал меньше баллов, чем вы.` 
+                    ? `На основе данных ${otherCount} респондентов. В столбцах "Ниже", "Такой же", "Выше" показано количество респондентов, у которых значение меньше, равно или больше вашего.` 
                     : 'Вы первый респондент! После накопления данных здесь появится статистика.'}
             </p>
         </div>

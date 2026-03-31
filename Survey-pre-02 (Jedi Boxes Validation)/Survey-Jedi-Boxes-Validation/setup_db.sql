@@ -87,5 +87,13 @@ CREATE TABLE IF NOT EXISTS jedi_boxes_respondents (
     KEY idx_proc_total (proc_total),
     KEY idx_swls_total (swls_total),
     KEY idx_mbi_total (mbi_total),
-    KEY idx_created_at (created_at)
+    KEY idx_created_at (created_at),
+    KEY idx_age (age),
+    KEY idx_cubes_reactive (cubes_reactive),
+    KEY idx_cubes_proactive (cubes_proactive),
+    KEY idx_cubes_operational (cubes_operational),
+    KEY idx_representative (representative),
+    KEY idx_work_life (work_life),
+    KEY idx_energy_deficit (energy_deficit),
+    KEY idx_memory_vs_records (memory_vs_records)
 );

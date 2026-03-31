@@ -104,11 +104,17 @@ if ($action === 'save_page') {
     }
     
     // Расчёт суммарных баллов (только если есть данные)
+    // Вопрос 8 - обратный (заранее выполняю задачи = низкая прокрастинация)
     $has_proc_data = false;
     $proc_total = 0;
     for ($i = 1; $i <= 8; $i++) {
         if (isset($pageData["proc_$i"])) {
-            $proc_total += (int)$pageData["proc_$i"];
+            $value = (int)$pageData["proc_$i"];
+            // Вопрос 8 обратный: 6 - значение
+            if ($i == 8) {
+                $value = 6 - $value;
+            }
+            $proc_total += $value;
             $has_proc_data = true;
         }
     }
@@ -239,7 +245,7 @@ if ($action === 'finish_survey') {
 if ($action === 'get_results') {
     try {
         // Получаем данные текущего респондента
-        $stmt = $pdo->prepare("SELECT proc_total, swls_total, mbi_total FROM jedi_boxes_respondents WHERE session_id = ?");
+        $stmt = $pdo->prepare("SELECT proc_total, swls_total, mbi_total, age, cubes_reactive, cubes_proactive, cubes_operational, representative, work_life, energy_deficit, memory_vs_records FROM jedi_boxes_respondents WHERE session_id = ?");
         $stmt->execute([$session_id]);
         $current = $stmt->fetch();
         
@@ -251,7 +257,16 @@ if ($action === 'get_results') {
         $result = [
             'proc_total' => (int)$current['proc_total'],
             'swls_total' => (int)$current['swls_total'],
-            'mbi_total' => (int)$current['mbi_total']
+            'mbi_total' => (int)$current['mbi_total'],
+            // Данные для сравнения
+            'age' => $current['age'] ? (int)$current['age'] : null,
+            'cubes_reactive' => $current['cubes_reactive'] !== null ? (int)$current['cubes_reactive'] : null,
+            'cubes_proactive' => $current['cubes_proactive'] !== null ? (int)$current['cubes_proactive'] : null,
+            'cubes_operational' => $current['cubes_operational'] !== null ? (int)$current['cubes_operational'] : null,
+            'representative' => $current['representative'] !== null ? (int)$current['representative'] : null,
+            'work_life' => $current['work_life'] !== null ? (int)$current['work_life'] : null,
+            'energy_deficit' => $current['energy_deficit'] !== null ? (int)$current['energy_deficit'] : null,
+            'memory_vs_records' => $current['memory_vs_records'] !== null ? (int)$current['memory_vs_records'] : null
         ];
         
         // Получаем общее количество завершённых ответов (исключая текущего)
@@ -341,6 +356,45 @@ if ($action === 'get_results') {
         
         $result['total_respondents'] = (int)$proc_stats['cnt'];
         $result['other_respondents'] = (int)$proc_stats['cnt'];
+        
+        // Процентили для сравнительных метрик
+        $comparison_metrics = ['age', 'cubes_reactive', 'cubes_proactive', 'cubes_operational', 'representative', 'work_life', 'energy_deficit', 'memory_vs_records'];
+        
+        foreach ($comparison_metrics as $metric) {
+            $current_value = $current[$metric];
+            if ($current_value === null || $current_value === '') {
+                $result[$metric . '_percentile'] = null;
+                $result[$metric . '_below'] = null;
+                $result[$metric . '_equal'] = null;
+                $result[$metric . '_above'] = null;
+                continue;
+            }
+            
+            // Для возраста - выше значит больше (старше)
+            // Для кубиков - выше значит больше
+            // Для representative, work_life, energy_deficit, memory_vs_records - нужна логика в зависимости от шкалы
+            $stmt = $pdo->prepare("
+                SELECT 
+                    COUNT(*) as cnt,
+                    SUM(CASE WHEN $metric < ? THEN 1 ELSE 0 END) as below,
+                    SUM(CASE WHEN $metric = ? THEN 1 ELSE 0 END) as equal,
+                    SUM(CASE WHEN $metric > ? THEN 1 ELSE 0 END) as above
+                FROM jedi_boxes_respondents 
+                WHERE status = 'completed' AND $metric IS NOT NULL
+            ");
+            $stmt->execute([$current_value, $current_value, $current_value]);
+            $stats = $stmt->fetch();
+            
+            $percentile = 0;
+            if ($stats['cnt'] > 0) {
+                $percentile = round(($stats['below'] + 0.5 * $stats['equal']) / $stats['cnt'] * 100);
+            }
+            
+            $result[$metric . '_percentile'] = $percentile;
+            $result[$metric . '_below'] = (int)$stats['below'];
+            $result[$metric . '_equal'] = (int)$stats['equal'];
+            $result[$metric . '_above'] = (int)$stats['above'];
+        }
         
         echo json_encode(['success' => true, 'data' => $result]);
     } catch (PDOException $e) {
