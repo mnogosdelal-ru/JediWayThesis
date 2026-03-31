@@ -10,7 +10,7 @@ let cubeDistribution = {
     proactive: 0,
     operational: 0
 };
-const TOTAL_CUBES = 7;
+// TOTAL_CUBES берётся из drag-drop.js (window.TOTAL_CUBES)
 
 const apiCall = async (action, additionalData = {}) => {
     const payload = { action, session_id: appState.session_id, data: additionalData };
@@ -141,8 +141,8 @@ document.getElementById('btn-next-0').addEventListener('click', async () => {
 document.getElementById('btn-next-1').addEventListener('click', async () => {
     const totalPlaced = cubeDistribution.reactive + cubeDistribution.proactive + cubeDistribution.operational;
     
-    if(!appState.debug_mode && totalPlaced < TOTAL_CUBES) {
-        alert(`Пожалуйста, распределите все ${TOTAL_CUBES} кубиков. Сейчас распределено: ${totalPlaced}`);
+    if(!appState.debug_mode && totalPlaced < window.TOTAL_CUBES) {
+        alert(`Пожалуйста, распределите все ${window.TOTAL_CUBES} кубиков. Сейчас распределено: ${totalPlaced}`);
         return;
     }
 
@@ -324,70 +324,70 @@ async function loadResults() {
                     </tr>
                     <tr>
                         <td><strong>Прокрастинация</strong></td>
-                        <td>${fmt(r.proc_total)} (из 40)</td>
+                        <td>${fmt(r.proc_total)}</td>
                         <td>${fmt(r.proc_below)}</td>
                         <td>${fmt(r.proc_equal)}</td>
                         <td>${fmt(r.proc_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Удовлетворённость жизнью</strong></td>
-                        <td>${fmt(r.swls_total)} (из 35)</td>
+                        <td>${fmt(r.swls_total)}</td>
                         <td>${fmt(r.swls_below)}</td>
                         <td>${fmt(r.swls_equal)}</td>
                         <td>${fmt(r.swls_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Эмоциональное истощение</strong></td>
-                        <td>${fmt(r.mbi_total)} (из 54)</td>
+                        <td>${fmt(r.mbi_total)}</td>
                         <td>${fmt(r.mbi_below)}</td>
                         <td>${fmt(r.mbi_equal)}</td>
                         <td>${fmt(r.mbi_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в красной зоне</strong></td>
-                        <td>${fmt(r.cubes_reactive)} (из 7)</td>
+                        <td>${fmt(r.cubes_reactive)}</td>
                         <td>${fmt(r.cubes_reactive_below)}</td>
                         <td>${fmt(r.cubes_reactive_equal)}</td>
                         <td>${fmt(r.cubes_reactive_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в зелёной зоне</strong></td>
-                        <td>${fmt(r.cubes_proactive)} (из 7)</td>
+                        <td>${fmt(r.cubes_proactive)}</td>
                         <td>${fmt(r.cubes_proactive_below)}</td>
                         <td>${fmt(r.cubes_proactive_equal)}</td>
                         <td>${fmt(r.cubes_proactive_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в серой зоне</strong></td>
-                        <td>${fmt(r.cubes_operational)} (из 7)</td>
+                        <td>${fmt(r.cubes_operational)}</td>
                         <td>${fmt(r.cubes_operational_below)}</td>
                         <td>${fmt(r.cubes_operational_equal)}</td>
                         <td>${fmt(r.cubes_operational_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Насколько типичный представитель</strong></td>
-                        <td>${fmt(r.representative)} (от -3 до +3)</td>
+                        <td>${fmt(r.representative)}</td>
                         <td>${fmt(r.representative_below)}</td>
                         <td>${fmt(r.representative_equal)}</td>
                         <td>${fmt(r.representative_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Работа/личная жизнь</strong></td>
-                        <td>${fmt(r.work_life)} (от -3 до +3)</td>
+                        <td>${fmt(r.work_life)}</td>
                         <td>${fmt(r.work_life_below)}</td>
                         <td>${fmt(r.work_life_equal)}</td>
                         <td>${fmt(r.work_life_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Дефицит энергии</strong></td>
-                        <td>${fmt(r.energy_deficit)} (от -3 до +3)</td>
+                        <td>${fmt(r.energy_deficit)}</td>
                         <td>${fmt(r.energy_deficit_below)}</td>
                         <td>${fmt(r.energy_deficit_equal)}</td>
                         <td>${fmt(r.energy_deficit_above)}</td>
                     </tr>
                     <tr>
                         <td><strong>Записи vs память</strong></td>
-                        <td>${fmt(r.memory_vs_records)} (от -3 до +3)</td>
+                        <td>${fmt(r.memory_vs_records)}</td>
                         <td>${fmt(r.memory_vs_records_below)}</td>
                         <td>${fmt(r.memory_vs_records_equal)}</td>
                         <td>${fmt(r.memory_vs_records_above)}</td>
@@ -418,6 +418,6 @@ window.updateCubeCount = (zone, count) => {
 
 function updateAvailableCubes() {
     const placed = cubeDistribution.reactive + cubeDistribution.proactive + cubeDistribution.operational;
-    const available = TOTAL_CUBES - placed;
+    const available = window.TOTAL_CUBES - placed;
     document.getElementById('available-cubes').textContent = available;
 }

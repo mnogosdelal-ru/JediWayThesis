@@ -7,7 +7,9 @@
 (function() {
     'use strict';
 
-    const TOTAL_CUBES = 6;
+    // Глобальная константа для доступа из app.js
+    window.TOTAL_CUBES = 6;
+    const TOTAL_CUBES = window.TOTAL_CUBES;
 
     // Состояние
     let state = {
