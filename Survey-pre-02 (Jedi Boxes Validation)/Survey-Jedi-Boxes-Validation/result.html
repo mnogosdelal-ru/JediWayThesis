@@ -58,8 +58,8 @@ async function loadResults() {
     const totalRespondents = r.total_respondents || 1;
     const otherCount = r.other_respondents || 0;
     
-    // Функция для форматирования значения (прочерк если undefined/null)
-    const fmt = (val) => (val === undefined || val === null || val === '') ? '—' : val;
+    // Функция для форматирования значения (прочерк если undefined/null/0)
+    const fmt = (val) => (val === undefined || val === null || val === '' || val === 0) ? '—' : val;
     
     resultsContainer.innerHTML = `
         <div class="results-card">
