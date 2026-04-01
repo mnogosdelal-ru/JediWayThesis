@@ -983,6 +983,18 @@ input[type="text"], input[type="number"], select, textarea {
 }
 
 /* Описание в скобках в таблице результатов */
+.results-table .notes {
+    font-size: 0.6rem;
+    color: #666;
+    font-weight: normal;
+}
+
+/* Заметки в первом столбце (с названиями шкал) - с новой строки */
+.results-table td:first-child .notes {
+    display: block;
+}
+
+/* Описание в скобках в таблице результатов */
 .results-table td:first-child span.notes {
     display: block;
     font-size: 0.6rem;

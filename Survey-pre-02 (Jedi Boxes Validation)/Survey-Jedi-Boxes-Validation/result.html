@@ -102,21 +102,21 @@ async function loadResults() {
                     </tr>
                     <tr>
                         <td><strong>Прокрастинация</strong></td>
-                        <td>${fmt(r.proc_total)}</td>
+                        <td>${fmt(r.proc_total)} <span class="notes">(из 40)</span></td>
                         <td class="col-below">${fmtPct(r.proc_below_pct)}</td>
                         <td>${fmtPct(r.proc_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.proc_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Удовлетворённость жизнью</strong></td>
-                        <td>${fmt(r.swls_total)}</td>
+                        <td>${fmt(r.swls_total)} <span class="notes">(из 35)</span></td>
                         <td class="col-below">${fmtPct(r.swls_below_pct)}</td>
                         <td>${fmtPct(r.swls_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.swls_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Эмоциональное истощение</strong></td>
-                        <td>${fmt(r.mbi_total)}</td>
+                        <td>${fmt(r.mbi_total)} <span class="notes">(из 54)</span></td>
                         <td class="col-below">${fmtPct(r.mbi_below_pct)}</td>
                         <td>${fmtPct(r.mbi_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.mbi_above_pct)}</td>
