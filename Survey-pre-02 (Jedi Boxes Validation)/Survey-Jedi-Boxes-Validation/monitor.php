@@ -56,28 +56,28 @@ function getStats($pdo) {
     $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE status = 'completed'");
     $completed = $stmt->fetch()['cnt'];
     
-    // Не начавшие (нет записей о возрасте - значит не прошли демографию)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE age IS NULL OR age = 0");
-    $notStarted = $stmt->fetch()['cnt'];
+    // Начали (заполнили демографию)
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE age > 0");
+    $started = $stmt->fetch()['cnt'];
     
-    // Дошли до страницы 1 (заполнили демографию)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE age > 0 AND (cubes_reactive IS NULL OR cubes_reactive = 0)");
+    // Страница 1: Кубики (распределили кубики)
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE cubes_reactive > 0 OR cubes_proactive > 0 OR cubes_operational > 0");
     $atPage1 = $stmt->fetch()['cnt'];
     
-    // Дошли до страницы 2 (распределили кубики)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE cubes_reactive > 0 OR cubes_proactive > 0 OR cubes_operational > 0");
+    // Страница 2: Контекстные вопросы
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE representative IS NOT NULL");
     $atPage2 = $stmt->fetch()['cnt'];
     
-    // Дошли до страницы 3 (ответили на контекстные вопросы)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE representative > 0");
+    // Страница 3: Прокрастинация
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE proc_1 IS NOT NULL");
     $atPage3 = $stmt->fetch()['cnt'];
     
-    // Дошли до страницы 4 (ответили на прокрастинацию)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE proc_1 > 0");
+    // Страница 4: SWLS
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE swls_1 IS NOT NULL");
     $atPage4 = $stmt->fetch()['cnt'];
     
-    // Дошли до страницы 5 (ответили на SWLS)
-    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE swls_1 > 0");
+    // Страница 5: MBI (любой из 9 вопросов)
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE mbi_1 IS NOT NULL");
     $atPage5 = $stmt->fetch()['cnt'];
     
     return [
@@ -85,7 +85,7 @@ function getStats($pdo) {
         'completed' => $completed,
         'in_progress' => $total - $completed,
         'pages' => [
-            'started' => $total - $notStarted,
+            'started' => $started,
             'page1' => $atPage1,
             'page2' => $atPage2,
             'page3' => $atPage3,

@@ -56,8 +56,13 @@ if ($action === 'init_session') {
 
 // Все последующие действия требуют session_id
 if (!isset($data['session_id'])) {
-    // Пробуем получить из URL параметра
+    // Пробуем получить из URL параметра (для GET запросов)
     $session_id = $_GET['session'] ?? null;
+    // Или из заголовка Referer
+    if (!$session_id && isset($_SERVER['HTTP_REFERER'])) {
+        parse_str(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY), $queryParams);
+        $session_id = $queryParams['session'] ?? null;
+    }
     if (!$session_id) {
         echo json_encode(['success' => false, 'error' => 'Missing session_id']);
         exit;
@@ -347,16 +352,26 @@ if ($action === 'get_results') {
         $result['proc_below'] = (int)$proc_stats['below'];
         $result['proc_equal'] = (int)$proc_stats['equal'];
         $result['proc_above'] = (int)$proc_stats['above'];
+        // Проценты
+        $result['proc_below_pct'] = $proc_stats['cnt'] > 0 ? round($proc_stats['below'] / $proc_stats['cnt'] * 100) : 0;
+        $result['proc_equal_pct'] = $proc_stats['cnt'] > 0 ? round($proc_stats['equal'] / $proc_stats['cnt'] * 100) : 0;
+        $result['proc_above_pct'] = $proc_stats['cnt'] > 0 ? round($proc_stats['above'] / $proc_stats['cnt'] * 100) : 0;
         
         $result['swls_percentile'] = $swls_percentile;
         $result['swls_below'] = (int)$swls_stats['below'];
         $result['swls_equal'] = (int)$swls_stats['equal'];
         $result['swls_above'] = (int)$swls_stats['above'];
+        $result['swls_below_pct'] = $swls_stats['cnt'] > 0 ? round($swls_stats['below'] / $swls_stats['cnt'] * 100) : 0;
+        $result['swls_equal_pct'] = $swls_stats['cnt'] > 0 ? round($swls_stats['equal'] / $swls_stats['cnt'] * 100) : 0;
+        $result['swls_above_pct'] = $swls_stats['cnt'] > 0 ? round($swls_stats['above'] / $swls_stats['cnt'] * 100) : 0;
         
         $result['mbi_percentile'] = $mbi_percentile;
         $result['mbi_below'] = (int)$mbi_stats['below'];
         $result['mbi_equal'] = (int)$mbi_stats['equal'];
         $result['mbi_above'] = (int)$mbi_stats['above'];
+        $result['mbi_below_pct'] = $mbi_stats['cnt'] > 0 ? round($mbi_stats['below'] / $mbi_stats['cnt'] * 100) : 0;
+        $result['mbi_equal_pct'] = $mbi_stats['cnt'] > 0 ? round($mbi_stats['equal'] / $mbi_stats['cnt'] * 100) : 0;
+        $result['mbi_above_pct'] = $mbi_stats['cnt'] > 0 ? round($mbi_stats['above'] / $mbi_stats['cnt'] * 100) : 0;
         
         $result['total_respondents'] = (int)$proc_stats['cnt'];
         $result['other_respondents'] = (int)$proc_stats['cnt'];
@@ -398,6 +413,10 @@ if ($action === 'get_results') {
             $result[$metric . '_below'] = (int)$stats['below'];
             $result[$metric . '_equal'] = (int)$stats['equal'];
             $result[$metric . '_above'] = (int)$stats['above'];
+            // Проценты
+            $result[$metric . '_below_pct'] = $stats['cnt'] > 0 ? round($stats['below'] / $stats['cnt'] * 100) : 0;
+            $result[$metric . '_equal_pct'] = $stats['cnt'] > 0 ? round($stats['equal'] / $stats['cnt'] * 100) : 0;
+            $result[$metric . '_above_pct'] = $stats['cnt'] > 0 ? round($stats['above'] / $stats['cnt'] * 100) : 0;
         }
         
         echo json_encode(['success' => true, 'data' => $result]);

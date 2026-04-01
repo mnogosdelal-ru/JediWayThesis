@@ -18,7 +18,6 @@
         
         <div class="card">
             <p>Вы можете обновить эту страницу, чтобы увидеть актуальную статистику.</p>
-            <p><a href="index.html">Вернуться к опросу</a></p>
         </div>
     </section>
 
@@ -26,7 +25,17 @@
 
 <script>
 const apiCall = async (action, additionalData = {}) => {
-    const session_id = localStorage.getItem('survey_session_id') || new URLSearchParams(window.location.search).get('session');
+    // Сначала пробуем получить из URL параметра, потом из localStorage
+    let session_id = new URLSearchParams(window.location.search).get('session');
+    if (!session_id) {
+        session_id = localStorage.getItem('survey_session_id');
+    }
+    
+    // Сохраняем в localStorage для последующих запросов
+    if (session_id) {
+        localStorage.setItem('survey_session_id', session_id);
+    }
+    
     const payload = { action, session_id, data: additionalData };
     try {
         const res = await fetch('api.php', {
@@ -49,6 +58,8 @@ async function loadResults() {
     
     const result = await apiCall('get_results', {});
     
+    console.log('API result:', result);
+    
     if (!result.success || !result.data) {
         resultsContainer.innerHTML = '<p style="text-align:center;">Результаты недоступны. Возможно, вы ещё не прошли опрос.</p>';
         return;
@@ -58,8 +69,11 @@ async function loadResults() {
     const totalRespondents = r.total_respondents || 1;
     const otherCount = r.other_respondents || 0;
     
-    // Функция для форматирования значения (прочерк если undefined/null/0)
-    const fmt = (val) => (val === undefined || val === null || val === '' || val === 0) ? '—' : val;
+    // Функция для форматирования значения (прочерк если undefined/null, но 0 оставляем)
+    const fmt = (val) => (val === undefined || val === null || val === '') ? '—' : val;
+    
+    // Функция для форматирования процентов (0 заменяем на прочерк)
+    const fmtPct = (val) => (val === undefined || val === null || val === '' || val === 0) ? '—' : val + '%';
     
     resultsContainer.innerHTML = `
         <div class="results-card">
@@ -70,7 +84,7 @@ async function loadResults() {
                     <tr>
                         <th rowspan="2">Шкала / Параметр</th>
                         <th rowspan="2">Ваше значение</th>
-                        <th colspan="3">Число респондентов у кого этот параметр</th>
+                        <th colspan="3">Процент респондентов</th>
                     </tr>
                     <tr>
                         <th>Ниже</th>
@@ -82,85 +96,85 @@ async function loadResults() {
                     <tr>
                         <td><strong>Возраст</strong></td>
                         <td>${fmt(r.age)} лет</td>
-                        <td>${fmt(r.age_below)}</td>
-                        <td>${fmt(r.age_equal)}</td>
-                        <td>${fmt(r.age_above)}</td>
+                        <td class="col-below">${fmtPct(r.age_below_pct)}</td>
+                        <td>${fmtPct(r.age_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.age_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Прокрастинация</strong></td>
                         <td>${fmt(r.proc_total)}</td>
-                        <td>${fmt(r.proc_below)}</td>
-                        <td>${fmt(r.proc_equal)}</td>
-                        <td>${fmt(r.proc_above)}</td>
+                        <td class="col-below">${fmtPct(r.proc_below_pct)}</td>
+                        <td>${fmtPct(r.proc_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.proc_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Удовлетворённость жизнью</strong></td>
                         <td>${fmt(r.swls_total)}</td>
-                        <td>${fmt(r.swls_below)}</td>
-                        <td>${fmt(r.swls_equal)}</td>
-                        <td>${fmt(r.swls_above)}</td>
+                        <td class="col-below">${fmtPct(r.swls_below_pct)}</td>
+                        <td>${fmtPct(r.swls_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.swls_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Эмоциональное истощение</strong></td>
                         <td>${fmt(r.mbi_total)}</td>
-                        <td>${fmt(r.mbi_below)}</td>
-                        <td>${fmt(r.mbi_equal)}</td>
-                        <td>${fmt(r.mbi_above)}</td>
+                        <td class="col-below">${fmtPct(r.mbi_below_pct)}</td>
+                        <td>${fmtPct(r.mbi_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.mbi_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в красной зоне</strong></td>
                         <td>${fmt(r.cubes_reactive)}</td>
-                        <td>${fmt(r.cubes_reactive_below)}</td>
-                        <td>${fmt(r.cubes_reactive_equal)}</td>
-                        <td>${fmt(r.cubes_reactive_above)}</td>
+                        <td class="col-below">${fmtPct(r.cubes_reactive_below_pct)}</td>
+                        <td>${fmtPct(r.cubes_reactive_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.cubes_reactive_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в зелёной зоне</strong></td>
                         <td>${fmt(r.cubes_proactive)}</td>
-                        <td>${fmt(r.cubes_proactive_below)}</td>
-                        <td>${fmt(r.cubes_proactive_equal)}</td>
-                        <td>${fmt(r.cubes_proactive_above)}</td>
+                        <td class="col-below">${fmtPct(r.cubes_proactive_below_pct)}</td>
+                        <td>${fmtPct(r.cubes_proactive_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.cubes_proactive_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Энергия в серой зоне</strong></td>
                         <td>${fmt(r.cubes_operational)}</td>
-                        <td>${fmt(r.cubes_operational_below)}</td>
-                        <td>${fmt(r.cubes_operational_equal)}</td>
-                        <td>${fmt(r.cubes_operational_above)}</td>
+                        <td class="col-below">${fmtPct(r.cubes_operational_below_pct)}</td>
+                        <td>${fmtPct(r.cubes_operational_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.cubes_operational_above_pct)}</td>
                     </tr>
                     <tr>
-                        <td><strong>Насколько типичный представитель</strong></td>
+                        <td><strong>Насколько типичная неделя</strong><br><span class="notes">(минус - хуже, плюс - лучше)</span></td>
                         <td>${fmt(r.representative)}</td>
-                        <td>${fmt(r.representative_below)}</td>
-                        <td>${fmt(r.representative_equal)}</td>
-                        <td>${fmt(r.representative_above)}</td>
+                        <td class="col-below">${fmtPct(r.representative_below_pct)}</td>
+                        <td>${fmtPct(r.representative_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.representative_above_pct)}</td>
                     </tr>
                     <tr>
-                        <td><strong>Работа/личная жизнь</strong></td>
+                        <td><strong>Баланс работа/личная жизнь</strong><br><span class="notes">(минус - больше на личное, плюс - больше в работу)</span></td>
                         <td>${fmt(r.work_life)}</td>
-                        <td>${fmt(r.work_life_below)}</td>
-                        <td>${fmt(r.work_life_equal)}</td>
-                        <td>${fmt(r.work_life_above)}</td>
+                        <td class="col-below">${fmtPct(r.work_life_below_pct)}</td>
+                        <td>${fmtPct(r.work_life_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.work_life_above_pct)}</td>
                     </tr>
                     <tr>
-                        <td><strong>Дефицит энергии</strong></td>
+                        <td><strong>Дефицит энергии</strong><br><span class="notes">(минус - избыток, плюс - недостаток)</span></td>
                         <td>${fmt(r.energy_deficit)}</td>
-                        <td>${fmt(r.energy_deficit_below)}</td>
-                        <td>${fmt(r.energy_deficit_equal)}</td>
-                        <td>${fmt(r.energy_deficit_above)}</td>
+                        <td class="col-below">${fmtPct(r.energy_deficit_below_pct)}</td>
+                        <td>${fmtPct(r.energy_deficit_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.energy_deficit_above_pct)}</td>
                     </tr>
                     <tr>
-                        <td><strong>Записи vs память</strong></td>
+                        <td><strong>Записи vs память</strong><br><span class="notes">(1 - всё по памяти, 5 - всё по записи)</span></td>
                         <td>${fmt(r.memory_vs_records)}</td>
-                        <td>${fmt(r.memory_vs_records_below)}</td>
-                        <td>${fmt(r.memory_vs_records_equal)}</td>
-                        <td>${fmt(r.memory_vs_records_above)}</td>
+                        <td class="col-below">${fmtPct(r.memory_vs_records_below_pct)}</td>
+                        <td>${fmtPct(r.memory_vs_records_equal_pct)}</td>
+                        <td class="col-above">${fmtPct(r.memory_vs_records_above_pct)}</td>
                     </tr>
                 </tbody>
             </table>
             <p class="results-note">
                 ${otherCount > 0 
-                    ? `На основе данных ${otherCount} респондентов. В столбцах "Ниже", "Такой же", "Выше" показано количество респондентов, у которых значение меньше, равно или больше вашего.` 
+                    ? `На основе данных ${otherCount} респондентов. В столбцах показан процент респондентов, у которых значение меньше, равно или больше вашего.` 
                     : 'Вы первый респондент! После накопления данных здесь появится статистика.'}
             </p>
         </div>

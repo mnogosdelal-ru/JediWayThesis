@@ -982,11 +982,26 @@ input[type="text"], input[type="number"], select, textarea {
     color: var(--primary-color);
 }
 
+/* Описание в скобках в таблице результатов */
+.results-table td:first-child span.notes {
+    display: block;
+    font-size: 0.6rem;
+    color: #666;
+    font-weight: normal;
+}
+
 .results-note {
     text-align: center;
     font-size: 0.9rem;
     color: var(--text-muted);
     font-style: italic;
+}
+
+/* Серые столбцы в таблице результатов */
+.results-table .col-below,
+.results-table .col-above {
+    background-color: #f5f5f5;
+    color: #666;
 }
 
 /* Mobile */
