@@ -2,17 +2,29 @@
 
 > **Статус документа:** Черновик протокола исследования
 > **Дата:** 2026
-> **Цель:** Разработка и валидация краткого психометрического инструмента для оценки распределения энергии и его связи с продуктивностью, выгоранием и благополучием.
+> **Цель:** Разработка и валидация краткого психометрического инструмента для косвенной оценки личной продуктивности человека через оценку распределения энергии. Валидация посредством анализа связи с продуктивностью, выгоранием и благополучием.
 
 ---
 
 ## 1. Концептуальная рамка
 
 ### 1.1. Проблема
-Классические операционализации продуктивности (матрица Эйзенхауэра, сложные матрицы 2×2) имеют низкую надежность в самоотчетах из-за:
-*   Когнитивной перегрузки респондента (высокий отток).
-*   Социальной желательности (люди завышают «важное»).
-*   Неучета «операционной рутины», которая занимает значительную часть времени продуктивных людей.
+
+**В научном сообществе не существует валидного способа операционализировать личную продуктивность, кроме как через вопросы о затраченном времени.** Однако время — крайне ненадёжная метрика, особенно для умственного труда.
+
+**Искажения ретроспективных оценок времени.** Люди систематически искажают ретроспективные оценки времени: «важные» задачи субъективно занимают больше времени, чем объективно, а рутина недооценивается [Roy & Christenfeld, 2007](https://pubmed.ncbi.nlm.nih.gov/17691153/). Ретроспективные оценки времени зависят от того, как события сегментированы в памяти — при отсутствии чётких границ событий точность оценок снижается [Yue, 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC12769706/).
+
+**Высокая случайная ошибка самозаполняемых дневников.** Исследование с использованием wearable cameras показало: на групповом уровне самозаполняемые дневники времени достаточно валидны, однако на индивидуальном уровне они дают **очень низкую надёжность** — разброс составляет ±50 минут при среднем времени 72 минуты [Kelly et al., 2014](https://www.sciencedirect.com/science/article/pii/S2214140514000358). Это делает дневники **непригодными для оценки индивидуального поведения**.
+
+**Время ≠ Качество/Усилие.** Когнитивная нагрузка искажает восприятие времени — периоды интенсивной умственной работы субъективно «ускользают» быстрее, чем рутинные задачи [Molet, Alessandri & Zentall, 2012](https://journals.sagepub.com/doi/10.1080/17470218.2011.552728). Более того, когнитивное усилие и затраченное время — это **разные конструкты**, которые плохо коррелируют между собой [Westbrook et al., 2023](https://pmc.ncbi.nlm.nih.gov/articles/PMC10434945/).
+
+**Социальная желательность в самоотчётах.** Люди систематически завышают желательные качества (продуктивность, «важные» задачи) и занижают нежелательные [Latkin et al., 2017](https://pmc.ncbi.nlm.nih.gov/articles/PMC5519338/). Один из способов снизить этот эффект — ипсативный формат (forced-choice), где респондент выбирает между равнозначными альтернативами [Waters, 2021](https://www.semanticscholar.org/paper/2f3d6bfd547f81ef52a40f139edd0114de40a89d).
+
+**Энергия как альтернативный конструкт.** Исследования показывают, что «личная энергия» (personal energy) — это самостоятельный конструкт, не сводимый ко времени, и он связан с продуктивностью и здоровьем [Klijn, 2021](https://www.mdpi.com/2071-1050/13/23/13132).
+
+---
+
+**Следствие:** существующие инструменты измеряют «потраченное время», а не «продуктивность». Это создаёт ложную картину: человек может много работать, но оставаться непродуктивным. Необходим новый подход, который: (а) не зависит от точного восстановления времени; (б) снижает социальную желательность; (в) учитывает направление энергии, а не только её количество.
 
 ### 1.2. Предлагаемое решение
 Методика **«Три коробочки»** — ипсативный инструмент распределения ограниченного ресурса (6 единиц энергии) между тремя функциональными категориями.
@@ -36,18 +48,18 @@
 **Интерфейс:** Интерактивные «емкости» с возможностью drag-and-drop.
 
 ### 2.2. Алгоритм классификации профилей
-После распределения кубиков система сортирует категории по убыванию и присваивает один из 6 уровней:
+После распределения кубиков система сортирует категории по убыванию и присваивает один из 6 уровней. Уровни выстроены в однозначную прогрессию от лучшего к худшему:
 
-| Уровень | Порядок доминирования | Интерпретация |
-|---------|----------------------|---------------|
-| **1. Хаос** | 🔴 > 🟢 > ⚪ | Рост через кризис, высокий риск выгорания |
-| **2. Выживание** | 🔴 > ⚪ > 🟢 | Реактивность + отдых, отсутствие развития |
-| **3. Колесо** | ⚪ > 🔴 > 🟢 | Рутина и пожары, стагнация |
-| **4. Менеджер** | 🟢 > 🔴 > ⚪ | Рост есть, но много суеты, мало восстановления |
-| **5. Лидер** 🏆 | 🟢 > ⚪ > 🔴 | **Оптимальный баланс**: рост при стабильности, минимум пожаров |
-| **6. Мастер/Дзен** 🧘 | ⚪ > 🟢 > 🔴 | Система отлажена, рост фоновый, высокий ресурс |
+| Уровень | Порядок доминирования | Интерпретация | Пояснение |
+|---------|----------------------|---------------|-----------|
+| **6. Дзен** 🧘 | ⚪ > 🟢 > 🔴 | Автоматизация и устойчивость | Минимум реактивности, высокая проактивность, операционное как фоновый ресурс |
+| **5. Рост** 🏆 | 🟢 > ⚪ > 🔴 | Активный рост | Максимум проактивности с восстановлением, минимум пожаров |
+| **4. Не сдаёмся** 💪 | 🟢 > 🔴 > ⚪ | Рост через сопротивление | Высокая проактивность, но много реактивности, мало восстановления |
+| **3. Кризис** ⚡ | 🔴 > ⚪ > 🟢 | Реактивность без развития | Много пожаров, операционное как отвлечение, минимум роста |
+| **2. Выживание** 🔥 | 🔴 > 🟢 > ⚪ | Чистая реактивность | Только пожары и попытки роста, без восстановления |
+| **1. Хаос** 💀 | 🔴 = ⚪ = 🟢 (2-2-2) | Полный дисбаланс | Невозможность определить приоритеты |
 
-> **Примечание:** Уровни 5 и 6 могут рассматриваться как две вершины продуктивности: «Достижения» и «Устойчивость».
+> **Примечание:** Уровни 6 (Дзен) и 5 (Рост) — две вершины прогрессии: «Устойчивость» и «Достижения». Уровень 1 (Хаос) соответствует ситуации, когда респондент не может выделить приоритет — все три категории равны.
 
 ### 2.3. Обработка «ничьих» (Ties)
 При распределении 6 кубиков возможны равенства (напр., 2-2-2, 3-3-0, 4-1-1).
@@ -128,6 +140,7 @@ SDT предполагает, что люди имеют врождённую т
 ### 4.1. Гипотезы валидности инструмента
 | Код | Формулировка | Метод проверки | Теоретическое обоснование |
 |-----|--------------|----------------|---------------------------|
+| **H0** | **Респонденты с разными профилями (уровнями 1–6) статистически значимо различаются по трём критериям валидации:** эмоциональному истощению (MBI), прокрастинации и удовлетворённости жизнью (SWLS). | **ANOVA / Kruskal-Wallis** (межуровневые сравнения) + post-hoc тесты (Bonferroni / Dunn) | Модель «Три коробочки» постулирует, что профили с доминированием 🔴 (реактивность) ассоциированы с негативными исходами (выгорание, прокрастинация), а профили с доминированием 🟢 (проактивность) — с позитивными (благополучие). Если уровни 1–6 отражают реальные различия в структуре энергии, то они должны проявляться в различиях по валидирующим конструктам [JD-R модель, Demerouti et al., 2001](https://pubmed.ncbi.nlm.nih.gov/11419809/); [SDT, Ryan & Deci, 2000](https://app.pulsar.uba.ar/fetch.php/virtual-library/T65719/DeciAndRyanSelfDeterminationTheory.pdf). |
 | **H1** | Доля 🔴 (Срочное) положительно коррелирует с прокрастинацией и эмоциональным истощением (MBI). | Корреляция Спирмена | **JD-R модель:** Требования без ресурсов ведут к истощению [Demerouti et al., 2001](https://pubmed.ncbi.nlm.nih.gov/11419809/). **Прокрастинация как саморегуляторный провал:** Откладывание важных задач ведёт к накоплению срочных «пожаров» [Steel, 2007](https://pubmed.ncbi.nlm.nih.gov/17201571/). |
 | **H2** | Доля 🟢 (Важное) положительно коррелирует с удовлетворенностью жизнью (SWLS) и отрицательно — с эмоциональным истощением. | Корреляция Спирмена | **SDT:** Автономная мотивация и стремление к целям связаны с благополучием [Ryan & Deci, 2000](https://psycnet.apa.org/record/2000-03701-010). **Проактивное копинг:** Выступает личным ресурсом в расширенной JD-R модели [Usborne & Taylor, 2011](https://www.tandfonline.com/doi/abs/10.1080/10615806.2010.546804). |
 | **H3** | Профили с низким 🔴 (<2 кубиков) демонстрируют статистически значимо более низкое выгорание. | U-критерий Манна-Уитни / ANOVA | **Буферная гипотеза:** Низкие требования при высоких ресурсах защищают от выгорания [JD-R 3.0, Li et al., 2025](https://www.sciencedirect.com/science/article/pii/S000169182500023X). |
@@ -181,6 +194,7 @@ SDT предполагает, что люди имеют врождённую т
 ### 6.1. Основные методы
 | Задача | Метод | Примечание |
 |--------|-------|------------|
+| **Проверка H0 (различия между уровнями 1–6)** | Односторонний ANOVA (если нормальное распределение) или Kruskal-Wallis (если нет) | Основной метод проверки различий между 6 группами по непрерывным зависимым переменным (MBI, прокрастинация, SWLS). Для множественных сравнений — поправка Бонферрони или тест Данна (для Kruskal-Wallis). |
 | Проверка валидности | Корреляции Спирмена/Кендалла | Для ипсативных данных (сумма=6) |
 | Сравнение уровней | Kruskal-Wallis / ANOVA | Зависит от нормальности распределения |
 | Предсказание выгорания | Множественная регрессия | Включать только 2 из 3 цветов (избегать мультиколлинеарности) |
@@ -188,6 +202,34 @@ SDT предполагает, что люди имеют врождённую т
 | Модерация | PROCESS macro / иерархическая регрессия | Для проверки H5, H6, H8 |
 | Медиация | PROCESS Model 4 / структурные модели | Для проверки H9 |
 | Криволинейные эффекты | Полиномиальная регрессия | Для проверки H7 |
+
+#### Детальное описание проверки гипотезы H0
+
+**Дизайн анализа:**
+1. **Классификация респондентов** — каждому респонденту присваивается уровень (1–6) на основе алгоритма из раздела 2.2.
+2. **Три зависимые переменные:**
+   - MBI (эмоциональное истощение, 9 пунктов, диапазон 0–54)
+   - Прокрастинация (8 пунктов, диапазон 8–40)
+   - SWLS (5 пунктов, диапазон 5–35)
+3. **Три отдельных анализа** — для каждой зависимой переменной проводится отдельный тест.
+
+**Статистические критерии:**
+- **Проверка нормальности** — тест Шапиро-Уилка для каждой группы (уровня). Если p < 0.05 → распределение ненормальное.
+- **Односторонний ANOVA** — если нормальное распределение во всех 6 группах и однородность дисперсий (тест Левена). Вывод: F-статистика, p-value, η² (размер эффекта).
+- **Kruskal-Wallis** — если хотя бы в одной группе распределение ненормальное. Это непараметрический аналог ANOVA для независимых выборок. Вывод: H-статистика, p-value, ε² (размер эффекта).
+
+**Post-hoc сравнения:**
+- **Для ANOVA** — тест Тьюки (Tukey HSD) для попарных сравнений с поправкой на множественные сравнения.
+- **Для Kruskal-Wallis** — тест Данна (Dunn's test) с поправкой Бонферрони.
+
+**Ожидаемые результаты:**
+- Уровни 1–3 (доминирование 🔴): высокие баллы MBI и прокрастинации, низкие баллы SWLS.
+- Уровни 4–6 (доминирование 🟢 и ⚪): низкие баллы MBI и прокрастинации, высокие баллы SWLS.
+- Уровни 5 и 6 могут различаться: 5 (🟢>⚪>🔴) — максимум благополучия; 6 (⚪>🟢>🔴) — минимум выгорания.
+
+**Требования к данным:**
+- Минимальный размер группы: n ≥ 10 для каждого уровня (желательно n ≥ 20).
+- Если какие-то уровни не представлены в данных (например, n < 5), объединить с ближайшим по смыслу уровнем или исключить из анализа с описанием в отчёте.
 
 ### 6.2. Работа с композиционными данными
 ⚠️ **Важно:** Доли энергии (🔴+🟢+⚪=6) — это композиционные данные.
@@ -267,18 +309,9 @@ SDT предполагает, что люди имеют врождённую т
 >
 > *Перетаскивайте кубики мышкой или пальцем (на мобильном). Не стремитесь к «правильному» ответу — важна ваша реальная картина.*
 
-### B. Чек-лист перед запуском
-- [x] Протестировать drag&drop на мобильных устройствах (iOS/Android) — реализовано в drag-drop.js
-- [x] Проверить логику классификации профилей (все варианты + ничьи с иерархией 🔴>🟢>⚪)
-- [x] Создать HTML-версию опросника с адаптивным дизайном
-- [x] Настроить структуру БД и API
-- [ ] Настроить экспорт данных в формат, удобный для R/Python (CSV с кодировкой UTF-8).
-- [ ] Подготовить шаблон персональной обратной связи для респондентов.
-- [ ] Провести пилотное тестирование (n=30–50)
-
 ---
 
-## Приложение C. Библиография
+## Приложение B. Библиография
 
 ### Основные теоретические источники
 
@@ -290,28 +323,42 @@ SDT предполагает, что люди имеют врождённую т
 | 4 | Zhu, M., Yang, Y., & Hsee, C. K. (2018). The mere urgency effect. *Journal of Consumer Research, 45*(3), 673–690. | [Oxford Academic](https://academic.oup.com/jcr/article-abstract/45/3/673/4847790) |
 | 5 | Brown, A., & Maydeu-Olivares, A. (2013). How IRT can be used to deal with ipsative data in forced-choice questionnaires. *Educational and Psychological Measurement, 73*(3), 467–489. | — |
 
+### Дополнительные источники: проблема измерения времени и продуктивности
+
+| № | Citation | Ссылка |
+|---|----------|--------|
+| 6 | Roy, M. M., & Christenfeld, N. J. S. (2007). Bias in memory predicts bias in estimation of future task duration. *Memory & Cognition, 35*(3), 557–564. | [PubMed](https://pubmed.ncbi.nlm.nih.gov/17691153/) |
+| 7 | Yue, W. Y. Y. (2021). Retrospective duration judgments of naturalistic events depend on memories of event boundaries. *Memory & Cognition, 49*(3), 344–351. | [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12769706/) |
+| 8 | Kelly, P., Doherty, A., Berry, E., Broom, D., Hills, A., & Webb, O. (2014). High group level validity but high random error of a self-report travel diary, as assessed by wearable cameras. *Journal of Transport & Health, 1*(3), 190–201. | [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S2214140514000358) |
+| 9 | Aeon, B., Faber, A., & Panaccio, A. (2021). Does time management work? A meta-analysis. *PLoS ONE, 16*(1), e0245066. | [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC7799745/) |
+| 10 | Molet, M., Alessandri, J., & Zentall, T. R. (2012). Subjective time: Cognitive and physical secondary tasks affect timing differently. *Quarterly Journal of Experimental Psychology, 65*(12), 2338–2351. | [SAGE](https://journals.sagepub.com/doi/10.1080/17470218.2011.552728) |
+| 11 | Westbrook, A., van den Bosch, R., Määttä, J. I., Hofmans, L., B. J., & colleagues (2023). Is it cognitive effort you measure? Comparing three task paradigms to the Need for Cognition scale. *PLoS ONE, 18*(6), e0290177. | [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10434945/) |
+| 12 | Klijn, A. F. J. (2021). Construct dimensionality of personal energy at work and its relationship with health, absenteeism and productivity. *Sustainability, 13*(23), 13132. | [MDPI](https://www.mdpi.com/2071-1050/13/23/13132) |
+| 13 | Latkin, C. A., Davey-Rothwell, M. A., Knowlton, A. R., Alexander, K. A., Williams, C. T., & Boodram, B. (2017). The relationship between social desirability bias and self-reports of health, substance use, and social network factors among urban substance users in Baltimore. *PLoS ONE, 12*(10), e0185511. | [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC5519338/) |
+| 14 | Waters, L. K. (2021). A note on the "Fakability" of forced-choice scales. *Semantic Scholar* | [Semantic Scholar](https://www.semanticscholar.org/paper/2f3d6bfd547f81ef52a40f139edd0114de40a89d) |
+
 ### Дополнительные источники по гипотезам
 
 | № | Citation | Ссылка |
 |---|----------|--------|
-| 6 | Steel, P. (2007). The nature of procrastination: A meta-analytic and theoretical review of quintessential self-regulatory failure. *Psychological Bulletin, 133*(1), 65–94. | [PubMed](https://pubmed.ncbi.nlm.nih.gov/17201571/) |
-| 7 | Usborne, E., & Taylor, D. M. (2011). Proactive coping as a personal resource in the expanded Job Demands-Resources model. *Anxiety, Stress & Coping, 24*(5), 569–588. | — |
-| 8 | Covey, S. R. (2004). *The 7 Habits of Highly Effective People*. Free Press. | — |
-| 9 | Kennedy, D. R., Clapp, P., & DeLuca, J. L. (2022). Enhancing pharmacy faculty well-being and productivity while reducing burnout. *American Journal of Pharmaceutical Education, 86*(5), 8764. | — |
-| 10 | Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation. *American Psychologist, 57*(9), 705–717. | [PDF](https://www-2.rotman.utoronto.ca/facbios/file/09%20-%20Locke%20&%20Latham%202002%20AP.pdf) |
-| 11 | Aydin, B., & Rice, L. (2025). Boosting productivity and wellbeing through time management. *Frontiers in Education, 10*, 1623228. | — |
-| 12 | Sirois, F., & Pychyl, T. (2013). Procrastination and the priority of short-term mood regulation: Consequences for future self. *Social and Personality Psychology Compass, 7*(2), 115–127. | [Wiley](https://compass.onlinelibrary.wiley.com/doi/abs/10.1111/spc3.12011) |
-| 13 | Schaufeli, W. B., Taris, T. W., & Bakker, A. B. (2008). An unbalanced approach to the concept of workaholism. *European Journal of Work and Organizational Psychology, 17*(1), 1–5. | — |
-| 14 | Gorgievski, M. J., Moriano, J. A., & Bakker, A. B. (2018). Workaholism and work engagement: A systematic review. *Journal of Business and Psychology, 34*, 1–23. | — |
-| 15 | Amstad, F. T., Meier, L. L., Fasel, U., Elfering, A., & Semmer, N. K. (2011). A meta-analysis of work-family conflict and various outcomes with a special emphasis on cross-domain versus matching-domain relations. *Journal of Occupational Health Psychology, 16*(2), 151–169. | [PDF](https://laurenzmeier.info/pdf/Amstad2011JOHP.pdf) |
-| 16 | Hobfoll, S. E. (1989). Conservation of resources: A new attempt at conceptualizing stress. *American Psychologist, 44*(3), 513–524. | [PDF](https://www.researchgate.net/profile/Stevan_Hobfoll/publication/20507127_Conservation_of_Resources_A_New_Attempt_at_Conceptualizing_Stress/links/53ed1c190cf2981ada12af0c.pdf) |
-| 17 | Edwards, J. R., & Rothbard, N. P. (2000). Mechanisms linking work and family: Clarifying the relationship between work and family constructs. *Academy of Management Review, 25*(1), 178–199. | — |
-| 18 | Bianchi, S. M., Milkie, M. A., Sayer, L. C., & Robinson, J. P. (2012). The division of labor in the home. *Annual Review of Sociology, 38*, 271–290. | — |
-| 19 | Daminger, A. (2019). The cognitive dimension of household labor. *American Sociological Review, 84*(4), 609–633. | [Sage](https://journals.sagepub.com/doi/abs/10.1177/0003122419859007) |
-| 20 | Hess, T. M. (2014). Selective engagement of cognitive resources: Motivational influences on older adults' cognitive functioning. *Perspectives on Psychological Science, 9*(4), 388–407. | — |
-| 21 | Carstensen, L. L. (2006). The influence of a sense of time on human development. *Science, 312*(5782), 1913–1915. | — |
-| 22 | Csikszentmihalyi, M. (1990). *Flow: The Psychology of Optimal Experience*. Harper & Row. | [Wikipedia](https://en.wikipedia.org/wiki/Flow:_The_Psychology_of_Optimal_Experience) |
-| 23 | Sonnentag, S., & Fritz, C. (2007). The Recovery Experience Questionnaire: Development and validation of a measure for assessing recuperation and unwinding from work. *Journal of Occupational Health Psychology, 12*(3), 204–221. | [ResearchGate](https://www.researchgate.net/publication/6201016_The_Recovery_Experience_Questionnaire_Development_and_Validation_of_a_Measure_for_Assessing_Recuperation_and_Unwinding_From_Work) |
+| 15 | Steel, P. (2007). The nature of procrastination: A meta-analytic and theoretical review of quintessential self-regulatory failure. *Psychological Bulletin, 133*(1), 65–94. | [PubMed](https://pubmed.ncbi.nlm.nih.gov/17201571/) |
+| 16 | Usborne, E., & Taylor, D. M. (2011). Proactive coping as a personal resource in the expanded Job Demands-Resources model. *Anxiety, Stress & Coping, 24*(5), 569–588. | — |
+| 17 | Covey, S. R. (2004). *The 7 Habits of Highly Effective People*. Free Press. | — |
+| 18 | Kennedy, D. R., Clapp, P., & DeLuca, J. L. (2022). Enhancing pharmacy faculty well-being and productivity while reducing burnout. *American Journal of Pharmaceutical Education, 86*(5), 8764. | — |
+| 19 | Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation. *American Psychologist, 57*(9), 705–717. | [PDF](https://www-2.rotman.utoronto.ca/facbios/file/09%20-%20Locke%20&%20Latham%202002%20AP.pdf) |
+| 20 | Aydin, B., & Rice, L. (2025). Boosting productivity and wellbeing through time management. *Frontiers in Education, 10*, 1623228. | — |
+| 21 | Sirois, F., & Pychyl, T. (2013). Procrastination and the priority of short-term mood regulation: Consequences for future self. *Social and Personality Psychology Compass, 7*(2), 115–127. | [Wiley](https://compass.onlinelibrary.wiley.com/doi/abs/10.1111/spc3.12011) |
+| 22 | Schaufeli, W. B., Taris, T. W., & Bakker, A. B. (2008). An unbalanced approach to the concept of workaholism. *European Journal of Work and Organizational Psychology, 17*(1), 1–5. | — |
+| 23 | Gorgievski, M. J., Moriano, J. A., & Bakker, A. B. (2018). Workaholism and work engagement: A systematic review. *Journal of Business and Psychology, 34*, 1–23. | — |
+| 24 | Amstad, F. T., Meier, L. L., Fasel, U., Elfering, A., & Semmer, N. K. (2011). A meta-analysis of work-family conflict and various outcomes with a special emphasis on cross-domain versus matching-domain relations. *Journal of Occupational Health Psychology, 16*(2), 151–169. | [PDF](https://laurenzmeier.info/pdf/Amstad2011JOHP.pdf) |
+| 25 | Hobfoll, S. E. (1989). Conservation of resources: A new attempt at conceptualizing stress. *American Psychologist, 44*(3), 513–524. | [PDF](https://www.researchgate.net/profile/Stevan_Hobfoll/publication/20507127_Conservation_of_Resources_A_New_Attempt_at_Conceptualizing_Stress/links/53ed1c190cf2981ada12af0c.pdf) |
+| 26 | Edwards, J. R., & Rothbard, N. P. (2000). Mechanisms linking work and family: Clarifying the relationship between work and family constructs. *Academy of Management Review, 25*(1), 178–199. | — |
+| 27 | Bianchi, S. M., Milkie, M. A., Sayer, L. C., & Robinson, J. P. (2012). The division of labor in the home. *Annual Review of Sociology, 38*, 271–290. | — |
+| 28 | Daminger, A. (2019). The cognitive dimension of household labor. *American Sociological Review, 84*(4), 609–633. | [Sage](https://journals.sagepub.com/doi/abs/10.1177/0003122419859007) |
+| 29 | Hess, T. M. (2014). Selective engagement of cognitive resources: Motivational influences on older adults' cognitive functioning. *Perspectives on Psychological Science, 9*(4), 388–407. | — |
+| 30 | Carstensen, L. L. (2006). The influence of a sense of time on human development. *Science, 312*(5782), 1913–1915. | — |
+| 31 | Csikszentmihalyi, M. (1990). *Flow: The Psychology of Optimal Experience*. Harper & Row. | [Wikipedia](https://en.wikipedia.org/wiki/Flow:_The_Psychology_of_Optimal_Experience) |
+| 32 | Sonnentag, S., & Fritz, C. (2007). The Recovery Experience Questionnaire: Development and validation of a measure for assessing recuperation and unwinding from work. *Journal of Occupational Health Psychology, 12*(3), 204–221. | [ResearchGate](https://www.researchgate.net/publication/6201016_The_Recovery_Experience_Questionnaire_Development_and_Validation_of_a_Measure_for_Assessing_Recuperation_and_Unwinding_From_Work) |
 
 ---
 

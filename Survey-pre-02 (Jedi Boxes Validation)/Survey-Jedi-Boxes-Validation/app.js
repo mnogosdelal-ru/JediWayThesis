@@ -1,7 +1,9 @@
 let appState = {
     session_id: null,
     debug_mode: false,
-    time_page0_start: Date.now()
+    time_page0_start: Date.now(),
+    user_agent: navigator.userAgent,
+    device_type: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
 };
 
 // Состояние кубиков
@@ -69,7 +71,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     const initPayload = {
         action: 'init_session',
-        session_id: existingSessionId
+        session_id: existingSessionId,
+        user_agent: appState.user_agent,
+        device_type: appState.device_type
     };
     
     try {
@@ -137,12 +141,18 @@ document.getElementById('btn-next-0').addEventListener('click', async () => {
     showPage(1);
 });
 
-// Page 1 -> 2
+// Page 1 -> 2 (Кубики + вопрос про память/записи -> Контекст)
 document.getElementById('btn-next-1').addEventListener('click', async () => {
     const totalPlaced = cubeDistribution.reactive + cubeDistribution.proactive + cubeDistribution.operational;
-    
+    const memoryVsRecords = document.querySelector('input[name="memory_vs_records"]:checked');
+
     if(!appState.debug_mode && totalPlaced < window.TOTAL_CUBES) {
         alert(`Пожалуйста, распределите все ${window.TOTAL_CUBES} кубиков. Сейчас распределено: ${totalPlaced}`);
+        return;
+    }
+
+    if(!appState.debug_mode && !memoryVsRecords) {
+        alert("Пожалуйста, ответьте на вопрос.");
         return;
     }
 
@@ -156,7 +166,8 @@ document.getElementById('btn-next-1').addEventListener('click', async () => {
         time_page1_total: totalTimeSec,
         cubes_reactive: cubeDistribution.reactive,
         cubes_proactive: cubeDistribution.proactive,
-        cubes_operational: cubeDistribution.operational
+        cubes_operational: cubeDistribution.operational,
+        memory_vs_records: memoryVsRecords ? parseInt(memoryVsRecords.value) : null
     });
     showPage(2);
 });
@@ -169,9 +180,8 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
     const representative = document.querySelector('input[name="representative"]:checked');
     const workLife = document.querySelector('input[name="work_life"]:checked');
     const energyDeficit = document.querySelector('input[name="energy_deficit"]:checked');
-    const memoryVsRecords = document.querySelector('input[name="memory_vs_records"]:checked');
 
-    if(!appState.debug_mode && (!representative || !workLife || !energyDeficit || !memoryVsRecords)) {
+    if(!appState.debug_mode && (!representative || !workLife || !energyDeficit)) {
         alert("Пожалуйста, ответьте на все вопросы.");
         return;
     }
@@ -183,8 +193,7 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
         time_page2_total: totalTimeSec,
         representative: representative ? parseInt(representative.value) : null,
         work_life: workLife ? parseInt(workLife.value) : null,
-        energy_deficit: energyDeficit ? parseInt(energyDeficit.value) : null,
-        memory_vs_records: memoryVsRecords ? parseInt(memoryVsRecords.value) : null
+        energy_deficit: energyDeficit ? parseInt(energyDeficit.value) : null
     });
     showPage(3);
 });
@@ -205,7 +214,7 @@ document.getElementById('btn-next-3').addEventListener('click', async () => {
         alert("Пожалуйста, ответьте на все вопросы шкалы прокрастинации.");
         return;
     }
-
+    
     await apiCall('save_page', {
         status: 'page4',
         time_page3_start: appState.time_page3_start,
@@ -231,7 +240,7 @@ document.getElementById('btn-next-4').addEventListener('click', async () => {
         alert("Пожалуйста, ответьте на все вопросы шкалы удовлетворённости жизнью.");
         return;
     }
-
+    
     await apiCall('save_page', {
         status: 'page5',
         time_page4_start: appState.time_page4_start,

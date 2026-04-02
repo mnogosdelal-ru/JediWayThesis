@@ -78,6 +78,11 @@ CREATE TABLE IF NOT EXISTS jedi_boxes_respondents (
     time_finished BIGINT,
     time_total INT,
     
+    -- Метаданные (7.3)
+    user_agent VARCHAR(500),
+    ip_hash VARCHAR(64),
+    device_type VARCHAR(20),
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     KEY idx_status (status),

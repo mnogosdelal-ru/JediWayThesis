@@ -75,6 +75,32 @@ async function loadResults() {
     // Функция для форматирования процентов (0 заменяем на прочерк)
     const fmtPct = (val) => (val === undefined || val === null || val === '' || val === 0) ? '—' : val + '%';
     
+    // Функция для получения эмодзи индикатора для шкал
+    const getIndicatorEmoji = (value, type) => {
+        if (value === undefined || value === null || value === '') return '';
+        
+        let emoji;
+        
+        if (type === 'proc') {
+            // Прокрастинация: <=15 - зелёный, 16-22 - жёлтый, >=23 - красный
+            if (value <= 15) emoji = '🟢';
+            else if (value >= 23) emoji = '🔴';
+            else emoji = '🟡';
+        } else if (type === 'swls') {
+            // Удовлетворённость: <=16 - красный, 17-24 - жёлтый, >=25 - зелёный
+            if (value <= 16) emoji = '🔴';
+            else if (value >= 25) emoji = '🟢';
+            else emoji = '🟡';
+        } else if (type === 'mbi') {
+            // Эмоциональное истощение: <=15 - зелёный, 16-24 - жёлтый, >=25 - красный
+            if (value <= 15) emoji = '🟢';
+            else if (value >= 25) emoji = '🔴';
+            else emoji = '🟡';
+        }
+        
+        return emoji;
+    };
+    
     resultsContainer.innerHTML = `
         <div class="results-card">
             <h2>Ваши результаты</h2>
@@ -102,21 +128,21 @@ async function loadResults() {
                     </tr>
                     <tr>
                         <td><strong>Прокрастинация</strong></td>
-                        <td>${fmt(r.proc_total)} <span class="notes">(из 40)</span></td>
+                        <td>${fmt(r.proc_total)} <span class="notes">(из 40)</span> ${getIndicatorEmoji(r.proc_total, 'proc')}</td>
                         <td class="col-below">${fmtPct(r.proc_below_pct)}</td>
                         <td>${fmtPct(r.proc_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.proc_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Удовлетворённость жизнью</strong></td>
-                        <td>${fmt(r.swls_total)} <span class="notes">(из 35)</span></td>
+                        <td>${fmt(r.swls_total)} <span class="notes">(из 35)</span> ${getIndicatorEmoji(r.swls_total, 'swls')}</td>
                         <td class="col-below">${fmtPct(r.swls_below_pct)}</td>
                         <td>${fmtPct(r.swls_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.swls_above_pct)}</td>
                     </tr>
                     <tr>
                         <td><strong>Эмоциональное истощение</strong></td>
-                        <td>${fmt(r.mbi_total)} <span class="notes">(из 54)</span></td>
+                        <td>${fmt(r.mbi_total)} <span class="notes">(из 54)</span> ${getIndicatorEmoji(r.mbi_total, 'mbi')}</td>
                         <td class="col-below">${fmtPct(r.mbi_below_pct)}</td>
                         <td>${fmtPct(r.mbi_equal_pct)}</td>
                         <td class="col-above">${fmtPct(r.mbi_above_pct)}</td>

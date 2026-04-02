@@ -171,17 +171,8 @@
             </div>
         </div>
 
-        <div class="actions">
-            <button id="btn-prev-1" class="btn btn-secondary">← Назад</button>
-            <button id="btn-next-1" class="btn btn-primary">Продолжить</button>
-        </div>
-    </section>
-
-    <!-- СТРАНИЦА 2: Контекстные вопросы -->
-    <section id="page2" class="page">
-        <h1>Контекстные вопросы</h1>
-        <div class="card">
-            <!-- Память vs записи (перемещено вверх) -->
+        <!-- Вопрос про память/записи -->
+        <div class="card" style="margin-top: 20px;">
             <div class="likert-scale-group">
                 <label>Когда вы распределяли "энергию" по коробочкам, то какую часть вы восстановили по памяти, а какую по своим записям (дневники, ежедневник, календарь, список задач и т.п.)?</label>
                 <div class="radio-vertical-list">
@@ -207,12 +198,23 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <div class="actions">
+            <button id="btn-prev-1" class="btn btn-secondary">← Назад</button>
+            <button id="btn-next-1" class="btn btn-primary">Продолжить</button>
+        </div>
+    </section>
+
+    <!-- СТРАНИЦА 2: Контекстные вопросы -->
+    <section id="page2" class="page">
+        <h1>Контекстные вопросы</h1>
+        <div class="card">
             <!-- Насколько показательная неделя (-3 до +3) -->
             <div class="likert-scale-group">
-                <label>Насколько прошедшая неделя отличалась от вашего обычного режима работы?</label>
+                <label>Насколько прошедшая неделя была похожа на ваш обычный режим работы?</label>
                 <div class="likert-center-scale">
-                    <span class="likert-center-label left">Значительно хуже</span>
+                    <span class="likert-center-label left">Эта недела была значительно хуже</span>
                     
                     <input type="radio" name="representative" id="rep--3" value="-3">
                     <label for="rep--3">-3</label>
@@ -235,8 +237,8 @@
                     <input type="radio" name="representative" id="rep-3" value="3">
                     <label for="rep-3">3</label>
                     
-                    <span class="likert-center-label right">Значительно лучше</span>
-                    <p class="center-scale-note">Как обычно</p>
+                    <span class="likert-center-label right">Эта неделя была значительно лучше</span>
+                    <p class="center-scale-note">Неделя прошла как обычно</p>
                 </div>
             </div>
 

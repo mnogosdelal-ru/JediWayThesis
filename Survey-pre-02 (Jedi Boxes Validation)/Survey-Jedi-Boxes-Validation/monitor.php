@@ -60,7 +60,7 @@ function getStats($pdo) {
     $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE age > 0");
     $started = $stmt->fetch()['cnt'];
     
-    // Страница 1: Кубики (распределили кубики)
+    // Страница 1: Кубики + вопрос про память/записи
     $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM jedi_boxes_respondents WHERE cubes_reactive > 0 OR cubes_proactive > 0 OR cubes_operational > 0");
     $atPage1 = $stmt->fetch()['cnt'];
     

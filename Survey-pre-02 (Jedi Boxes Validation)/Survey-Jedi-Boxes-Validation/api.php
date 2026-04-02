@@ -39,9 +39,26 @@ if ($action === 'init_session') {
     // Новая сессия
     $session_id = bin2hex(random_bytes(16));
 
+    // Метаданные (7.3)
+    $user_agent = isset($data['user_agent']) ? substr($data['user_agent'], 0, 500) : null;
+    $device_type = isset($data['device_type']) ? $data['device_type'] : null;
+    
+    // Хэш IP для контроля дубликатов (без хранения персональных данных)
+    $ip_hash = null;
+    if (isset($_SERVER['REMOTE_ADDR'])) {
+        $ip_raw = $_SERVER['REMOTE_ADDR'] . ($user_agent ?? '');
+        $ip_hash = hash('sha256', $ip_raw);
+    }
+
     try {
-        $stmt = $pdo->prepare("INSERT INTO jedi_boxes_respondents (session_id, debug_mode) VALUES (?, ?)");
-        $stmt->execute([$session_id, defined('DEBUG_MODE') && DEBUG_MODE ? 1 : 0]);
+        $stmt = $pdo->prepare("INSERT INTO jedi_boxes_respondents (session_id, debug_mode, user_agent, ip_hash, device_type) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $session_id, 
+            defined('DEBUG_MODE') && DEBUG_MODE ? 1 : 0,
+            $user_agent,
+            $ip_hash,
+            $device_type
+        ]);
 
         echo json_encode([
             'success' => true,
@@ -83,6 +100,10 @@ if ($action === 'save_page') {
         // Page 1: Кубики
         'time_page1_start', 'time_page1_end', 'time_page1_total',
         'cubes_reactive', 'cubes_proactive', 'cubes_operational',
+        
+        // Page 1b: Вопрос про память/записи
+        'time_page1b_start', 'time_page1b_end', 'time_page1b_total',
+        'memory_vs_records',
         
         // Page 2: Контекстные вопросы
         'time_page2_start', 'time_page2_end', 'time_page2_total',
