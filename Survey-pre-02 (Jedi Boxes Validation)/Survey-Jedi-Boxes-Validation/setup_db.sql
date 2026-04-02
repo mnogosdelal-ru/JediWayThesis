@@ -97,5 +97,22 @@ CREATE TABLE IF NOT EXISTS jedi_boxes_respondents (
     KEY idx_representative (representative),
     KEY idx_work_life (work_life),
     KEY idx_energy_deficit (energy_deficit),
-    KEY idx_memory_vs_records (memory_vs_records)
+    KEY idx_memory_vs_records (memory_vs_records),
+    
+    -- Составные индексы для процентилей (страница результатов)
+    KEY idx_status_proc (status, proc_total),
+    KEY idx_status_swls (status, swls_total),
+    KEY idx_status_mbi (status, mbi_total),
+    KEY idx_status_cubes_reactive (status, cubes_reactive),
+    KEY idx_status_cubes_proactive (status, cubes_proactive),
+    KEY idx_status_cubes_operational (status, cubes_operational),
+    KEY idx_status_representative (status, representative),
+    KEY idx_status_work_life (status, work_life),
+    KEY idx_status_energy_deficit (status, energy_deficit),
+    KEY idx_status_memory_vs_records (status, memory_vs_records),
+    
+    -- Индексы для мониторинга прогресса (проверка: IS NOT NULL)
+    KEY idx_proc_1 (proc_1),
+    KEY idx_swls_1 (swls_1),
+    KEY idx_mbi_1 (mbi_1)
 );
