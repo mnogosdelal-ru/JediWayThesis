@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(findstr *)",
+      "Bash(del *)"
+    ]
+  },
+  "$version": 3
+}
