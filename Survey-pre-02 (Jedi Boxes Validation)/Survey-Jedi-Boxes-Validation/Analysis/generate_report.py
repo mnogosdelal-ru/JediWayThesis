@@ -643,6 +643,72 @@ class JediBoxesAnalyzer:
         self.add_paragraph(f"![Корреляционная матрица]({path})")
         self.add_paragraph(f"*Значимость: *** p<0.001, ** p<0.01, * p<0.05, n.s. - не значимо | eps={RG_RATIO_EPS}*")
 
+        # 4a. Корреляционная матрица для почти типовой недели (-1..1)
+        df_almost = self.completed[self.completed['representative'].between(-1, 1)]
+        if len(df_almost) >= 5:
+            fig, ax = plt.subplots(figsize=(14, 12))
+            corr_almost = df_almost[cols].corr(method='spearman')
+            p_matrix_almost = np.zeros_like(corr_almost)
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        _, p = spearmanr(df_almost[cols[i]], df_almost[cols[j]])
+                        p_matrix_almost[i, j] = p
+
+            sns.heatmap(corr_almost, annot=True, fmt='.2f', cmap='RdBu_r',
+                       center=0, vmin=-1, vmax=1, xticklabels=labels,
+                       yticklabels=labels, ax=ax, cbar_kws={'shrink': 0.8})
+            ax.set_title(f'Корреляционная матрица — Почти типовая неделя (n={len(df_almost)})', fontproperties=TITLE_FONT)
+
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        p_val = p_matrix_almost[i, j]
+                        if p_val < 0.001: p_text = '***'
+                        elif p_val < 0.01: p_text = '**'
+                        elif p_val < 0.05: p_text = '*'
+                        else: p_text = 'n.s.'
+                        ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
+                               fontsize=8, color='black', fontproperties=TICK_FONT)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+            plt.tight_layout()
+            path = self.save_figure('correlation_matrix_almost')
+            self.add_paragraph(f"\n![Корреляционная матрица — почти типовая]({path})")
+
+        # 4b. Корреляционная матрица для точно типовой недели (0)
+        df_exact = self.completed[self.completed['representative'] == 0]
+        if len(df_exact) >= 5:
+            fig, ax = plt.subplots(figsize=(14, 12))
+            corr_exact = df_exact[cols].corr(method='spearman')
+            p_matrix_exact = np.zeros_like(corr_exact)
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        _, p = spearmanr(df_exact[cols[i]], df_exact[cols[j]])
+                        p_matrix_exact[i, j] = p
+
+            sns.heatmap(corr_exact, annot=True, fmt='.2f', cmap='RdBu_r',
+                       center=0, vmin=-1, vmax=1, xticklabels=labels,
+                       yticklabels=labels, ax=ax, cbar_kws={'shrink': 0.8})
+            ax.set_title(f'Корреляционная матрица — Точно типовая неделя (n={len(df_exact)})', fontproperties=TITLE_FONT)
+
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        p_val = p_matrix_exact[i, j]
+                        if p_val < 0.001: p_text = '***'
+                        elif p_val < 0.01: p_text = '**'
+                        elif p_val < 0.05: p_text = '*'
+                        else: p_text = 'n.s.'
+                        ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
+                               fontsize=8, color='black', fontproperties=TICK_FONT)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+            plt.tight_layout()
+            path = self.save_figure('correlation_matrix_exact')
+            self.add_paragraph(f"\n![Корреляционная матрица — точно типовая]({path})")
+
         # 5. Распределение шкал
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
