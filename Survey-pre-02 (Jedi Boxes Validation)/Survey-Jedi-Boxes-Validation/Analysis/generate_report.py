@@ -115,10 +115,7 @@ HYPOTHESES = {
     'H10': 'Гендерные различия в распределении зон',
     'H11': 'Возрастной тренд: с возрастом доля 🔴 снижается',
     'H12': 'Профиль "Дзен" связан с наименьшим энергетическим дефицитом',
-    'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом красных и зеленых кубиков',
-    'H7b': 'MBI и SWLS предсказываются только числом зелёных (целевых) кубиков',
-    'H7c': 'MBI, Прокрастинация и SWLS предсказываются числом всех трёх типов кубиков (🔴, 🟢, ⚪)',
-    'H7d': 'H7c на типовой неделе (representative ∈ [-1, 1])',
+    'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом всех трёх кубиков (🔴, 🟢, ⚪)',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных'
 }
 
@@ -1218,656 +1215,206 @@ class JediBoxesAnalyzer:
 
     def analyze_h7a_linear_regression(self):
         """
-        H7a: Линейная регрессия для предсказания MBI, Прокрастинации и SWLS
-        на основе числа красных и зеленых кубиков.
+        H7a: Множественная линейная регрессия для предсказания MBI, Прокрастинации и SWLS
+        на основе всех трёх зон (🔴, 🟢, ⚪).
 
-        Метод: Множественная линейная регрессия с R^2
+        Анализ для трёх выборок: полная, почти типовую (-1..1), точно типовую (0).
         """
-        self.add_section("H7a: Линейная регрессия - предсказание по кубикам", 3)
+        self.add_section("H7a: Линейная регрессия — предсказание по трём зонам", 3)
 
         self.add_paragraph(HYPOTHESES['H7a'])
 
-        # Подготовим данные
-        X_reactive = self.completed['cubes_reactive'].values
-        X_proactive = self.completed['cubes_proactive'].values
-        X = np.column_stack([X_reactive, X_proactive])
-
-        targets = [
-            ('mbi_total', 'MBI (выгорание)'),
-            ('proc_total', 'Прокрастинация'),
-            ('swls_total', 'SWLS (удовлетворённость)')
-        ]
-
-        for target_col, target_name in targets:
-            y = self.completed[target_col].values
-
-            # Множественная линейная регрессия
-            # Добавляем intercept
-            X_with_intercept = np.column_stack([np.ones(len(X)), X])
-            
-            # Вычисляем коэффициенты методом наименьших квадратов
-            try:
-                beta = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
-                y_pred = X_with_intercept @ beta
-                
-                # Вычисляем R^2
-                ss_res = np.sum((y - y_pred) ** 2)
-                ss_tot = np.sum((y - np.mean(y)) ** 2)
-                r_squared = 1 - (ss_res / ss_tot)
-                
-                # Стандартные ошибки коэффициентов
-                n = len(y)
-                p = 2  # количество предикторов
-                mse = ss_res / (n - p - 1)
-                var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
-                se_beta = np.sqrt(np.diag(var_beta))
-                
-                # t-статистики и p-value для коэффициентов
-                t_stats = beta / se_beta
-                from scipy.stats import t as t_dist
-                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p-1))
-                
-                intercept, coef_reactive, coef_proactive = beta
-                
-                self.add_paragraph(f"**{target_name}:**")
-                self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_reactive:.2f}×Срочное + {coef_proactive:.2f}×Целевое")
-                self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется моделью)")
-                self.add_paragraph(f"- Коэффициенты:")
-                self.add_paragraph(f"  - Intercept: {intercept:.2f} (p={p_values[0]:.3f})")
-                self.add_paragraph(f"  - Срочное (🔴): {coef_reactive:.2f} (p={p_values[1]:.3f})")
-                self.add_paragraph(f"  - Целевое (🟢): {coef_proactive:.2f} (p={p_values[2]:.3f})")
-                
-                # Интерпретация
-                if r_squared >= 0.3:
-                    strength = "сильная"
-                elif r_squared >= 0.1:
-                    strength = "умеренная"
-                else:
-                    strength = "слабая"
-                
-                self.add_paragraph(f"- Предсказательная способность модели: {strength} (R²={r_squared:.3f})")
-                
-                # Визуализация для каждого таргета
-                fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-                
-                # График: Срочное vs target
-                axes[0].scatter(X_reactive, y, alpha=0.6, color='red')
-                # Линия регрессии (фиксируем проактивное на среднем)
-                x_line = np.linspace(X_reactive.min(), X_reactive.max(), 100)
-                y_line = intercept + coef_reactive * x_line + coef_proactive * np.mean(X_proactive)
-                axes[0].plot(x_line, y_line, 'r-', linewidth=2)
-                axes[0].set_xlabel('Срочное (🔴)', fontproperties=LABEL_FONT)
-                axes[0].set_ylabel(target_name, fontproperties=LABEL_FONT)
-                axes[0].set_title(f'Срочное → {target_name}', fontproperties=TITLE_FONT)
-                axes[0].text(0.05, 0.95, f'R²={r_squared:.3f}', transform=axes[0].transAxes,
-                           fontsize=12, verticalalignment='top', fontproperties=TICK_FONT)
-                
-                # График: Целевое vs target
-                axes[1].scatter(X_proactive, y, alpha=0.6, color='green')
-                y_line2 = intercept + coef_reactive * np.mean(X_reactive) + coef_proactive * x_line
-                axes[1].plot(x_line, y_line2, 'g-', linewidth=2)
-                axes[1].set_xlabel('Целевое (🟢)', fontproperties=LABEL_FONT)
-                axes[1].set_ylabel(target_name, fontproperties=LABEL_FONT)
-                axes[1].set_title(f'Целевое → {target_name}', fontproperties=TITLE_FONT)
-                axes[1].text(0.05, 0.95, f'R²={r_squared:.3f}', transform=axes[1].transAxes,
-                           fontsize=12, verticalalignment='top', fontproperties=TICK_FONT)
-                
-                plt.suptitle(f'Линейная регрессия: {target_name}', fontproperties=TITLE_FONT)
-                plt.tight_layout()
-                path = self.save_figure(f'regression_{target_col}', target_name)
-                self.add_paragraph(f"![{target_name}]({path})")
-                
-            except Exception as e:
-                self.add_paragraph(f"⚠️ Ошибка при расчёте регрессии: {e}")
-
-    def analyze_h7b_proactive_only_regression(self):
-        """
-        H7b: Предсказание MBI и SWLS только по целевым кубикам (🟢).
-
-        Метод: Простая линейная регрессия
-        """
-        self.add_section("H7b: Предсказание MBI и SWLS только по целевым кубикам (🟢)", 3)
-
         self.add_paragraph("""
-**H7b: MBI и SWLS предсказываются только числом зелёных (целевых) кубиков.**
+Множественная линейная регрессия: `Шкала = β₀ + β₁×🔴 + β₂×🟢 + β₃×⚪`
 
-Целевые кубики отражают проактивное распределение энергии — направление ресурсов
-на задачи, приближающие к долгосрочным целям. Гипотеза: именно проактивность
-является основным предиктором благополучия и выгорания.
+Анализ выполняется для трёх подвыборок:
+- **Полная** — все завершённые респонденты
+- **Почти типовую** — representative ∈ [-1, 1]
+- **Точно типовая** — representative = 0
 """)
 
-        X = self.completed['cubes_proactive'].values
+        # Определяем три выборки
+        df_full = self.completed
+        df_almost = self.completed[self.completed['representative'].between(-1, 1)]
+        df_exact = self.completed[self.completed['representative'] == 0]
 
-        targets = [
-            ('mbi_total', 'MBI (выгорание)'),
-            ('swls_total', 'SWLS (удовлетворённость)')
+        samples = [
+            ('Полная', df_full),
+            ('Почти типовая (−1..1)', df_almost),
+            ('Точно типовая (0)', df_exact),
         ]
 
-        reg_headers = ['Показатель', 'Intercept', 'β (🟢)', 'R²', 'p (β)', 'Значимость β']
-        reg_rows = []
-
-        for target_col, target_name in targets:
-            y = self.completed[target_col].values
-
-            from scipy.stats import linregress
-            slope, intercept, r_value, p_value, std_err = linregress(X, y)
-            r_squared = r_value ** 2
-
-            sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else "n.s."
-            reg_rows.append([
-                target_name,
-                f"{intercept:.2f}",
-                f"{slope:.3f}",
-                f"{r_squared:.3f}",
-                f"{p_value:.4f}",
-                sig
-            ])
-
-            self.add_paragraph(f"\n**{target_name}:**")
-            self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {slope:.2f} × 🟢")
-            self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
-            self.add_paragraph(f"- Коэффициент 🟢: {slope:.2f} (p={p_value:.4f})")
-
-            if r_squared >= 0.3:
-                strength = "сильная"
-            elif r_squared >= 0.1:
-                strength = "умеренная"
-            else:
-                strength = "слабая"
-            self.add_paragraph(f"- Предсказательная способность: {strength}")
-
-            if slope > 0:
-                self.add_paragraph(f"- Интерпретация: чем больше целевых кубиков, тем выше {target_name}")
-            else:
-                self.add_paragraph(f"- Интерпретация: чем больше целевых кубиков, тем ниже {target_name}")
-
-        self.add_paragraph(f"\n**Сводная таблица регрессий (только 🟢):**")
-        self.add_table(reg_headers, reg_rows)
-
-        # Визуализация
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
-        for idx, (target_col, target_name) in enumerate(targets):
-            y = self.completed[target_col].values
-            slope, intercept, r_value, p_value, _ = linregress(X, y)
-            r_squared = r_value ** 2
-
-            axes[idx].scatter(X, y, alpha=0.6, color='green')
-            x_line = np.linspace(X.min(), X.max(), 100)
-            y_line = intercept + slope * x_line
-            axes[idx].plot(x_line, y_line, 'r-', linewidth=2)
-            axes[idx].set_xlabel('Целевое (🟢)', fontproperties=LABEL_FONT)
-            axes[idx].set_ylabel(target_name, fontproperties=LABEL_FONT)
-            axes[idx].set_title(f'🟢 → {target_name} (R²={r_squared:.3f})', fontproperties=TITLE_FONT)
-            for label in axes[idx].get_xticklabels() + axes[idx].get_yticklabels():
-                label.set_fontproperties(TICK_FONT)
-
-        plt.suptitle('H7b: Предсказание по целевым кубикам (🟢)', fontproperties=TITLE_FONT)
-        plt.tight_layout()
-        path = self.save_figure('h7b_proactive_only')
-        self.add_paragraph(f"\n![H7b: Регрессии только по 🟢]({path})")
-
-        # Выводы
-        self.add_paragraph(f"\n**Выводы по H7b:**")
-        for target_col, target_name in targets:
-            y = self.completed[target_col].values
-            slope, intercept, r_value, p_value, _ = linregress(X, y)
-            r_squared = r_value ** 2
-            sig = "значим" if p_value < 0.05 else "не значим"
-            self.add_paragraph(f"- {target_name}: R² = {r_squared:.3f}, β = {slope:.2f}, p = {p_value:.4f} ({sig})")
-
-    def analyze_h7c_all_three_cubes_regression(self):
-        """
-        H7c: Предсказание MBI, Прокрастинации и SWLS по всем трём типам кубиков.
-
-        Метод: Множественная линейная регрессия
-        """
-        self.add_section("H7c: Предсказание шкал по всем трём типам кубиков (🔴, 🟢, ⚪)", 3)
-
-        self.add_paragraph("""
-**H7c: MBI, Прокрастинация и SWLS предсказываются числом всех трёх типов кубиков.**
-
-В отличие от H7a (только 🔴 и 🟢), здесь включены все три зоны, включая операционное (⚪).
-Это позволяет оценить независимый вклад каждой зоны.
-""")
-
-        X_reactive = self.completed['cubes_reactive'].values
-        X_proactive = self.completed['cubes_proactive'].values
-        X_operational = self.completed['cubes_operational'].values
-        X = np.column_stack([X_reactive, X_proactive, X_operational])
-
         targets = [
-            ('mbi_total', 'MBI (выгорание)'),
+            ('mbi_total', 'MBI'),
             ('proc_total', 'Прокрастинация'),
-            ('swls_total', 'SWLS (удовлетворённость)')
+            ('swls_total', 'SWLS'),
         ]
 
-        reg_headers = ['Показатель', 'Intercept', 'β (🔴)', 'β (🟢)', 'β (⚪)', 'R²', 'p (🔴)', 'p (🟢)', 'p (⚪)']
-        reg_rows = []
+        # ==================== СВОДНАЯ ТАБЛИЦА ====================
+        self.add_paragraph("**Сводная таблица регрессий:**\n")
 
+        summary_headers = ['Выборка', 'n', 'Показатель', 'R²',
+                           'β₀', 'β₁(🔴)', 'p(🔴)',
+                           'β₂(🟢)', 'p(🟢)',
+                           'β₃(⚪)', 'p(⚪)']
+        summary_rows = []
+
+        all_results = {}  # Для графиков
+
+        for sample_name, df in samples:
+            n = len(df)
+            if n < 10:
+                summary_rows.append([sample_name, str(n), '—', '—', '—', '—', '—', '—', '—', '—', '—'])
+                all_results[sample_name] = None
+                continue
+
+            X_r = df['cubes_reactive'].values
+            X_g = df['cubes_proactive'].values
+            X_o = df['cubes_operational'].values
+            X = np.column_stack([X_r, X_g, X_o])
+
+            sample_results = {}
+
+            for target_col, target_name in targets:
+                y = df[target_col].values
+                X_int = np.column_stack([np.ones(len(X)), X])
+
+                try:
+                    beta = np.linalg.lstsq(X_int, y, rcond=None)[0]
+                    y_pred = X_int @ beta
+                    ss_res = np.sum((y - y_pred) ** 2)
+                    ss_tot = np.sum((y - np.mean(y)) ** 2)
+                    r_squared = 1 - (ss_res / ss_tot)
+
+                    p_num = 3
+                    mse = ss_res / (n - p_num - 1)
+                    var_beta = mse * np.linalg.inv(X_int.T @ X_int)
+                    se_beta = np.sqrt(np.diag(var_beta))
+                    t_stats = beta / se_beta
+                    from scipy.stats import t as t_dist
+                    p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p_num-1))
+
+                    sig = lambda p: "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+
+                    summary_rows.append([
+                        sample_name, str(n), target_name,
+                        f"{r_squared:.3f}",
+                        f"{beta[0]:.2f}",
+                        f"{beta[1]:.3f}", f"{p_values[1]:.4f}{sig(p_values[1])}",
+                        f"{beta[2]:.3f}", f"{p_values[2]:.4f}{sig(p_values[2])}",
+                        f"{beta[3]:.3f}", f"{p_values[3]:.4f}{sig(p_values[3])}"
+                    ])
+
+                    sample_results[target_col] = {
+                        'beta': beta, 'r2': r_squared, 'p': p_values, 'n': n
+                    }
+                except:
+                    summary_rows.append([sample_name, str(n), target_name, 'Ошибка'] + ['—']*7)
+                    sample_results[target_col] = None
+
+            all_results[sample_name] = sample_results
+
+        self.add_table(summary_headers, summary_rows)
+        self.add_paragraph(f"*Значимость: *** p<0.001, ** p<0.01, * p<0.05*")
+
+        # ==================== ГРАФИКИ ====================
+        # Для каждого показателя — один subplot с тремя линиями (выборками)
         for target_col, target_name in targets:
-            y = self.completed[target_col].values
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-            X_with_intercept = np.column_stack([np.ones(len(X)), X])
+            for ax_idx, (sample_name, df) in enumerate(samples):
+                ax = axes[ax_idx]
+                res = all_results[sample_name]
+                if res is None or res.get(target_col) is None:
+                    ax.text(0.5, 0.5, f'{sample_name}\nнет данных', ha='center', va='center',
+                           transform=ax.transAxes, fontproperties=LABEL_FONT)
+                    ax.set_title(sample_name, fontproperties=TITLE_FONT)
+                    continue
 
-            try:
-                beta = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
-                y_pred = X_with_intercept @ beta
+                r_data = res[target_col]
+                beta = r_data['beta']
+                r2 = r_data['r2']
 
-                ss_res = np.sum((y - y_pred) ** 2)
-                ss_tot = np.sum((y - np.mean(y)) ** 2)
-                r_squared = 1 - (ss_res / ss_tot)
+                # Scatter по каждой зоне
+                X_r = df['cubes_reactive'].values
+                X_g = df['cubes_proactive'].values
+                X_o = df['cubes_operational'].values
+                y = df[target_col].values
 
-                n = len(y)
-                p = 3
-                mse = ss_res / (n - p - 1)
-                var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
-                se_beta = np.sqrt(np.diag(var_beta))
+                # Средние значения для фиксации других предикторов
+                mean_r, mean_g, mean_o = X_r.mean(), X_g.mean(), X_o.mean()
 
-                t_stats = beta / se_beta
-                from scipy.stats import t as t_dist
-                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p-1))
+                # 🔴
+                x_line = np.linspace(X_r.min(), X_r.max(), 50)
+                y_line = beta[0] + beta[1]*x_line + beta[2]*mean_g + beta[3]*mean_o
+                ax.scatter(X_r, y, alpha=0.4, color='#e74c3c', s=20)
+                ax.plot(x_line, y_line, '#e74c3c', linewidth=2, label=f'🔴 β={beta[1]:.2f}')
 
-                intercept, coef_r, coef_g, coef_o = beta
+                # 🟢
+                x_line = np.linspace(X_g.min(), X_g.max(), 50)
+                y_line = beta[0] + beta[1]*mean_r + beta[2]*x_line + beta[3]*mean_o
+                ax.scatter(X_g, y, alpha=0.4, color='#27ae60', s=20)
+                ax.plot(x_line, y_line, '#27ae60', linewidth=2, label=f'🟢 β={beta[2]:.2f}')
 
-                sig_r = "***" if p_values[1] < 0.001 else "**" if p_values[1] < 0.01 else "*" if p_values[1] < 0.05 else "n.s."
-                sig_g = "***" if p_values[2] < 0.001 else "**" if p_values[2] < 0.01 else "*" if p_values[2] < 0.05 else "n.s."
-                sig_o = "***" if p_values[3] < 0.001 else "**" if p_values[3] < 0.01 else "*" if p_values[3] < 0.05 else "n.s."
+                # ⚪
+                x_line = np.linspace(X_o.min(), X_o.max(), 50)
+                y_line = beta[0] + beta[1]*mean_r + beta[2]*mean_g + beta[3]*x_line
+                ax.scatter(X_o, y, alpha=0.4, color='#95a5a6', s=20)
+                ax.plot(x_line, y_line, '#95a5a6', linewidth=2, label=f'⚪ β={beta[3]:.2f}')
 
-                reg_rows.append([
-                    target_name,
-                    f"{intercept:.2f}",
-                    f"{coef_r:.3f}",
-                    f"{coef_g:.3f}",
-                    f"{coef_o:.3f}",
-                    f"{r_squared:.3f}",
-                    f"{p_values[1]:.4f} {sig_r}",
-                    f"{p_values[2]:.4f} {sig_g}",
-                    f"{p_values[3]:.4f} {sig_o}"
-                ])
+                ax.set_title(f'{sample_name}\n(R²={r2:.3f}, n={r_data["n"]})', fontproperties=TITLE_FONT)
+                ax.set_xlabel('Кубики', fontproperties=LABEL_FONT)
+                ax.set_ylabel(target_name, fontproperties=LABEL_FONT)
+                ax.legend(prop={'size': 8})
+                for label in ax.get_xticklabels() + ax.get_yticklabels():
+                    label.set_fontproperties(TICK_FONT)
 
-                self.add_paragraph(f"\n**{target_name}:**")
-                self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_r:.2f}×🔴 + {coef_g:.2f}×🟢 + {coef_o:.2f}×⚪")
-                self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
-                self.add_paragraph(f"- Коэффициенты:")
-                self.add_paragraph(f"  - 🔴: β = {coef_r:.3f}, p = {p_values[1]:.4f} {sig_r}")
-                self.add_paragraph(f"  - 🟢: β = {coef_g:.3f}, p = {p_values[2]:.4f} {sig_g}")
-                self.add_paragraph(f"  - ⚪: β = {coef_o:.3f}, p = {p_values[3]:.4f} {sig_o}")
+            plt.suptitle(f'{target_name}: регрессия по трём зонам', fontproperties=TITLE_FONT)
+            plt.tight_layout()
+            path = self.save_figure(f'h7a_{target_col}')
+            self.add_paragraph(f"\n![{target_name}](figures/h7a_{target_col}.png)")
 
-                if r_squared >= 0.3:
-                    strength = "сильная"
-                elif r_squared >= 0.1:
-                    strength = "умеренная"
-                else:
-                    strength = "слабая"
-                self.add_paragraph(f"- Предсказательная способность: {strength}")
-
-            except Exception as e:
-                self.add_paragraph(f"⚠️ Ошибка при расчёте {target_name}: {e}")
-                reg_rows.append([target_name, "Ошибка", "-", "-", "-", "-", "-", "-", "-"])
-
-        self.add_paragraph(f"\n**Сводная таблица множественной регрессии (🔴, 🟢, ⚪):**")
-        self.add_table(reg_headers, reg_rows)
-
-        # Сравнительная таблица H7a vs H7c
-        self.add_paragraph(f"\n**Сравнение H7a (🔴+🟢) и H7c (🔴+🟢+⚪):**")
-        self.add_paragraph("*Показывает, добавляет ли операционная зона объяснительную силу.*")
-
-        comparison_headers = ['Показатель', 'R² (H7a: 🔴+🟢)', 'R² (H7c: 🔴+🟢+⚪)', 'ΔR²']
-        comparison_rows = []
-
-        for target_col, target_name in targets:
-            # H7a: только 🔴 и 🟢
-            X_7a = np.column_stack([X_reactive, X_proactive])
-            y = self.completed[target_col].values
-            X_7a_int = np.column_stack([np.ones(len(X_7a)), X_7a])
-            try:
-                beta_7a = np.linalg.lstsq(X_7a_int, y, rcond=None)[0]
-                y_pred_7a = X_7a_int @ beta_7a
-                ss_res_7a = np.sum((y - y_pred_7a) ** 2)
-                ss_tot = np.sum((y - np.mean(y)) ** 2)
-                r2_7a = 1 - (ss_res_7a / ss_tot)
-            except:
-                r2_7a = np.nan
-
-            # H7c: 🔴 + 🟢 + ⚪
-            X_7c = np.column_stack([X_reactive, X_proactive, X_operational])
-            X_7c_int = np.column_stack([np.ones(len(X_7c)), X_7c])
-            try:
-                beta_7c = np.linalg.lstsq(X_7c_int, y, rcond=None)[0]
-                y_pred_7c = X_7c_int @ beta_7c
-                ss_res_7c = np.sum((y - y_pred_7c) ** 2)
-                r2_7c = 1 - (ss_res_7c / ss_tot)
-                delta = r2_7c - r2_7a
-            except:
-                r2_7c, delta = np.nan, np.nan
-
-            comparison_rows.append([
-                target_name,
-                f"{r2_7a:.3f}" if not np.isnan(r2_7a) else "N/A",
-                f"{r2_7c:.3f}" if not np.isnan(r2_7c) else "N/A",
-                f"{delta:+.3f}" if not np.isnan(delta) else "N/A"
-            ])
-
-        self.add_table(comparison_headers, comparison_rows)
-
-        # Визуализация: сравнение R²
+        # ==================== СРАВНЕНИЕ R² ====================
         fig, ax = plt.subplots(figsize=(8, 5))
-
-        model_names = ['H7a\n(🔴+🟢)', 'H7c\n(🔴+🟢+⚪)']
         x_pos = np.arange(len(targets))
-        width = 0.35
+        w = 0.25
+        colors_s = ['#3498db', '#e67e22', '#2ecc71']
 
-        r2_7a_vals = []
-        r2_7c_vals = []
-        target_labels = []
+        for si, (sample_name, _) in enumerate(samples):
+            res = all_results[sample_name]
+            if res is None:
+                continue
+            r2_vals = []
+            for target_col, _ in targets:
+                r2_vals.append(res[target_col]['r2'] if res.get(target_col) else 0)
+            ax.bar(x_pos + si*w - w, r2_vals, w, label=sample_name, color=colors_s[si], alpha=0.8)
 
-        for target_col, target_name in targets:
-            target_labels.append(target_name.replace(' (выгорание)', '').replace(' (удовлетворённость)', ''))
-
-            y = self.completed[target_col].values
-
-            X_7a_int = np.column_stack([np.ones(len(X_7a)), X_7a])
-            try:
-                beta_7a = np.linalg.lstsq(X_7a_int, y, rcond=None)[0]
-                y_pred_7a = X_7a_int @ beta_7a
-                r2_7a = 1 - np.sum((y - y_pred_7a)**2) / np.sum((y - np.mean(y))**2)
-            except:
-                r2_7a = 0
-
-            X_7c_int = np.column_stack([np.ones(len(X_7c)), X_7c])
-            try:
-                beta_7c = np.linalg.lstsq(X_7c_int, y, rcond=None)[0]
-                y_pred_7c = X_7c_int @ beta_7c
-                r2_7c = 1 - np.sum((y - y_pred_7c)**2) / np.sum((y - np.mean(y))**2)
-            except:
-                r2_7c = 0
-
-            r2_7a_vals.append(r2_7a)
-            r2_7c_vals.append(r2_7c)
-
-        bars1 = ax.bar(x_pos - width/2, r2_7a_vals, width, label='H7a (🔴+🟢)', color='steelblue', alpha=0.8)
-        bars2 = ax.bar(x_pos + width/2, r2_7c_vals, width, label='H7c (🔴+🟢+⚪)', color='coral', alpha=0.8)
-
-        ax.set_xlabel('Зависимая переменная', fontproperties=LABEL_FONT)
         ax.set_ylabel('R²', fontproperties=LABEL_FONT)
-        ax.set_title('Сравнение объяснительной силы моделей H7a и H7c', fontproperties=TITLE_FONT)
+        ax.set_title('Сравнение R² по выборкам', fontproperties=TITLE_FONT)
         ax.set_xticks(x_pos)
-        ax.set_xticklabels(target_labels, fontproperties=TICK_FONT)
+        ax.set_xticklabels([t[1] for t in targets], fontproperties=TICK_FONT)
         ax.legend(prop=TICK_FONT)
         for label in ax.get_yticklabels():
             label.set_fontproperties(TICK_FONT)
-
         plt.tight_layout()
-        path = self.save_figure('h7c_comparison')
-        self.add_paragraph(f"\n![H7c: Сравнение R²]({path})")
+        path = self.save_figure('h7a_r2_comparison')
+        self.add_paragraph(f"\n![Сравнение R²](figures/h7a_r2_comparison.png)")
 
-        # Выводы
-        self.add_paragraph(f"\n**Выводы по H7c:**")
-        self.add_paragraph(f"- Добавление операционной зоны (⚪) в модель меняет объяснительную силу")
-        for i, (target_col, target_name) in enumerate(targets):
-            if i < len(comparison_rows):
-                row = comparison_rows[i]
-                self.add_paragraph(f"- {target_name}: ΔR² = {row[3]} при добавлении ⚪")
-
-    def analyze_h7d_all_three_cubes_typical_week(self):
-        """
-        H7d: Предсказание MBI, Прокрастинации и SWLS по всем трём типам кубиков
-        на подвыборке типовой недели (representative ∈ [-1, 1]).
-
-        Метод: Множественная линейная регрессия
-        """
-        self.add_section("H7d: Предсказание по всем трём кубикам на типовой неделе", 3)
-
-        self.add_paragraph("""
-**H7d: H7c на подвыборке респондентов с типовой неделей (representative ∈ [-1, 1]).**
-
-Проверяем, меняется ли предсказательная сила модели при фильтрации респондентов,
-у которых неделя была близка к обычной. Это снижает шум от нетипичных обстоятельств.
-""")
-
-        df_typical = self.completed[self.completed['representative'].between(-1, 1)].copy()
-        n_full = len(self.completed)
-        n_typical = len(df_typical)
-
-        self.add_paragraph(f"**Полная выборка:** {n_full} респондентов")
-        self.add_paragraph(f"**Типовая неделя:** {n_typical} респондентов ({n_typical/n_full*100:.1f}%)")
-
-        X_reactive = df_typical['cubes_reactive'].values
-        X_proactive = df_typical['cubes_proactive'].values
-        X_operational = df_typical['cubes_operational'].values
-        X = np.column_stack([X_reactive, X_proactive, X_operational])
-
-        targets = [
-            ('mbi_total', 'MBI (выгорание)'),
-            ('proc_total', 'Прокрастинация'),
-            ('swls_total', 'SWLS (удовлетворённость)')
-        ]
-
-        reg_headers = ['Показатель', 'Intercept', 'β (🔴)', 'β (🟢)', 'β (⚪)', 'R²', 'p (🔴)', 'p (🟢)', 'p (⚪)']
-        reg_rows = []
-
-        # Для сравнения: результаты полной выборки (H7c)
-        full_r2 = {}
-        full_beta = {}
-        full_pval = {}
-
-        for target_col, target_name in targets:
-            y_full = self.completed[target_col].values
-            X_full = np.column_stack([self.completed['cubes_reactive'].values,
-                                       self.completed['cubes_proactive'].values,
-                                       self.completed['cubes_operational'].values])
-            X_full_int = np.column_stack([np.ones(len(X_full)), X_full])
-            try:
-                beta_full = np.linalg.lstsq(X_full_int, y_full, rcond=None)[0]
-                y_pred_full = X_full_int @ beta_full
-                ss_res_full = np.sum((y_full - y_pred_full) ** 2)
-                ss_tot_full = np.sum((y_full - np.mean(y_full)) ** 2)
-                full_r2[target_col] = 1 - (ss_res_full / ss_tot_full)
-                full_beta[target_col] = beta_full
-
-                n_f = len(y_full)
-                p_f = 3
-                mse_f = ss_res_full / (n_f - p_f - 1)
-                var_beta_f = mse_f * np.linalg.inv(X_full_int.T @ X_full_int)
-                se_beta_f = np.sqrt(np.diag(var_beta_f))
-                from scipy.stats import t as t_dist
-                t_stats_f = beta_full / se_beta_f
-                full_pval[target_col] = 2 * (1 - t_dist.cdf(np.abs(t_stats_f), df=n_f-p_f-1))
-            except:
-                full_r2[target_col] = np.nan
-                full_beta[target_col] = None
-                full_pval[target_col] = None
-
-        # Регрессия на типовой неделе
-        for target_col, target_name in targets:
-            y = df_typical[target_col].values
-
-            X_with_intercept = np.column_stack([np.ones(len(X)), X])
-
-            try:
-                beta = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
-                y_pred = X_with_intercept @ beta
-
-                ss_res = np.sum((y - y_pred) ** 2)
-                ss_tot = np.sum((y - np.mean(y)) ** 2)
-                r_squared = 1 - (ss_res / ss_tot)
-
-                n = len(y)
-                p = 3
-                mse = ss_res / (n - p - 1)
-                var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
-                se_beta = np.sqrt(np.diag(var_beta))
-
-                t_stats = beta / se_beta
-                from scipy.stats import t as t_dist
-                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p-1))
-
-                intercept, coef_r, coef_g, coef_o = beta
-
-                sig_r = "***" if p_values[1] < 0.001 else "**" if p_values[1] < 0.01 else "*" if p_values[1] < 0.05 else "n.s."
-                sig_g = "***" if p_values[2] < 0.001 else "**" if p_values[2] < 0.01 else "*" if p_values[2] < 0.05 else "n.s."
-                sig_o = "***" if p_values[3] < 0.001 else "**" if p_values[3] < 0.01 else "*" if p_values[3] < 0.05 else "n.s."
-
-                reg_rows.append([
-                    target_name,
-                    f"{intercept:.2f}",
-                    f"{coef_r:.3f}",
-                    f"{coef_g:.3f}",
-                    f"{coef_o:.3f}",
-                    f"{r_squared:.3f}",
-                    f"{p_values[1]:.4f} {sig_r}",
-                    f"{p_values[2]:.4f} {sig_g}",
-                    f"{p_values[3]:.4f} {sig_o}"
-                ])
-
-                self.add_paragraph(f"\n**{target_name} (типовая неделя):**")
-                self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_r:.2f}×🔴 + {coef_g:.2f}×🟢 + {coef_o:.2f}×⚪")
-                self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
-                self.add_paragraph(f"- Коэффициенты:")
-                self.add_paragraph(f"  - 🔴: β = {coef_r:.3f}, p = {p_values[1]:.4f} {sig_r}")
-                self.add_paragraph(f"  - 🟢: β = {coef_g:.3f}, p = {p_values[2]:.4f} {sig_g}")
-                self.add_paragraph(f"  - ⚪: β = {coef_o:.3f}, p = {p_values[3]:.4f} {sig_o}")
-
-                if r_squared >= 0.3:
-                    strength = "сильная"
-                elif r_squared >= 0.1:
-                    strength = "умеренная"
-                else:
-                    strength = "слабая"
-                self.add_paragraph(f"- Предсказательная способность: {strength}")
-
-            except Exception as e:
-                self.add_paragraph(f"⚠️ Ошибка при расчёте {target_name}: {e}")
-                reg_rows.append([target_name, "Ошибка", "-", "-", "-", "-", "-", "-", "-"])
-
-        self.add_paragraph(f"\n**Сводная таблица множественной регрессии (типовая неделя):**")
-        self.add_table(reg_headers, reg_rows)
-
-        # Сравнительная таблица: полная vs типовая
-        self.add_paragraph(f"\n**Сравнение H7c (полная) и H7d (типовая неделя):**")
-
-        comp_headers = ['Показатель', 'R² (полная)', 'R² (типовая)', 'ΔR²',
-                        'β🔴 полная', 'β🔴 типовая',
-                        'β🟢 полная', 'β🟢 типовая',
-                        'β⚪ полная', 'β⚪ типовая']
-        comp_rows = []
-
-        for target_col, target_name in targets:
-            # Типовая
-            y_t = df_typical[target_col].values
-            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
-            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
-            try:
-                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
-                y_pred_t = X_t_int @ beta_t
-                r2_t = 1 - np.sum((y_t - y_pred_t)**2) / np.sum((y_t - np.mean(y_t))**2)
-                delta_r2 = r2_t - full_r2.get(target_col, 0)
-            except:
-                r2_t, delta_r2 = np.nan, np.nan
-                beta_t = [np.nan]*4
-
-            r2_f = full_r2.get(target_col, np.nan)
-            beta_f = full_beta.get(target_col, [np.nan]*4)
-
-            comp_rows.append([
-                target_name,
-                f"{r2_f:.3f}" if not np.isnan(r2_f) else "N/A",
-                f"{r2_t:.3f}" if not np.isnan(r2_t) else "N/A",
-                f"{delta_r2:+.3f}" if not np.isnan(delta_r2) else "N/A",
-                f"{beta_f[1]:.3f}" if beta_f is not None else "N/A",
-                f"{beta_t[1]:.3f}" if beta_t is not None else "N/A",
-                f"{beta_f[2]:.3f}" if beta_f is not None else "N/A",
-                f"{beta_t[2]:.3f}" if beta_t is not None else "N/A",
-                f"{beta_f[3]:.3f}" if beta_f is not None else "N/A",
-                f"{beta_t[3]:.3f}" if beta_t is not None else "N/A",
-            ])
-
-        self.add_table(comp_headers, comp_rows)
-
-        # Визуализация: сравнение R² и коэффициентов
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-        target_labels_short = [t[1].replace(' (выгорание)', '').replace(' (удовлетворённость)', '').replace('Прокрастинация', 'Прокр.') for t in targets]
-        x_pos = np.arange(len(targets))
-        width = 0.35
-
-        # R² сравнение
-        r2_full_vals = [full_r2.get(t[0], 0) for t in targets]
-        r2_typical_vals = []
-        for target_col, target_name in targets:
-            y_t = df_typical[target_col].values
-            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
-            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
-            try:
-                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
-                y_pred_t = X_t_int @ beta_t
-                r2_t = 1 - np.sum((y_t - y_pred_t)**2) / np.sum((y_t - np.mean(y_t))**2)
-            except:
-                r2_t = 0
-            r2_typical_vals.append(r2_t)
-
-        axes[0].bar(x_pos - width/2, r2_full_vals, width, label='Полная', color='steelblue', alpha=0.8)
-        axes[0].bar(x_pos + width/2, r2_typical_vals, width, label='Типовая', color='coral', alpha=0.8)
-        axes[0].set_ylabel('R²', fontproperties=LABEL_FONT)
-        axes[0].set_title('Сравнение R²', fontproperties=TITLE_FONT)
-        axes[0].set_xticks(x_pos)
-        axes[0].set_xticklabels(target_labels_short, fontproperties=TICK_FONT)
-        axes[0].legend(prop=TICK_FONT)
-        for label in axes[0].get_yticklabels():
-            label.set_fontproperties(TICK_FONT)
-
-        # Коэффициенты сравнение
-        coef_full_r = [full_beta.get(t[0], [0]*4)[1] if full_beta.get(t[0]) is not None else 0 for t in targets]
-        coef_full_g = [full_beta.get(t[0], [0]*4)[2] if full_beta.get(t[0]) is not None else 0 for t in targets]
-        coef_full_o = [full_beta.get(t[0], [0]*4)[3] if full_beta.get(t[0]) is not None else 0 for t in targets]
-
-        coef_typical_r = []
-        coef_typical_g = []
-        coef_typical_o = []
-        for target_col, target_name in targets:
-            y_t = df_typical[target_col].values
-            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
-            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
-            try:
-                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
-                coef_typical_r.append(beta_t[1])
-                coef_typical_g.append(beta_t[2])
-                coef_typical_o.append(beta_t[3])
-            except:
-                coef_typical_r.append(0)
-                coef_typical_g.append(0)
-                coef_typical_o.append(0)
-
-        x = np.arange(len(targets))
-        w = 0.2
-        for i, (c_fr, c_ft) in enumerate(zip(coef_full_r, coef_typical_r)):
-            axes[1].bar(x[i] - w*1.5, c_fr, w, color='#e74c3c', alpha=0.7, label='🔴 полная' if i == 0 else '')
-            axes[1].bar(x[i] - w*0.5, c_ft, w, color='#e74c3c', alpha=0.4, hatch='///', label='🔴 типовая' if i == 0 else '')
-            axes[1].bar(x[i] + w*0.5, c_fr if False else coef_full_g[i], w, color='#27ae60', alpha=0.7, label='🟢 полная' if i == 0 else '')
-            axes[1].bar(x[i] + w*1.5, coef_typical_g[i], w, color='#27ae60', alpha=0.4, hatch='///', label='🟢 типовая' if i == 0 else '')
-        axes[1].axhline(y=0, color='black', linewidth=0.5)
-        axes[1].set_ylabel('Стандартизованный β', fontproperties=LABEL_FONT)
-        axes[1].set_title('Сравнение коэффициентов', fontproperties=TITLE_FONT)
-        axes[1].set_xticks(x)
-        axes[1].set_xticklabels(target_labels_short, fontproperties=TICK_FONT)
-        axes[1].legend(prop={'size': 7})
-        for label in axes[1].get_yticklabels():
-            label.set_fontproperties(TICK_FONT)
-
-        plt.suptitle('H7d: Сравнение регрессий (полная vs типовая неделя)', fontproperties=TITLE_FONT)
-        plt.tight_layout()
-        path = self.save_figure('h7d_comparison')
-        self.add_paragraph(f"\n![H7d: Сравнение]({path})")
-
-        # Выводы
-        self.add_paragraph(f"\n**Выводы по H7d:**")
-        self.add_paragraph(f"- При фильтрации по типовой неделе:")
-        for i, (target_col, target_name) in enumerate(targets):
-            if i < len(comp_rows):
-                row = comp_rows[i]
-                self.add_paragraph(f"- {target_name}: R² изменяется с {row[1]} на {row[2]} (Δ = {row[3]})")
-
+        # ==================== ВЫВОДЫ ====================
+        self.add_paragraph(f"\n**Выводы по H7a:**")
+        for sample_name, _ in samples:
+            res = all_results[sample_name]
+            if res is None:
+                continue
+            for target_col, target_name in targets:
+                r = res.get(target_col)
+                if r:
+                    sig_zones = []
+                    for zi, zone in [(1, '🔴'), (2, '🟢'), (3, '⚪')]:
+                        if r['p'][zi] < 0.05:
+                            sig_zones.append(zone)
+                    zones_str = ', '.join(sig_zones) if sig_zones else 'нет значимых'
+                    self.add_paragraph(f"- {sample_name}, {target_name}: R²={r['r2']:.3f}, значимые: {zones_str}")
 
     def analyze_h10a_position_comparison(self):
         """
@@ -2688,9 +2235,6 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h11_age_trend()
         self.analyze_h12_zen_deficit()
         self.analyze_h7a_linear_regression()
-        self.analyze_h7b_proactive_only_regression()
-        self.analyze_h7c_all_three_cubes_regression()
-        self.analyze_h7d_all_three_cubes_typical_week()
         self.analyze_h10a_position_comparison()
         self.analyze_productivity_index()
         self.analyze_response_time()
