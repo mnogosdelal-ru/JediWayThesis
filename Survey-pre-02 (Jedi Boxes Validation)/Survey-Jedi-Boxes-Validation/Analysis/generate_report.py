@@ -116,6 +116,8 @@ HYPOTHESES = {
     'H11': 'Возрастной тренд: с возрастом доля 🔴 снижается',
     'H12': 'Профиль "Дзен" связан с наименьшим энергетическим дефицитом',
     'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом красных и зеленых кубиков',
+    'H7b': 'MBI и SWLS предсказываются только числом зелёных (целевых) кубиков',
+    'H7c': 'MBI, Прокрастинация и SWLS предсказываются числом всех трёх типов кубиков (🔴, 🟢, ⚪)',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных'
 }
 
@@ -384,17 +386,18 @@ class JediBoxesAnalyzer:
         wl_y_values = [int((work_life == x).sum()) for x in all_wl_values]
         wl_x_positions = list(range(len(all_wl_values)))
 
-        ax.bar(wl_x_positions, wl_y_values, color='steelblue', edgecolor='white')
+        ax.bar(wl_x_positions, wl_y_values, color='steelblue', edgecolor='white', align='center', width=1.0)
         ax.set_xlabel('Балл', fontproperties=LABEL_FONT)
         ax.set_ylabel('Число респондентов', fontproperties=LABEL_FONT)
         ax.set_title('Баланс работа/личное', fontproperties=TITLE_FONT)
         ax.set_xticks(wl_x_positions)
         ax.set_xticklabels([wl_labels[x] for x in all_wl_values], fontproperties=TICK_FONT, rotation=0)
+        ax.set_xlim(-0.6, len(all_wl_values) - 0.4)
 
         # Добавляем подписи значений
         for i, count in enumerate(wl_y_values):
             if count > 0:
-                ax.text(i, count + 0.3, str(count), ha='center', fontproperties=SMALL_TEXT_FONT)
+                ax.text(i, count + 0.3, str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
 
         plt.tight_layout()
         path = self.save_figure('work_life_balance')
@@ -418,16 +421,17 @@ class JediBoxesAnalyzer:
         rep_y_values = [int((rep == x).sum()) for x in all_rep_values]
         rep_x_positions = list(range(len(all_rep_values)))
 
-        ax.bar(rep_x_positions, rep_y_values, color='forestgreen', edgecolor='white')
+        ax.bar(rep_x_positions, rep_y_values, color='forestgreen', edgecolor='white', align='center', width=1.0)
         ax.set_xlabel('Балл', fontproperties=LABEL_FONT)
         ax.set_ylabel('Число респондентов', fontproperties=LABEL_FONT)
         ax.set_title('Типичность недели', fontproperties=TITLE_FONT)
         ax.set_xticks(rep_x_positions)
         ax.set_xticklabels([rep_labels[x] for x in all_rep_values], fontproperties=TICK_FONT, rotation=0)
+        ax.set_xlim(-0.6, len(all_rep_values) - 0.4)
 
         for i, count in enumerate(rep_y_values):
             if count > 0:
-                ax.text(i, count + 0.3, str(count), ha='center', fontproperties=SMALL_TEXT_FONT)
+                ax.text(i, count + 0.3, str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
 
         plt.tight_layout()
         path = self.save_figure('week_typicality')
@@ -451,16 +455,17 @@ class JediBoxesAnalyzer:
         deficit_y_values = [int((deficit == x).sum()) for x in all_deficit_values]
         deficit_x_positions = list(range(len(all_deficit_values)))
 
-        ax.bar(deficit_x_positions, deficit_y_values, color='crimson', edgecolor='white')
+        ax.bar(deficit_x_positions, deficit_y_values, color='crimson', edgecolor='white', align='center', width=1.0)
         ax.set_xlabel('Балл', fontproperties=LABEL_FONT)
         ax.set_ylabel('Число респондентов', fontproperties=LABEL_FONT)
         ax.set_title('Энергетический дефицит', fontproperties=TITLE_FONT)
         ax.set_xticks(deficit_x_positions)
         ax.set_xticklabels([deficit_labels[x] for x in all_deficit_values], fontproperties=TICK_FONT, rotation=0)
+        ax.set_xlim(-0.6, len(all_deficit_values) - 0.4)
 
         for i, count in enumerate(deficit_y_values):
             if count > 0:
-                ax.text(i, count + 0.3, str(count), ha='center', fontproperties=SMALL_TEXT_FONT)
+                ax.text(i, count + 0.3, str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
 
         plt.tight_layout()
         path = self.save_figure('energy_deficit')
@@ -477,8 +482,8 @@ class JediBoxesAnalyzer:
 
             # Используем integer positions для баров
             x_pos = np.arange(len(unique_vals))
-            axes[i].bar(x_pos, counts, color=color, edgecolor='white', alpha=0.8, width=0.8)
-            
+            axes[i].bar(x_pos, counts, color=color, edgecolor='white', alpha=0.8, align='center', width=1.0)
+
             # Заголовок с цветным кружком
             axes[i].set_title(ZONE_NAMES[zone], fontsize=13, fontweight='bold',
                             color=ZONE_TEXT_COLORS[zone], fontproperties=LABEL_FONT)
@@ -486,9 +491,11 @@ class JediBoxesAnalyzer:
             axes[i].set_ylabel('Частота', fontproperties=LABEL_FONT)
             axes[i].set_xticks(x_pos)
             axes[i].set_xticklabels([str(int(v)) for v in unique_vals], fontproperties=TICK_FONT)
-            axes[i].axvline(x_pos[np.argmax(counts)], color='red', linestyle='--', alpha=0.5)
-            axes[i].text(x_pos[np.argmax(counts)]/2, max(counts)*0.9, f'M = {vals.mean():.1f}',
-                        color='red', fontsize=10, fontproperties=TICK_FONT)
+            axes[i].set_xlim(x_pos[0] - 0.6, x_pos[-1] + 0.6)
+            mode_pos = np.argmax(counts)
+            axes[i].axvline(mode_pos, color='red', linestyle='--', alpha=0.5)
+            axes[i].text(mode_pos, max(counts)*0.9, f'M = {vals.mean():.1f}',
+                        color='red', fontsize=10, ha='center', fontproperties=TICK_FONT)
 
         plt.suptitle('Распределение кубиков по зонам', fontsize=14, fontweight='bold',
                     fontproperties=TITLE_FONT)
@@ -518,6 +525,70 @@ class JediBoxesAnalyzer:
         plt.tight_layout()
         path = self.save_figure('profile_levels', 'Уровни профиля')
         self.add_paragraph(f"![Уровни профиля]({path})")
+
+        # 3a. Распределение по полу
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        gender_counts = self.completed['gender'].value_counts()
+        # Преобразуем в обычные int
+        gender_counts = {k: int(v) for k, v in gender_counts.items()}
+        sorted_genders = sorted(gender_counts.keys())
+        gender_labels_map = {'male': 'Мужской', 'female': 'Женский'}
+        colors_gender = ['#3498db', '#e91e63']
+
+        bars = ax.bar(range(len(sorted_genders)),
+                     [gender_counts[g] for g in sorted_genders],
+                     color=colors_gender[:len(sorted_genders)], edgecolor='white', align='center', width=1.0)
+
+        ax.set_xlabel('Пол', fontproperties=LABEL_FONT)
+        ax.set_ylabel('Количество респондентов', fontproperties=LABEL_FONT)
+        ax.set_title('Распределение по полу', fontproperties=TITLE_FONT)
+        ax.set_xticks(range(len(sorted_genders)))
+        ax.set_xticklabels([gender_labels_map.get(g, g) for g in sorted_genders], fontproperties=TICK_FONT)
+        ax.set_xlim(-0.6, len(sorted_genders) - 0.4)
+
+        for bar, count in zip(bars, [gender_counts[g] for g in sorted_genders]):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
+                   str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('gender_distribution')
+        self.add_paragraph(f"![Распределение по полу]({path})")
+
+        # 3b. Распределение по возрасту
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+        ages = self.completed['age'].dropna().astype(int)
+        if len(ages) > 0:
+            age_min = int(ages.min())
+            age_max = int(ages.max())
+            all_ages = list(range(age_min, age_max + 1))
+            age_counts = [int((ages == a).sum()) for a in all_ages]
+
+            ax.bar(range(len(all_ages)), age_counts, color='teal', edgecolor='white', align='center', width=1.0)
+            ax.set_xlabel('Возраст', fontproperties=LABEL_FONT)
+            ax.set_ylabel('Количество респондентов', fontproperties=LABEL_FONT)
+            ax.set_title('Распределение по возрасту', fontproperties=TITLE_FONT)
+            ax.set_xticks(range(len(all_ages)))
+            # Показываем не все метки, если возрастов много
+            if len(all_ages) <= 20:
+                ax.set_xticklabels([str(a) for a in all_ages], fontproperties=TICK_FONT, rotation=45, ha='right')
+            else:
+                # Показываем каждую 2-ю или 3-ю
+                step = max(1, len(all_ages) // 15)
+                tick_pos = list(range(0, len(all_ages), step))
+                tick_labels = [str(all_ages[i]) for i in tick_pos]
+                ax.set_xticks(tick_pos)
+                ax.set_xticklabels(tick_labels, fontproperties=TICK_FONT, rotation=45, ha='right')
+            ax.set_xlim(-0.6, len(all_ages) - 0.4)
+
+            for i, count in enumerate(age_counts):
+                if count > 0:
+                    ax.text(i, count + 0.2, str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('age_distribution')
+        self.add_paragraph(f"![Распределение по возрасту]({path})")
 
         # 4. Корреляционная матрица с p-value, ProductivityIndex и контекстуальными показателями
         fig, ax = plt.subplots(figsize=(14, 12))
@@ -1247,6 +1318,293 @@ class JediBoxesAnalyzer:
                 
             except Exception as e:
                 self.add_paragraph(f"⚠️ Ошибка при расчёте регрессии: {e}")
+
+    def analyze_h7b_proactive_only_regression(self):
+        """
+        H7b: Предсказание MBI и SWLS только по целевым кубикам (🟢).
+
+        Метод: Простая линейная регрессия
+        """
+        self.add_section("H7b: Предсказание MBI и SWLS только по целевым кубикам (🟢)", 3)
+
+        self.add_paragraph("""
+**H7b: MBI и SWLS предсказываются только числом зелёных (целевых) кубиков.**
+
+Целевые кубики отражают проактивное распределение энергии — направление ресурсов
+на задачи, приближающие к долгосрочным целям. Гипотеза: именно проактивность
+является основным предиктором благополучия и выгорания.
+""")
+
+        X = self.completed['cubes_proactive'].values
+
+        targets = [
+            ('mbi_total', 'MBI (выгорание)'),
+            ('swls_total', 'SWLS (удовлетворённость)')
+        ]
+
+        reg_headers = ['Показатель', 'Intercept', 'β (🟢)', 'R²', 'p (β)', 'Значимость β']
+        reg_rows = []
+
+        for target_col, target_name in targets:
+            y = self.completed[target_col].values
+
+            from scipy.stats import linregress
+            slope, intercept, r_value, p_value, std_err = linregress(X, y)
+            r_squared = r_value ** 2
+
+            sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 else "*" if p_value < 0.05 else "n.s."
+            reg_rows.append([
+                target_name,
+                f"{intercept:.2f}",
+                f"{slope:.3f}",
+                f"{r_squared:.3f}",
+                f"{p_value:.4f}",
+                sig
+            ])
+
+            self.add_paragraph(f"\n**{target_name}:**")
+            self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {slope:.2f} × 🟢")
+            self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
+            self.add_paragraph(f"- Коэффициент 🟢: {slope:.2f} (p={p_value:.4f})")
+
+            if r_squared >= 0.3:
+                strength = "сильная"
+            elif r_squared >= 0.1:
+                strength = "умеренная"
+            else:
+                strength = "слабая"
+            self.add_paragraph(f"- Предсказательная способность: {strength}")
+
+            if slope > 0:
+                self.add_paragraph(f"- Интерпретация: чем больше целевых кубиков, тем выше {target_name}")
+            else:
+                self.add_paragraph(f"- Интерпретация: чем больше целевых кубиков, тем ниже {target_name}")
+
+        self.add_paragraph(f"\n**Сводная таблица регрессий (только 🟢):**")
+        self.add_table(reg_headers, reg_rows)
+
+        # Визуализация
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+        for idx, (target_col, target_name) in enumerate(targets):
+            y = self.completed[target_col].values
+            slope, intercept, r_value, p_value, _ = linregress(X, y)
+            r_squared = r_value ** 2
+
+            axes[idx].scatter(X, y, alpha=0.6, color='green')
+            x_line = np.linspace(X.min(), X.max(), 100)
+            y_line = intercept + slope * x_line
+            axes[idx].plot(x_line, y_line, 'r-', linewidth=2)
+            axes[idx].set_xlabel('Целевое (🟢)', fontproperties=LABEL_FONT)
+            axes[idx].set_ylabel(target_name, fontproperties=LABEL_FONT)
+            axes[idx].set_title(f'🟢 → {target_name} (R²={r_squared:.3f})', fontproperties=TITLE_FONT)
+            for label in axes[idx].get_xticklabels() + axes[idx].get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle('H7b: Предсказание по целевым кубикам (🟢)', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('h7b_proactive_only')
+        self.add_paragraph(f"\n![H7b: Регрессии только по 🟢]({path})")
+
+        # Выводы
+        self.add_paragraph(f"\n**Выводы по H7b:**")
+        for target_col, target_name in targets:
+            y = self.completed[target_col].values
+            slope, intercept, r_value, p_value, _ = linregress(X, y)
+            r_squared = r_value ** 2
+            sig = "значим" if p_value < 0.05 else "не значим"
+            self.add_paragraph(f"- {target_name}: R² = {r_squared:.3f}, β = {slope:.2f}, p = {p_value:.4f} ({sig})")
+
+    def analyze_h7c_all_three_cubes_regression(self):
+        """
+        H7c: Предсказание MBI, Прокрастинации и SWLS по всем трём типам кубиков.
+
+        Метод: Множественная линейная регрессия
+        """
+        self.add_section("H7c: Предсказание шкал по всем трём типам кубиков (🔴, 🟢, ⚪)", 3)
+
+        self.add_paragraph("""
+**H7c: MBI, Прокрастинация и SWLS предсказываются числом всех трёх типов кубиков.**
+
+В отличие от H7a (только 🔴 и 🟢), здесь включены все три зоны, включая операционное (⚪).
+Это позволяет оценить независимый вклад каждой зоны.
+""")
+
+        X_reactive = self.completed['cubes_reactive'].values
+        X_proactive = self.completed['cubes_proactive'].values
+        X_operational = self.completed['cubes_operational'].values
+        X = np.column_stack([X_reactive, X_proactive, X_operational])
+
+        targets = [
+            ('mbi_total', 'MBI (выгорание)'),
+            ('proc_total', 'Прокрастинация'),
+            ('swls_total', 'SWLS (удовлетворённость)')
+        ]
+
+        reg_headers = ['Показатель', 'Intercept', 'β (🔴)', 'β (🟢)', 'β (⚪)', 'R²', 'p (🔴)', 'p (🟢)', 'p (⚪)']
+        reg_rows = []
+
+        for target_col, target_name in targets:
+            y = self.completed[target_col].values
+
+            X_with_intercept = np.column_stack([np.ones(len(X)), X])
+
+            try:
+                beta = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
+                y_pred = X_with_intercept @ beta
+
+                ss_res = np.sum((y - y_pred) ** 2)
+                ss_tot = np.sum((y - np.mean(y)) ** 2)
+                r_squared = 1 - (ss_res / ss_tot)
+
+                n = len(y)
+                p = 3
+                mse = ss_res / (n - p - 1)
+                var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
+                se_beta = np.sqrt(np.diag(var_beta))
+
+                t_stats = beta / se_beta
+                from scipy.stats import t as t_dist
+                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p-1))
+
+                intercept, coef_r, coef_g, coef_o = beta
+
+                sig_r = "***" if p_values[1] < 0.001 else "**" if p_values[1] < 0.01 else "*" if p_values[1] < 0.05 else "n.s."
+                sig_g = "***" if p_values[2] < 0.001 else "**" if p_values[2] < 0.01 else "*" if p_values[2] < 0.05 else "n.s."
+                sig_o = "***" if p_values[3] < 0.001 else "**" if p_values[3] < 0.01 else "*" if p_values[3] < 0.05 else "n.s."
+
+                reg_rows.append([
+                    target_name,
+                    f"{intercept:.2f}",
+                    f"{coef_r:.3f}",
+                    f"{coef_g:.3f}",
+                    f"{coef_o:.3f}",
+                    f"{r_squared:.3f}",
+                    f"{p_values[1]:.4f} {sig_r}",
+                    f"{p_values[2]:.4f} {sig_g}",
+                    f"{p_values[3]:.4f} {sig_o}"
+                ])
+
+                self.add_paragraph(f"\n**{target_name}:**")
+                self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_r:.2f}×🔴 + {coef_g:.2f}×🟢 + {coef_o:.2f}×⚪")
+                self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
+
+                if r_squared >= 0.3:
+                    strength = "сильная"
+                elif r_squared >= 0.1:
+                    strength = "умеренная"
+                else:
+                    strength = "слабая"
+                self.add_paragraph(f"- Предсказательная способность: {strength}")
+
+            except Exception as e:
+                self.add_paragraph(f"⚠️ Ошибка при расчёте {target_name}: {e}")
+                reg_rows.append([target_name, "Ошибка", "-", "-", "-", "-", "-", "-", "-"])
+
+        self.add_paragraph(f"\n**Сводная таблица множественной регрессии (🔴, 🟢, ⚪):**")
+        self.add_table(reg_headers, reg_rows)
+
+        # Сравнительная таблица H7a vs H7c
+        self.add_paragraph(f"\n**Сравнение H7a (🔴+🟢) и H7c (🔴+🟢+⚪):**")
+        self.add_paragraph("*Показывает, добавляет ли операционная зона объяснительную силу.*")
+
+        comparison_headers = ['Показатель', 'R² (H7a: 🔴+🟢)', 'R² (H7c: 🔴+🟢+⚪)', 'ΔR²']
+        comparison_rows = []
+
+        for target_col, target_name in targets:
+            # H7a: только 🔴 и 🟢
+            X_7a = np.column_stack([X_reactive, X_proactive])
+            y = self.completed[target_col].values
+            X_7a_int = np.column_stack([np.ones(len(X_7a)), X_7a])
+            try:
+                beta_7a = np.linalg.lstsq(X_7a_int, y, rcond=None)[0]
+                y_pred_7a = X_7a_int @ beta_7a
+                ss_res_7a = np.sum((y - y_pred_7a) ** 2)
+                ss_tot = np.sum((y - np.mean(y)) ** 2)
+                r2_7a = 1 - (ss_res_7a / ss_tot)
+            except:
+                r2_7a = np.nan
+
+            # H7c: 🔴 + 🟢 + ⚪
+            X_7c = np.column_stack([X_reactive, X_proactive, X_operational])
+            X_7c_int = np.column_stack([np.ones(len(X_7c)), X_7c])
+            try:
+                beta_7c = np.linalg.lstsq(X_7c_int, y, rcond=None)[0]
+                y_pred_7c = X_7c_int @ beta_7c
+                ss_res_7c = np.sum((y - y_pred_7c) ** 2)
+                r2_7c = 1 - (ss_res_7c / ss_tot)
+                delta = r2_7c - r2_7a
+            except:
+                r2_7c, delta = np.nan, np.nan
+
+            comparison_rows.append([
+                target_name,
+                f"{r2_7a:.3f}" if not np.isnan(r2_7a) else "N/A",
+                f"{r2_7c:.3f}" if not np.isnan(r2_7c) else "N/A",
+                f"{delta:+.3f}" if not np.isnan(delta) else "N/A"
+            ])
+
+        self.add_table(comparison_headers, comparison_rows)
+
+        # Визуализация: сравнение R²
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        model_names = ['H7a\n(🔴+🟢)', 'H7c\n(🔴+🟢+⚪)']
+        x_pos = np.arange(len(targets))
+        width = 0.35
+
+        r2_7a_vals = []
+        r2_7c_vals = []
+        target_labels = []
+
+        for target_col, target_name in targets:
+            target_labels.append(target_name.replace(' (выгорание)', '').replace(' (удовлетворённость)', ''))
+
+            y = self.completed[target_col].values
+
+            X_7a_int = np.column_stack([np.ones(len(X_7a)), X_7a])
+            try:
+                beta_7a = np.linalg.lstsq(X_7a_int, y, rcond=None)[0]
+                y_pred_7a = X_7a_int @ beta_7a
+                r2_7a = 1 - np.sum((y - y_pred_7a)**2) / np.sum((y - np.mean(y))**2)
+            except:
+                r2_7a = 0
+
+            X_7c_int = np.column_stack([np.ones(len(X_7c)), X_7c])
+            try:
+                beta_7c = np.linalg.lstsq(X_7c_int, y, rcond=None)[0]
+                y_pred_7c = X_7c_int @ beta_7c
+                r2_7c = 1 - np.sum((y - y_pred_7c)**2) / np.sum((y - np.mean(y))**2)
+            except:
+                r2_7c = 0
+
+            r2_7a_vals.append(r2_7a)
+            r2_7c_vals.append(r2_7c)
+
+        bars1 = ax.bar(x_pos - width/2, r2_7a_vals, width, label='H7a (🔴+🟢)', color='steelblue', alpha=0.8)
+        bars2 = ax.bar(x_pos + width/2, r2_7c_vals, width, label='H7c (🔴+🟢+⚪)', color='coral', alpha=0.8)
+
+        ax.set_xlabel('Зависимая переменная', fontproperties=LABEL_FONT)
+        ax.set_ylabel('R²', fontproperties=LABEL_FONT)
+        ax.set_title('Сравнение объяснительной силы моделей H7a и H7c', fontproperties=TITLE_FONT)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(target_labels, fontproperties=TICK_FONT)
+        ax.legend(prop=TICK_FONT)
+        for label in ax.get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('h7c_comparison')
+        self.add_paragraph(f"\n![H7c: Сравнение R²]({path})")
+
+        # Выводы
+        self.add_paragraph(f"\n**Выводы по H7c:**")
+        self.add_paragraph(f"- Добавление операционной зоны (⚪) в модель меняет объяснительную силу")
+        for i, (target_col, target_name) in enumerate(targets):
+            if i < len(comparison_rows):
+                row = comparison_rows[i]
+                self.add_paragraph(f"- {target_name}: ΔR² = {row[3]} при добавлении ⚪")
+
 
     def analyze_h10a_position_comparison(self):
         """
@@ -2067,6 +2425,8 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h11_age_trend()
         self.analyze_h12_zen_deficit()
         self.analyze_h7a_linear_regression()
+        self.analyze_h7b_proactive_only_regression()
+        self.analyze_h7c_all_three_cubes_regression()
         self.analyze_h10a_position_comparison()
         self.analyze_productivity_index()
         self.analyze_response_time()
