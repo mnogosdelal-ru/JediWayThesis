@@ -115,7 +115,7 @@ HYPOTHESES = {
     'H10': 'Гендерные различия в распределении зон',
     'H11': 'Возрастной тренд: с возрастом доля 🔴 снижается',
     'H12': 'Профиль "Дзен" связан с наименьшим энергетическим дефицитом',
-    'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом всех трёх кубиков (🔴, 🟢, ⚪)',
+    'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом срочных и целевых кубиков (🔴, 🟢)',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных'
 }
 
@@ -1216,16 +1216,16 @@ class JediBoxesAnalyzer:
     def analyze_h7a_linear_regression(self):
         """
         H7a: Множественная линейная регрессия для предсказания MBI, Прокрастинации и SWLS
-        на основе всех трёх зон (🔴, 🟢, ⚪).
+        на основе двух зон (🔴, 🟢).
 
         Анализ для трёх выборок: полная, почти типовую (-1..1), точно типовую (0).
         """
-        self.add_section("H7a: Линейная регрессия — предсказание по трём зонам", 3)
+        self.add_section("H7a: Линейная регрессия — предсказание по 🔴 и 🟢", 3)
 
         self.add_paragraph(HYPOTHESES['H7a'])
 
         self.add_paragraph("""
-Множественная линейная регрессия: `Шкала = β₀ + β₁×🔴 + β₂×🟢 + β₃×⚪`
+Множественная линейная регрессия: `Шкала = β₀ + β₁×🔴 + β₂×🟢`
 
 Анализ выполняется для трёх подвыборок:
 - **Полная** — все завершённые респонденты
@@ -1255,8 +1255,7 @@ class JediBoxesAnalyzer:
 
         summary_headers = ['Выборка', 'n', 'Показатель', 'R²',
                            'β₀', 'β₁(🔴)', 'p(🔴)',
-                           'β₂(🟢)', 'p(🟢)',
-                           'β₃(⚪)', 'p(⚪)']
+                           'β₂(🟢)', 'p(🟢)']
         summary_rows = []
 
         all_results = {}  # Для графиков
@@ -1264,14 +1263,13 @@ class JediBoxesAnalyzer:
         for sample_name, df in samples:
             n = len(df)
             if n < 10:
-                summary_rows.append([sample_name, str(n), '—', '—', '—', '—', '—', '—', '—', '—', '—'])
+                summary_rows.append([sample_name, str(n), '—', '—', '—', '—', '—', '—', '—'])
                 all_results[sample_name] = None
                 continue
 
             X_r = df['cubes_reactive'].values
             X_g = df['cubes_proactive'].values
-            X_o = df['cubes_operational'].values
-            X = np.column_stack([X_r, X_g, X_o])
+            X = np.column_stack([X_r, X_g])
 
             sample_results = {}
 
@@ -1286,7 +1284,7 @@ class JediBoxesAnalyzer:
                     ss_tot = np.sum((y - np.mean(y)) ** 2)
                     r_squared = 1 - (ss_res / ss_tot)
 
-                    p_num = 3
+                    p_num = 2
                     mse = ss_res / (n - p_num - 1)
                     var_beta = mse * np.linalg.inv(X_int.T @ X_int)
                     se_beta = np.sqrt(np.diag(var_beta))
@@ -1301,15 +1299,14 @@ class JediBoxesAnalyzer:
                         f"{r_squared:.3f}",
                         f"{beta[0]:.2f}",
                         f"{beta[1]:.3f}", f"{p_values[1]:.4f}{sig(p_values[1])}",
-                        f"{beta[2]:.3f}", f"{p_values[2]:.4f}{sig(p_values[2])}",
-                        f"{beta[3]:.3f}", f"{p_values[3]:.4f}{sig(p_values[3])}"
+                        f"{beta[2]:.3f}", f"{p_values[2]:.4f}{sig(p_values[2])}"
                     ])
 
                     sample_results[target_col] = {
                         'beta': beta, 'r2': r_squared, 'p': p_values, 'n': n
                     }
-                except:
-                    summary_rows.append([sample_name, str(n), target_name, 'Ошибка'] + ['—']*7)
+                except Exception as e:
+                    summary_rows.append([sample_name, str(n), target_name, f'Ошибка: {e}'] + ['—']*5)
                     sample_results[target_col] = None
 
             all_results[sample_name] = sample_results
@@ -1318,7 +1315,6 @@ class JediBoxesAnalyzer:
         self.add_paragraph(f"*Значимость: *** p<0.001, ** p<0.01, * p<0.05*")
 
         # ==================== ГРАФИКИ ====================
-        # Для каждого показателя — один subplot с тремя линиями (выборками)
         for target_col, target_name in targets:
             fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
@@ -1335,41 +1331,32 @@ class JediBoxesAnalyzer:
                 beta = r_data['beta']
                 r2 = r_data['r2']
 
-                # Scatter по каждой зоне
                 X_r = df['cubes_reactive'].values
                 X_g = df['cubes_proactive'].values
-                X_o = df['cubes_operational'].values
                 y = df[target_col].values
 
-                # Средние значения для фиксации других предикторов
-                mean_r, mean_g, mean_o = X_r.mean(), X_g.mean(), X_o.mean()
+                mean_r, mean_g = X_r.mean(), X_g.mean()
 
                 # 🔴
                 x_line = np.linspace(X_r.min(), X_r.max(), 50)
-                y_line = beta[0] + beta[1]*x_line + beta[2]*mean_g + beta[3]*mean_o
+                y_line = beta[0] + beta[1]*x_line + beta[2]*mean_g
                 ax.scatter(X_r, y, alpha=0.4, color='#e74c3c', s=20)
                 ax.plot(x_line, y_line, '#e74c3c', linewidth=2, label=f'🔴 β={beta[1]:.2f}')
 
                 # 🟢
                 x_line = np.linspace(X_g.min(), X_g.max(), 50)
-                y_line = beta[0] + beta[1]*mean_r + beta[2]*x_line + beta[3]*mean_o
+                y_line = beta[0] + beta[1]*mean_r + beta[2]*x_line
                 ax.scatter(X_g, y, alpha=0.4, color='#27ae60', s=20)
                 ax.plot(x_line, y_line, '#27ae60', linewidth=2, label=f'🟢 β={beta[2]:.2f}')
-
-                # ⚪
-                x_line = np.linspace(X_o.min(), X_o.max(), 50)
-                y_line = beta[0] + beta[1]*mean_r + beta[2]*mean_g + beta[3]*x_line
-                ax.scatter(X_o, y, alpha=0.4, color='#95a5a6', s=20)
-                ax.plot(x_line, y_line, '#95a5a6', linewidth=2, label=f'⚪ β={beta[3]:.2f}')
 
                 ax.set_title(f'{sample_name}\n(R²={r2:.3f}, n={r_data["n"]})', fontproperties=TITLE_FONT)
                 ax.set_xlabel('Кубики', fontproperties=LABEL_FONT)
                 ax.set_ylabel(target_name, fontproperties=LABEL_FONT)
-                ax.legend(prop={'size': 8})
+                ax.legend(prop={'size': 9})
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_fontproperties(TICK_FONT)
 
-            plt.suptitle(f'{target_name}: регрессия по трём зонам', fontproperties=TITLE_FONT)
+            plt.suptitle(f'{target_name}: регрессия по 🔴 и 🟢', fontproperties=TITLE_FONT)
             plt.tight_layout()
             path = self.save_figure(f'h7a_{target_col}')
             self.add_paragraph(f"\n![{target_name}](figures/h7a_{target_col}.png)")
@@ -1410,7 +1397,7 @@ class JediBoxesAnalyzer:
                 r = res.get(target_col)
                 if r:
                     sig_zones = []
-                    for zi, zone in [(1, '🔴'), (2, '🟢'), (3, '⚪')]:
+                    for zi, zone in [(1, '🔴'), (2, '🟢')]:
                         if r['p'][zi] < 0.05:
                             sig_zones.append(zone)
                     zones_str = ', '.join(sig_zones) if sig_zones else 'нет значимых'
