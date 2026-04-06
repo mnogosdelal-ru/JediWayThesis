@@ -118,6 +118,7 @@ HYPOTHESES = {
     'H7a': 'Линейная регрессия: MBI, Прокрастинация и SWLS предсказываются числом красных и зеленых кубиков',
     'H7b': 'MBI и SWLS предсказываются только числом зелёных (целевых) кубиков',
     'H7c': 'MBI, Прокрастинация и SWLS предсказываются числом всех трёх типов кубиков (🔴, 🟢, ⚪)',
+    'H7d': 'H7c на типовой неделе (representative ∈ [-1, 1])',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных'
 }
 
@@ -1488,6 +1489,10 @@ class JediBoxesAnalyzer:
                 self.add_paragraph(f"\n**{target_name}:**")
                 self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_r:.2f}×🔴 + {coef_g:.2f}×🟢 + {coef_o:.2f}×⚪")
                 self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
+                self.add_paragraph(f"- Коэффициенты:")
+                self.add_paragraph(f"  - 🔴: β = {coef_r:.3f}, p = {p_values[1]:.4f} {sig_r}")
+                self.add_paragraph(f"  - 🟢: β = {coef_g:.3f}, p = {p_values[2]:.4f} {sig_g}")
+                self.add_paragraph(f"  - ⚪: β = {coef_o:.3f}, p = {p_values[3]:.4f} {sig_o}")
 
                 if r_squared >= 0.3:
                     strength = "сильная"
@@ -1604,6 +1609,264 @@ class JediBoxesAnalyzer:
             if i < len(comparison_rows):
                 row = comparison_rows[i]
                 self.add_paragraph(f"- {target_name}: ΔR² = {row[3]} при добавлении ⚪")
+
+    def analyze_h7d_all_three_cubes_typical_week(self):
+        """
+        H7d: Предсказание MBI, Прокрастинации и SWLS по всем трём типам кубиков
+        на подвыборке типовой недели (representative ∈ [-1, 1]).
+
+        Метод: Множественная линейная регрессия
+        """
+        self.add_section("H7d: Предсказание по всем трём кубикам на типовой неделе", 3)
+
+        self.add_paragraph("""
+**H7d: H7c на подвыборке респондентов с типовой неделей (representative ∈ [-1, 1]).**
+
+Проверяем, меняется ли предсказательная сила модели при фильтрации респондентов,
+у которых неделя была близка к обычной. Это снижает шум от нетипичных обстоятельств.
+""")
+
+        df_typical = self.completed[self.completed['representative'].between(-1, 1)].copy()
+        n_full = len(self.completed)
+        n_typical = len(df_typical)
+
+        self.add_paragraph(f"**Полная выборка:** {n_full} респондентов")
+        self.add_paragraph(f"**Типовая неделя:** {n_typical} респондентов ({n_typical/n_full*100:.1f}%)")
+
+        X_reactive = df_typical['cubes_reactive'].values
+        X_proactive = df_typical['cubes_proactive'].values
+        X_operational = df_typical['cubes_operational'].values
+        X = np.column_stack([X_reactive, X_proactive, X_operational])
+
+        targets = [
+            ('mbi_total', 'MBI (выгорание)'),
+            ('proc_total', 'Прокрастинация'),
+            ('swls_total', 'SWLS (удовлетворённость)')
+        ]
+
+        reg_headers = ['Показатель', 'Intercept', 'β (🔴)', 'β (🟢)', 'β (⚪)', 'R²', 'p (🔴)', 'p (🟢)', 'p (⚪)']
+        reg_rows = []
+
+        # Для сравнения: результаты полной выборки (H7c)
+        full_r2 = {}
+        full_beta = {}
+        full_pval = {}
+
+        for target_col, target_name in targets:
+            y_full = self.completed[target_col].values
+            X_full = np.column_stack([self.completed['cubes_reactive'].values,
+                                       self.completed['cubes_proactive'].values,
+                                       self.completed['cubes_operational'].values])
+            X_full_int = np.column_stack([np.ones(len(X_full)), X_full])
+            try:
+                beta_full = np.linalg.lstsq(X_full_int, y_full, rcond=None)[0]
+                y_pred_full = X_full_int @ beta_full
+                ss_res_full = np.sum((y_full - y_pred_full) ** 2)
+                ss_tot_full = np.sum((y_full - np.mean(y_full)) ** 2)
+                full_r2[target_col] = 1 - (ss_res_full / ss_tot_full)
+                full_beta[target_col] = beta_full
+
+                n_f = len(y_full)
+                p_f = 3
+                mse_f = ss_res_full / (n_f - p_f - 1)
+                var_beta_f = mse_f * np.linalg.inv(X_full_int.T @ X_full_int)
+                se_beta_f = np.sqrt(np.diag(var_beta_f))
+                from scipy.stats import t as t_dist
+                t_stats_f = beta_full / se_beta_f
+                full_pval[target_col] = 2 * (1 - t_dist.cdf(np.abs(t_stats_f), df=n_f-p_f-1))
+            except:
+                full_r2[target_col] = np.nan
+                full_beta[target_col] = None
+                full_pval[target_col] = None
+
+        # Регрессия на типовой неделе
+        for target_col, target_name in targets:
+            y = df_typical[target_col].values
+
+            X_with_intercept = np.column_stack([np.ones(len(X)), X])
+
+            try:
+                beta = np.linalg.lstsq(X_with_intercept, y, rcond=None)[0]
+                y_pred = X_with_intercept @ beta
+
+                ss_res = np.sum((y - y_pred) ** 2)
+                ss_tot = np.sum((y - np.mean(y)) ** 2)
+                r_squared = 1 - (ss_res / ss_tot)
+
+                n = len(y)
+                p = 3
+                mse = ss_res / (n - p - 1)
+                var_beta = mse * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
+                se_beta = np.sqrt(np.diag(var_beta))
+
+                t_stats = beta / se_beta
+                from scipy.stats import t as t_dist
+                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n-p-1))
+
+                intercept, coef_r, coef_g, coef_o = beta
+
+                sig_r = "***" if p_values[1] < 0.001 else "**" if p_values[1] < 0.01 else "*" if p_values[1] < 0.05 else "n.s."
+                sig_g = "***" if p_values[2] < 0.001 else "**" if p_values[2] < 0.01 else "*" if p_values[2] < 0.05 else "n.s."
+                sig_o = "***" if p_values[3] < 0.001 else "**" if p_values[3] < 0.01 else "*" if p_values[3] < 0.05 else "n.s."
+
+                reg_rows.append([
+                    target_name,
+                    f"{intercept:.2f}",
+                    f"{coef_r:.3f}",
+                    f"{coef_g:.3f}",
+                    f"{coef_o:.3f}",
+                    f"{r_squared:.3f}",
+                    f"{p_values[1]:.4f} {sig_r}",
+                    f"{p_values[2]:.4f} {sig_g}",
+                    f"{p_values[3]:.4f} {sig_o}"
+                ])
+
+                self.add_paragraph(f"\n**{target_name} (типовая неделя):**")
+                self.add_paragraph(f"- Уравнение: {target_name} = {intercept:.2f} + {coef_r:.2f}×🔴 + {coef_g:.2f}×🟢 + {coef_o:.2f}×⚪")
+                self.add_paragraph(f"- R² = {r_squared:.3f} ({r_squared*100:.1f}% дисперсии объясняется)")
+                self.add_paragraph(f"- Коэффициенты:")
+                self.add_paragraph(f"  - 🔴: β = {coef_r:.3f}, p = {p_values[1]:.4f} {sig_r}")
+                self.add_paragraph(f"  - 🟢: β = {coef_g:.3f}, p = {p_values[2]:.4f} {sig_g}")
+                self.add_paragraph(f"  - ⚪: β = {coef_o:.3f}, p = {p_values[3]:.4f} {sig_o}")
+
+                if r_squared >= 0.3:
+                    strength = "сильная"
+                elif r_squared >= 0.1:
+                    strength = "умеренная"
+                else:
+                    strength = "слабая"
+                self.add_paragraph(f"- Предсказательная способность: {strength}")
+
+            except Exception as e:
+                self.add_paragraph(f"⚠️ Ошибка при расчёте {target_name}: {e}")
+                reg_rows.append([target_name, "Ошибка", "-", "-", "-", "-", "-", "-", "-"])
+
+        self.add_paragraph(f"\n**Сводная таблица множественной регрессии (типовая неделя):**")
+        self.add_table(reg_headers, reg_rows)
+
+        # Сравнительная таблица: полная vs типовая
+        self.add_paragraph(f"\n**Сравнение H7c (полная) и H7d (типовая неделя):**")
+
+        comp_headers = ['Показатель', 'R² (полная)', 'R² (типовая)', 'ΔR²',
+                        'β🔴 полная', 'β🔴 типовая',
+                        'β🟢 полная', 'β🟢 типовая',
+                        'β⚪ полная', 'β⚪ типовая']
+        comp_rows = []
+
+        for target_col, target_name in targets:
+            # Типовая
+            y_t = df_typical[target_col].values
+            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
+            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
+            try:
+                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
+                y_pred_t = X_t_int @ beta_t
+                r2_t = 1 - np.sum((y_t - y_pred_t)**2) / np.sum((y_t - np.mean(y_t))**2)
+                delta_r2 = r2_t - full_r2.get(target_col, 0)
+            except:
+                r2_t, delta_r2 = np.nan, np.nan
+                beta_t = [np.nan]*4
+
+            r2_f = full_r2.get(target_col, np.nan)
+            beta_f = full_beta.get(target_col, [np.nan]*4)
+
+            comp_rows.append([
+                target_name,
+                f"{r2_f:.3f}" if not np.isnan(r2_f) else "N/A",
+                f"{r2_t:.3f}" if not np.isnan(r2_t) else "N/A",
+                f"{delta_r2:+.3f}" if not np.isnan(delta_r2) else "N/A",
+                f"{beta_f[1]:.3f}" if beta_f is not None else "N/A",
+                f"{beta_t[1]:.3f}" if beta_t is not None else "N/A",
+                f"{beta_f[2]:.3f}" if beta_f is not None else "N/A",
+                f"{beta_t[2]:.3f}" if beta_t is not None else "N/A",
+                f"{beta_f[3]:.3f}" if beta_f is not None else "N/A",
+                f"{beta_t[3]:.3f}" if beta_t is not None else "N/A",
+            ])
+
+        self.add_table(comp_headers, comp_rows)
+
+        # Визуализация: сравнение R² и коэффициентов
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+        target_labels_short = [t[1].replace(' (выгорание)', '').replace(' (удовлетворённость)', '').replace('Прокрастинация', 'Прокр.') for t in targets]
+        x_pos = np.arange(len(targets))
+        width = 0.35
+
+        # R² сравнение
+        r2_full_vals = [full_r2.get(t[0], 0) for t in targets]
+        r2_typical_vals = []
+        for target_col, target_name in targets:
+            y_t = df_typical[target_col].values
+            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
+            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
+            try:
+                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
+                y_pred_t = X_t_int @ beta_t
+                r2_t = 1 - np.sum((y_t - y_pred_t)**2) / np.sum((y_t - np.mean(y_t))**2)
+            except:
+                r2_t = 0
+            r2_typical_vals.append(r2_t)
+
+        axes[0].bar(x_pos - width/2, r2_full_vals, width, label='Полная', color='steelblue', alpha=0.8)
+        axes[0].bar(x_pos + width/2, r2_typical_vals, width, label='Типовая', color='coral', alpha=0.8)
+        axes[0].set_ylabel('R²', fontproperties=LABEL_FONT)
+        axes[0].set_title('Сравнение R²', fontproperties=TITLE_FONT)
+        axes[0].set_xticks(x_pos)
+        axes[0].set_xticklabels(target_labels_short, fontproperties=TICK_FONT)
+        axes[0].legend(prop=TICK_FONT)
+        for label in axes[0].get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        # Коэффициенты сравнение
+        coef_full_r = [full_beta.get(t[0], [0]*4)[1] if full_beta.get(t[0]) is not None else 0 for t in targets]
+        coef_full_g = [full_beta.get(t[0], [0]*4)[2] if full_beta.get(t[0]) is not None else 0 for t in targets]
+        coef_full_o = [full_beta.get(t[0], [0]*4)[3] if full_beta.get(t[0]) is not None else 0 for t in targets]
+
+        coef_typical_r = []
+        coef_typical_g = []
+        coef_typical_o = []
+        for target_col, target_name in targets:
+            y_t = df_typical[target_col].values
+            X_t = np.column_stack([X_reactive, X_proactive, X_operational])
+            X_t_int = np.column_stack([np.ones(len(X_t)), X_t])
+            try:
+                beta_t = np.linalg.lstsq(X_t_int, y_t, rcond=None)[0]
+                coef_typical_r.append(beta_t[1])
+                coef_typical_g.append(beta_t[2])
+                coef_typical_o.append(beta_t[3])
+            except:
+                coef_typical_r.append(0)
+                coef_typical_g.append(0)
+                coef_typical_o.append(0)
+
+        x = np.arange(len(targets))
+        w = 0.2
+        for i, (c_fr, c_ft) in enumerate(zip(coef_full_r, coef_typical_r)):
+            axes[1].bar(x[i] - w*1.5, c_fr, w, color='#e74c3c', alpha=0.7, label='🔴 полная' if i == 0 else '')
+            axes[1].bar(x[i] - w*0.5, c_ft, w, color='#e74c3c', alpha=0.4, hatch='///', label='🔴 типовая' if i == 0 else '')
+            axes[1].bar(x[i] + w*0.5, c_fr if False else coef_full_g[i], w, color='#27ae60', alpha=0.7, label='🟢 полная' if i == 0 else '')
+            axes[1].bar(x[i] + w*1.5, coef_typical_g[i], w, color='#27ae60', alpha=0.4, hatch='///', label='🟢 типовая' if i == 0 else '')
+        axes[1].axhline(y=0, color='black', linewidth=0.5)
+        axes[1].set_ylabel('Стандартизованный β', fontproperties=LABEL_FONT)
+        axes[1].set_title('Сравнение коэффициентов', fontproperties=TITLE_FONT)
+        axes[1].set_xticks(x)
+        axes[1].set_xticklabels(target_labels_short, fontproperties=TICK_FONT)
+        axes[1].legend(prop={'size': 7})
+        for label in axes[1].get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle('H7d: Сравнение регрессий (полная vs типовая неделя)', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('h7d_comparison')
+        self.add_paragraph(f"\n![H7d: Сравнение]({path})")
+
+        # Выводы
+        self.add_paragraph(f"\n**Выводы по H7d:**")
+        self.add_paragraph(f"- При фильтрации по типовой неделе:")
+        for i, (target_col, target_name) in enumerate(targets):
+            if i < len(comp_rows):
+                row = comp_rows[i]
+                self.add_paragraph(f"- {target_name}: R² изменяется с {row[1]} на {row[2]} (Δ = {row[3]})")
 
 
     def analyze_h10a_position_comparison(self):
@@ -2427,6 +2690,7 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h7a_linear_regression()
         self.analyze_h7b_proactive_only_regression()
         self.analyze_h7c_all_three_cubes_regression()
+        self.analyze_h7d_all_three_cubes_typical_week()
         self.analyze_h10a_position_comparison()
         self.analyze_productivity_index()
         self.analyze_response_time()
