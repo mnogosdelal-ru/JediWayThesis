@@ -1687,108 +1687,47 @@ ProductivityIndex — это логарифм по основанию 2 отно
         path = self.save_figure('productivity_index_regressions')
         self.add_paragraph(f"\n![Регрессии ProductivityIndex]({path})")
 
-        # --- Линейная регрессия по типовой неделе ---
-        self.add_paragraph(f"\n**Линейная регрессия с ProductivityIndex (типовая неделя, representative ∈ [-1, 1]):**")
+        # --- Линейная регрессия по трём выборкам ---
+        self.add_paragraph(f"\n**Линейная регрессия с ProductivityIndex по подвыборкам:**")
 
-        df_typical = self.completed[self.completed['representative'].between(-1, 1)].copy()
-        n_full = len(self.completed)
-        n_typical = len(df_typical)
+        df_almost = self.completed[self.completed['representative'].between(-1, 1)]
+        df_exact = self.completed[self.completed['representative'] == 0]
 
-        self.add_paragraph(f"*Выборка: {n_typical} из {n_full} респондентов ({n_typical/n_full*100:.1f}%)*")
+        samples_pi = [
+            ('Полная', self.completed, productivity_index),
+            ('Почти типовая (−1..1)', df_almost, df_almost['productivity_index'].dropna()),
+            ('Точно типовая (0)', df_exact, df_exact['productivity_index'].dropna()),
+        ]
 
-        # ProductivityIndex для типовой недели
-        pi_typical = df_typical['productivity_index'].dropna()
-
-        # Сводная таблица: полная vs типовая
-        reg_headers = ['Показатель', 'Полная (β₁)', 'Полная (R²)', 'Полная (p)',
-                       'Типовая (β₁)', 'Типовая (R²)', 'Типовая (p)', 'ΔR²']
+        reg_headers = ['Выборка', 'n', 'Показатель', 'β₁', 'R²', 'p']
         reg_rows = []
 
-        for target_col, target_name in targets:
-            # Полная выборка
-            y_full = self.completed[target_col].values
-            X_full = productivity_index.values
-            slope_f, intercept_f, r_f, p_f, _ = linregress(X_full, y_full)
-            r2_f = r_f ** 2
+        for sample_name, df_s, pi_s in samples_pi:
+            n_s = len(df_s)
+            pi_s = pi_s.dropna()
+            if n_s < 5 or len(pi_s) < 5:
+                reg_rows.append([sample_name, str(n_s), '—', '—', '—', '—'])
+                continue
 
-            # Типовая неделя
-            if n_typical >= 3 and len(pi_typical) >= 3:
-                y_t = df_typical[target_col].values
-                X_t = pi_typical.values
-                slope_t, intercept_t, r_t, p_t, _ = linregress(X_t, y_t)
-                r2_t = r_t ** 2
-            else:
-                slope_t, r2_t, p_t = np.nan, np.nan, np.nan
-
-            delta_r2 = r2_t - r2_f if not np.isnan(r2_t) else np.nan
-
-            reg_rows.append([
-                target_name,
-                f"{slope_f:.3f}", f"{r2_f:.3f}", f"{p_f:.4f}",
-                f"{slope_t:.3f}" if not np.isnan(slope_t) else "N/A",
-                f"{r2_t:.3f}" if not np.isnan(r2_t) else "N/A",
-                f"{p_t:.4f}" if not np.isnan(p_t) else "N/A",
-                f"{delta_r2:+.3f}" if not np.isnan(delta_r2) else "N/A"
-            ])
+            for target_col, target_name in targets:
+                y_s = df_s[target_col].values
+                X_s = pi_s.values
+                # Совместимые индексы
+                valid = df_s[target_col].notna().values & pi_s.notna().values
+                y_v = df_s[target_col].values[valid]
+                X_v = pi_s.values[valid]
+                if len(X_v) < 5:
+                    reg_rows.append([sample_name, str(len(X_v)), target_name, '—', '—', '—'])
+                    continue
+                slope_s, intercept_s, r_s, p_s, _ = linregress(X_v, y_v)
+                r2_s = r_s ** 2
+                sig = "***" if p_s < 0.001 else "**" if p_s < 0.01 else "*" if p_s < 0.05 else ""
+                reg_rows.append([
+                    sample_name, str(len(X_v)), target_name,
+                    f"{slope_s:.3f}", f"{r2_s:.3f}", f"{p_s:.4f} {sig}"
+                ])
 
         self.add_table(reg_headers, reg_rows)
-
-        # Визуализация: сравнение регрессий полная vs типовая
-        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-
-        for idx, (target_col, target_name) in enumerate(targets):
-            # Полная выборка
-            y_full = self.completed[target_col].values
-            X_full = productivity_index.values
-            slope_f, intercept_f, r_f, p_f, _ = linregress(X_full, y_full)
-            r2_f = r_f ** 2
-
-            # Типовая неделя
-            y_t = df_typical[target_col].values
-            X_t = pi_typical.values
-            slope_t, intercept_t, r_t, p_t, _ = linregress(X_t, y_t)
-            r2_t = r_t ** 2
-
-            # Scatter полной
-            axes[idx].scatter(X_full, y_full, alpha=0.3, color='steelblue', s=30, label='Полная')
-            # Scatter типовой
-            axes[idx].scatter(X_t, y_t, alpha=0.5, color='coral', s=30, label='Типовая')
-
-            # Линии тренда
-            x_min = min(X_full.min(), X_t.min())
-            x_max = max(X_full.max(), X_t.max())
-            x_line = np.linspace(x_min, x_max, 100)
-            y_line_f = intercept_f + slope_f * x_line
-            y_line_t = intercept_t + slope_t * x_line
-            axes[idx].plot(x_line, y_line_f, 'b-', linewidth=2, alpha=0.7, label=f'Полная R²={r2_f:.3f}')
-            axes[idx].plot(x_line, y_line_t, 'r-', linewidth=2, alpha=0.7, label=f'Типовая R²={r2_t:.3f}')
-
-            axes[idx].axvline(0, color='black', linestyle=':', alpha=0.5)
-            axes[idx].set_xlabel('ProductivityIndex (log₂)', fontproperties=LABEL_FONT)
-            axes[idx].set_ylabel(target_name, fontproperties=LABEL_FONT)
-            axes[idx].set_title(f'{target_name}', fontproperties=TITLE_FONT)
-            axes[idx].legend(prop={'size': 8})
-            for label in axes[idx].get_xticklabels() + axes[idx].get_yticklabels():
-                label.set_fontproperties(TICK_FONT)
-
-        plt.suptitle('ProductivityIndex: сравнение регрессий (полная vs типовая неделя)', fontproperties=TITLE_FONT)
-        plt.tight_layout()
-        path = self.save_figure('productivity_index_typical_week')
-        self.add_paragraph(f"\n![Регрессии ProductivityIndex — типовая неделя]({path})")
-
-        # Детальная статистика по типовой неделе
-        self.add_paragraph(f"\n**Детальная статистика (типовая неделя):**")
-        for target_col, target_name in targets:
-            y_t = df_typical[target_col].values
-            X_t = pi_typical.values
-            slope_t, intercept_t, r_t, p_t, _ = linregress(X_t, y_t)
-            r2_t = r_t ** 2
-
-            self.add_paragraph(f"- **{target_name}:** {target_name} = {intercept_t:.2f} + {slope_t:.2f} × PI, R² = {r2_t:.3f}, p = {p_t:.4f}")
-            if slope_t > 0:
-                self.add_paragraph(f"  → Чем выше ProductivityIndex, тем выше {target_name}")
-            else:
-                self.add_paragraph(f"  → Чем выше ProductivityIndex, тем ниже {target_name}")
 
         # Выводы
         self.add_paragraph(f"\n**Выводы по индексу ProductivityIndex:**")
@@ -1817,215 +1756,6 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.add_paragraph(f"- При 7 кубиках и eps=1 диапазон ProductivityIndex составляет [-3, 3]")
         self.add_paragraph(f"- ProductivityIndex может быть полезен как компактный индикатор продуктивного профиля")
         self.add_paragraph(f"- Используемый eps = {RG_RATIO_EPS} обеспечивает диапазон [-3, 3] при логарифме по основанию 2")
-
-
-    # =========================================================================
-    # АНАЛИЗ ТИПОВОЙ НЕДЕЛИ
-    # =========================================================================
-
-    def analyze_typical_week_comparison(self):
-        """
-        Анализ гипотез на подвыборке респондентов с типовой неделей (-1..1).
-
-        Сравниваем корреляции полной выборки и типовой недели.
-        """
-        self.add_section("Проверка гипотез на типовой неделе", 2)
-
-        self.add_paragraph("""
-**Описание анализа:**
-
-Один из источников шума в данных — нетипичные недели. Респонденты, у которых
-неделя была «значительно хуже» или «значительно лучше» обычной, могут иметь
-искажённое распределение кубиков, не отражающее их типичный паттерн.
-
-Здесь проверяются те же гипотезы, но только для респондентов, которые указали,
-что их неделя была близка к обычной (значение representative от -1 до 1 включительно).
-
-Сравниваются коэффициенты корреляции Спирмена для полной выборки и для
-подвыборки типовой недели.
-""")
-
-        # Фильтруем типовую неделю
-        df_typical = self.completed[self.completed['representative'].between(-1, 1)].copy()
-        n_full = len(self.completed)
-        n_typical = len(df_typical)
-
-        self.add_paragraph(f"**Полная выборка:** {n_full} респондентов")
-        self.add_paragraph(f"**Типовая неделя (representative ∈ [-1, 1]):** {n_typical} респондентов ({n_typical/n_full*100:.1f}%)")
-
-        # Определяем список гипотез для проверки
-        # Формат: (название, зона, шкала, ожидаемое направление, label)
-        hypotheses_to_check = [
-            ('H1: 🔴 vs Прокрастинация', 'cubes_reactive', 'proc_total', 'positive', '🔴 → Прокрастинация'),
-            ('H1: 🔴 vs MBI', 'cubes_reactive', 'mbi_total', 'positive', '🔴 → MBI'),
-            ('H1: 🔴 vs SWLS', 'cubes_reactive', 'swls_total', 'negative', '🔴 → SWLS'),
-            ('H2: 🟢 vs SWLS', 'cubes_proactive', 'swls_total', 'positive', '🟢 → SWLS'),
-            ('H2: 🟢 vs MBI', 'cubes_proactive', 'mbi_total', 'negative', '🟢 → MBI'),
-            ('H2: 🟢 vs Прокрастинация', 'cubes_proactive', 'proc_total', 'negative', '🟢 → Прокрастинация'),
-            ('H5: Память vs Записи → MBI', 'memory_vs_records', 'mbi_total', 'positive', 'Записи → MBI'),
-            ('H7: 🟢² vs MBI (квадратичная)', 'cubes_proactive_sq', 'mbi_total', 'positive', '🟢² → MBI'),
-            ('H8: Баланс × 🔴 → MBI', 'work_life_x_reactive', 'mbi_total', 'positive', 'Баланс×🔴 → MBI'),
-            ('H9: Дефицит как медиатор', 'energy_deficit', 'mbi_total', 'positive', 'Дефицит → MBI'),
-            ('H10a: Должность → кубики', None, None, None, 'Должность → кубики'),
-            ('H7a: Регрессия MBI', None, None, None, 'Регрессия MBI'),
-            ('H7a: Регрессия Прокрастинация', None, None, None, 'Регрессия Прокрастинация'),
-            ('H7a: Регрессия SWLS', None, None, None, 'Регрессия SWLS'),
-        ]
-
-        # Для простых корреляций считаем коэффициенты
-        simple_hypotheses = [h for h in hypotheses_to_check if h[2] is not None and not h[0].startswith('H7a') and h[0] != 'H10a']
-
-        self.add_paragraph(f"\n**Сравнительная таблица корреляций Спирмена:**\n")
-
-        # Заголовки таблицы
-        headers = ['Гипотеза', 'Полная (r)', 'Полная (p)', 'Типовая (r)', 'Типовая (p)', 'delta_r', 'Значимо?']
-        rows = []
-
-        for hyp_name, zone_col, scale_col, expected_dir, label in simple_hypotheses:
-            # Специальная обработка для H10a и квадратичных/модерационных
-            if zone_col == 'memory_vs_records':
-                var1_full = self.completed[zone_col]
-                var1_typical = df_typical[zone_col]
-            elif zone_col == 'cubes_proactive_sq':
-                var1_full = self.completed['cubes_proactive'] ** 2
-                var1_typical = df_typical['cubes_proactive'] ** 2
-            elif zone_col == 'work_life_x_reactive':
-                var1_full = self.completed['work_life'] * self.completed['cubes_reactive']
-                var1_typical = df_typical['work_life'] * df_typical['cubes_reactive']
-            elif zone_col == 'energy_deficit':
-                var1_full = self.completed[zone_col]
-                var1_typical = df_typical[zone_col]
-            else:
-                var1_full = self.completed[zone_col]
-                var1_typical = df_typical[zone_col]
-
-            var2_full = self.completed[scale_col]
-            var2_typical = df_typical[scale_col]
-
-            # Полная выборка
-            r_full, p_full = stats.spearmanr(var1_full, var2_full)
-
-            # Типовая неделя
-            if n_typical >= 3:
-                r_typical, p_typical = stats.spearmanr(var1_typical, var2_typical)
-            else:
-                r_typical, p_typical = np.nan, np.nan
-
-            # Разница абсолютных значений
-            delta = abs(r_typical) - abs(r_full) if not np.isnan(r_typical) else np.nan
-
-            # Определяем значимость изменений
-            if np.isnan(r_typical):
-                sig = "N/A"
-            elif p_typical < 0.05 and p_full >= 0.05:
-                sig = "✅ стало знач."
-            elif p_typical >= 0.05 and p_full < 0.05:
-                sig = "❌ стало не знач."
-            elif abs(delta) > 0.1:
-                sig = "↑ усиление" if delta > 0 else "↓ ослабление"
-            else:
-                sig = "—"
-
-            rows.append([
-                label,
-                f"{r_full:.3f}",
-                f"{p_full:.4f}",
-                f"{r_typical:.3f}",
-                f"{p_typical:.4f}",
-                f"{delta:+.3f}" if not np.isnan(delta) else "N/A",
-                sig
-            ])
-
-        self.add_table(headers, rows)
-        self.add_paragraph(f"*delta_r — изменение абсолютного значения корреляции при переходе к типовой неделе*")
-
-        # Дополнительно: индивидуальные корреляции по зонам для типовой недели
-        self.add_paragraph(f"\n**Корреляции зон с валидационными шкалами (типовая неделя):**")
-
-        zone_names = {
-            'cubes_reactive': 'Срочное ●',
-            'cubes_proactive': 'Целевое ●',
-            'cubes_operational': 'Операционное ●'
-        }
-        scale_names = {
-            'proc_total': 'Прокрастинация',
-            'swls_total': 'SWLS',
-            'mbi_total': 'MBI'
-        }
-
-        corr_data = []
-        for zone_col, zone_name in zone_names.items():
-            for scale_col, scale_name in scale_names.items():
-                r, p = stats.spearmanr(df_typical[zone_col], df_typical[scale_col])
-                sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
-                corr_data.append([zone_name, scale_name, f"{r:.3f}", f"{p:.4f}", sig])
-
-        self.add_table(['Зона', 'Шкала', 'r', 'p', 'Знач.'], corr_data)
-
-        # Визуализация: сравнение корреляций
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        x = np.arange(len(simple_hypotheses))
-        width = 0.35
-
-        r_full_vals = []
-        r_typical_vals = []
-        labels = []
-
-        for hyp_name, zone_col, scale_col, expected_dir, label in simple_hypotheses:
-            labels.append(label)
-            if zone_col == 'cubes_proactive_sq':
-                var1_full = self.completed['cubes_proactive'] ** 2
-                var1_typical = df_typical['cubes_proactive'] ** 2
-            elif zone_col == 'work_life_x_reactive':
-                var1_full = self.completed['work_life'] * self.completed['cubes_reactive']
-                var1_typical = df_typical['work_life'] * df_typical['cubes_reactive']
-            else:
-                var1_full = self.completed[zone_col]
-                var1_typical = df_typical[zone_col]
-
-            var2_full = self.completed[scale_col]
-            var2_typical = df_typical[scale_col]
-
-            r_full, _ = stats.spearmanr(var1_full, var2_full)
-            r_typical, _ = stats.spearmanr(var1_typical, var2_typical)
-
-            r_full_vals.append(r_full)
-            r_typical_vals.append(r_typical)
-
-        bars1 = ax.bar(x - width/2, r_full_vals, width, label='Полная выборка', color='steelblue', alpha=0.8)
-        bars2 = ax.bar(x + width/2, r_typical_vals, width, label='Типовая неделя', color='coral', alpha=0.8)
-
-        ax.axhline(y=0, color='black', linewidth=0.5)
-        ax.set_xlabel('Гипотеза', fontproperties=LABEL_FONT)
-        ax.set_ylabel('Коэффициент корреляции Спирмена', fontproperties=LABEL_FONT)
-        ax.set_title('Сравнение корреляций: полная выборка vs типовая неделя', fontproperties=TITLE_FONT)
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=45, ha='right', fontproperties=TICK_FONT)
-        ax.legend(prop=TICK_FONT)
-        plt.tight_layout()
-        path = self.save_figure('typical_week_correlations')
-        self.add_paragraph(f"\n![Сравнение корреляций]({path})")
-
-        # Выводы
-        self.add_paragraph(f"\n**Выводы по анализу типовой недели:**")
-
-        # Считаем, сколько корреляций усилились/ослабели
-        strengthened = sum(1 for r in rows if 'усиление' in r[6])
-        weakened = sum(1 for r in rows if 'ослабление' in r[6])
-        became_sig = sum(1 for r in rows if 'стало знач' in r[6])
-        lost_sig = sum(1 for r in rows if 'стало не знач' in r[6])
-
-        self.add_paragraph(f"- При фильтрации по типовой неделе:")
-        self.add_paragraph(f"  - Усилились корреляции: {strengthened}")
-        self.add_paragraph(f"  - Ослабели корреляции: {weakened}")
-        self.add_paragraph(f"  - Стали значимыми: {became_sig}")
-        self.add_paragraph(f"  - Потеряли значимость: {lost_sig}")
-
-        if became_sig > 0:
-            self.add_paragraph(f"- Фильтрация по типовой неделе помогает выявить скрытые связи")
-        else:
-            self.add_paragraph(f"- Фильтрация по типовой неделе не привела к появлению новых значимых связей")
 
 
     # =========================================================================
@@ -2151,69 +1881,6 @@ ProductivityIndex — это логарифм по основанию 2 отно
         path = self.save_figure('response_time_vs_cubes')
         self.add_paragraph(f"\n![Время ответа vs кубики]({path})")
 
-        # Дополнительно: сравнение времени для разных уровней профиля
-        if 'level' in df_valid.columns or True:  # Всегда вычисляем level
-            df_valid = self._add_level_column(df_valid)
-
-            self.add_paragraph(f"\n**Время ответа по уровням профиля:**")
-
-            level_stats = df_valid.groupby('level')['time_page2_total'].agg(['mean', 'std', 'count'])
-
-            table_data = []
-            for level in sorted(level_stats.index):
-                row = level_stats.loc[level]
-                profile_name = PROFILE_LEVELS.get(level, f'Уровень {level}')
-                table_data.append([level, profile_name, int(row['count']),
-                                   f"{row['mean']:.1f}", f"{row['std']:.1f}"])
-
-            self.add_table(['Уровень', 'Профиль', 'n', 'M (сек)', 'SD'], table_data)
-
-            # Визуализация: boxplot времени по уровням
-            fig, ax = plt.subplots(figsize=(10, 6))
-
-            sorted_levels = sorted(df_valid['level'].unique())
-            bp_data = [df_valid[df_valid['level'] == l]['time_page2_total'].values for l in sorted_levels]
-            labels = [PROFILE_LEVELS.get(l, f'Ур.{l}') for l in sorted_levels]
-
-            bp = ax.boxplot(bp_data, labels=labels, patch_artist=True, widths=0.6)
-
-            for patch, level in zip(bp['boxes'], sorted_levels):
-                # Цвета по доминирующей зоне
-                if level in [2, 3]:
-                    patch.set_facecolor(ZONE_COLORS['reactive'])
-                elif level in [4, 5]:
-                    patch.set_facecolor(ZONE_COLORS['proactive'])
-                elif level == 6:
-                    patch.set_facecolor(ZONE_COLORS['operational'])
-                else:
-                    patch.set_facecolor('gray')
-                patch.set_alpha(0.7)
-
-            ax.set_xlabel('Уровень профиля', fontproperties=LABEL_FONT)
-            ax.set_ylabel('Время на странице 2 (сек)', fontproperties=LABEL_FONT)
-            ax.set_title('Время ответа по уровням профиля', fontproperties=TITLE_FONT)
-            plt.xticks(rotation=30, ha='right', fontproperties=TICK_FONT)
-            plt.yticks(fontproperties=TICK_FONT)
-            plt.tight_layout()
-            path = self.save_figure('response_time_by_level')
-            self.add_paragraph(f"\n![Время ответа по уровням]({path})")
-
-            # Статистический тест: Крускал-Уоллис для сравнения уровней
-            if len(sorted_levels) >= 2:
-                groups = [df_valid[df_valid['level'] == l]['time_page2_total'].values for l in sorted_levels]
-                # Фильтруем пустые группы
-                groups = [g for g in groups if len(g) > 1]
-                if len(groups) >= 2:
-                    h_stat, p_val = stats.kruskal(*groups)
-                    self.add_paragraph(f"\n**Тест Крускала-Уоллиса: различия времени по уровням:**")
-                    self.add_paragraph(f"- H = {h_stat:.3f}, p = {p_val:.4f}")
-                    if p_val < 0.05:
-                        self.add_paragraph(f"- **Результат значим**: существуют статистически значимые различия "
-                                          f"во времени ответа между уровнями профиля (p < 0.05)")
-                    else:
-                        self.add_paragraph(f"- **Результат не значим**: нет статистически значимых различий "
-                                          f"во времени ответа между уровнями профиля (p > 0.05)")
-
         # Выводы
         self.add_paragraph(f"\n**Выводы по анализу времени:**")
 
@@ -2291,7 +1958,6 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h10a_position_comparison()
         self.analyze_productivity_index()
         self.analyze_response_time()
-        self.analyze_typical_week_comparison()
 
         # Заключение
         self.add_section("Заключение", 2)
