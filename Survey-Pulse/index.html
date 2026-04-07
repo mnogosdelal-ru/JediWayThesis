@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пульс-опрос</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Главная страница -->
+    <section id="survey-page" class="page active">
+        <h1>Пульс-опрос</h1>
+
+        <div class="card intro-card">
+            <p>Как прошла ваша неделя? Распределите 6 кубиков энергии и ответьте на пару вопросов.</p>
+            <p>Займёт <strong>~2 минуты</strong>. Анонимно.</p>
+        </div>
+
+        <!-- Инструкция и легенда -->
+        <div class="card">
+            <p>Перед тем как ответить, подумайте о <strong>прошедшей неделе</strong> и задачах, на которые вы тратили свою энергию (время, силы, мыслетопливо).</p>
+            <p><strong>У вас есть 6 кубиков</strong> — это весь ваш ресурс за неделю. Распределите их по трём зонам:</p>
+
+            <!-- Легенда зон -->
+            <div class="zones-legend">
+                <div class="legend-item reactive">
+                    <span class="legend-icon">🔴</span>
+                    <div>
+                        <strong>Срочное</strong>
+                        <p>Задачи, которые требовали немедленного решения (если бы вы их не сделали, то немедленно столкнулись бы с негативом)</p>
+                    </div>
+                </div>
+                <div class="legend-item proactive">
+                    <span class="legend-icon">🟢</span>
+                    <div>
+                        <strong>Целевое</strong>
+                        <p>Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей</p>
+                    </div>
+                </div>
+                <div class="legend-item operational">
+                    <span class="legend-icon">⚪</span>
+                    <div>
+                        <strong>Операционное</strong>
+                        <p>Рутинные задачи, поддержание текущих процессов или просто что-то несрочное без явной цели</p>
+                    </div>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: var(--text-muted);">Перетаскивайте кубики мышкой или пальцем (на мобильном).</p>
+        </div>
+
+        <!-- Зона пула (источник кубиков) -->
+        <div class="pool-container" id="pool">
+            <div class="pool-label">Ваша энергия</div>
+            <div class="pool-slots" id="pool-slots">
+                <!-- Кубики будут добавлены через JS -->
+            </div>
+            <div class="pool-counter">
+                Осталось: <span id="available-cubes">—</span>
+            </div>
+        </div>
+
+        <!-- Три зоны -->
+        <div class="zones-container">
+            <!-- Зона 1: Срочное -->
+            <div class="zone reactive-zone" data-zone="reactive">
+                <div class="zone-header">
+                    <span class="zone-icon">🔴</span>
+                    <h3>Срочное</h3>
+                </div>
+                <div class="zone-drop-area" id="reactive-zone">
+                    <div class="zone-cubes" id="reactive-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+
+            <!-- Зона 2: Целевое -->
+            <div class="zone proactive-zone" data-zone="proactive">
+                <div class="zone-header">
+                    <span class="zone-icon">🟢</span>
+                    <h3>Целевое</h3>
+                </div>
+                <div class="zone-drop-area" id="proactive-zone">
+                    <div class="zone-cubes" id="proactive-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+
+            <!-- Зона 3: Операционное -->
+            <div class="zone operational-zone" data-zone="operational">
+                <div class="zone-header">
+                    <span class="zone-icon">⚪</span>
+                    <h3>Операционное</h3>
+                </div>
+                <div class="zone-drop-area" id="operational-zone">
+                    <div class="zone-cubes" id="operational-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вопрос про память/записи -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="likert-scale-group">
+                <label>Когда вы распределяли "энергию" по коробочкам, то какую часть вы восстановили по памяти, а какую по своим записям (дневники, ежедневник, календарь, список задач и т.п.)?</label>
+                <div class="radio-vertical-list">
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-1" value="1">
+                        <label for="mvr-1">Всё восстановил(а) по памяти</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-2" value="2">
+                        <label for="mvr-2">Большую часть восстановил(а) по памяти, и кое-что по записям</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-3" value="3">
+                        <label for="mvr-3">Примерно половину по памяти, половину по записям</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-4" value="4">
+                        <label for="mvr-4">Большую часть по записям и немного откорректировал(а) по памяти</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="memory_vs_records" id="mvr-5" value="5">
+                        <label for="mvr-5">Практически всё восстановил(а) по записям</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контекстные вопросы -->
+        <div class="card">
+            <!-- Насколько показательная неделя (-3 до +3) -->
+            <div class="likert-scale-group">
+                <label>Насколько прошедшая неделя была похожа на ваш обычный режим работы?</label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Эта неделя была значительно хуже</span>
+
+                    <input type="radio" name="representative" id="rep--3" value="-3">
+                    <label for="rep--3">-3</label>
+
+                    <input type="radio" name="representative" id="rep--2" value="-2">
+                    <label for="rep--2">-2</label>
+
+                    <input type="radio" name="representative" id="rep--1" value="-1">
+                    <label for="rep--1">-1</label>
+
+                    <input type="radio" name="representative" id="rep-0" value="0">
+                    <label for="rep-0">0</label>
+
+                    <input type="radio" name="representative" id="rep-1" value="1">
+                    <label for="rep-1">1</label>
+
+                    <input type="radio" name="representative" id="rep-2" value="2">
+                    <label for="rep-2">2</label>
+
+                    <input type="radio" name="representative" id="rep-3" value="3">
+                    <label for="rep-3">3</label>
+
+                    <span class="likert-center-label right">Эта неделя была значительно лучше</span>
+                    <p class="center-scale-note">Неделя прошла как обычно</p>
+                </div>
+            </div>
+
+            <!-- Доля работы (-3 до +3) -->
+            <div class="likert-scale-group">
+                <label>Как на прошедшей неделе вы распределили свою энергию между работой и личной жизнью?</label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Всё на личное</span>
+
+                    <input type="radio" name="work_life" id="wl--3" value="-3">
+                    <label for="wl--3">-3</label>
+
+                    <input type="radio" name="work_life" id="wl--2" value="-2">
+                    <label for="wl--2">-2</label>
+
+                    <input type="radio" name="work_life" id="wl--1" value="-1">
+                    <label for="wl--1">-1</label>
+
+                    <input type="radio" name="work_life" id="wl-0" value="0">
+                    <label for="wl-0">0</label>
+
+                    <input type="radio" name="work_life" id="wl-1" value="1">
+                    <label for="wl-1">1</label>
+
+                    <input type="radio" name="work_life" id="wl-2" value="2">
+                    <label for="wl-2">2</label>
+
+                    <input type="radio" name="work_life" id="wl-3" value="3">
+                    <label for="wl-3">3</label>
+
+                    <span class="likert-center-label right">Всё на работу</span>
+                    <p class="center-scale-note">Работа и личное в балансе</p>
+                </div>
+            </div>
+
+            <!-- Энергетический дефицит -->
+            <div class="likert-scale-group">
+                <label>Сколько кубиков энергии на этой неделе вам не хватило, чтобы сделать всё, что вы хотели?</label>
+                <div class="likert-deficit-scale">
+                    <span class="likert-deficit-label left">Минимум половина ещё осталась</span>
+
+                    <input type="radio" name="energy_deficit" id="def--3" value="-3">
+                    <label for="def--3">-3</label>
+
+                    <input type="radio" name="energy_deficit" id="def--2" value="-2">
+                    <label for="def--2">-2</label>
+
+                    <input type="radio" name="energy_deficit" id="def--1" value="-1">
+                    <label for="def--1">-1</label>
+
+                    <input type="radio" name="energy_deficit" id="def-0" value="0">
+                    <label for="def-0">0</label>
+
+                    <input type="radio" name="energy_deficit" id="def-3" value="3">
+                    <label for="def-3">3</label>
+
+                    <input type="radio" name="energy_deficit" id="def-6" value="6">
+                    <label for="def-6">6</label>
+
+                    <input type="radio" name="energy_deficit" id="def-9" value="9">
+                    <label for="def-9">9</label>
+
+                    <span class="likert-deficit-label right">Минимум 9 не хватило</span>
+                    <p class="center-scale-note">Точь-в-точь хватило</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Текстовые поля -->
+        <div class="card">
+            <div class="text-field">
+                <label for="takeaway">Что самое ценное вы вынесли для себя на этой неделе?</label>
+                <textarea id="takeaway" placeholder="Поделитесь главным инсайтом..." rows="3"></textarea>
+                <p class="field-hint">Необязательно</p>
+            </div>
+
+            <div class="text-field">
+                <label for="comment">Любой комментарий для нас</label>
+                <textarea id="comment" placeholder="Мысли, пожелания, вопросы..." rows="3"></textarea>
+                <p class="field-hint">Необязательно</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-submit" class="btn btn-primary btn-large">Отправить</button>
+        </div>
+    </section>
+
+    <!-- Страница благодарности -->
+    <section id="thank-you" class="page">
+        <div class="thank-you">
+            <div class="emoji">🙏</div>
+            <h1>Спасибо!</h1>
+            <p>Ваши ответы сохранены.</p>
+        </div>
+    </section>
+
+</div>
+
+<script src="drag-drop.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

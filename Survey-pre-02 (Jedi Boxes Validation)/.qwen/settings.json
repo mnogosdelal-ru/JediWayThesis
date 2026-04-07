@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python *)",
       "Bash(findstr *)",
-      "Bash(del *)"
+      "Bash(del *)",
+      "Bash(php *)"
     ]
   },
   "$version": 3
