@@ -58,6 +58,7 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 .card p { margin-bottom: 10px; color: var(--text-muted); font-size: 0.95rem; }
 .card p:last-child { margin-bottom: 0; }
 .card p strong { color: var(--text-main); }
+.card .center-scale-note { font-size: 0.6rem; }
 
 .intro-card { text-align: center; }
 

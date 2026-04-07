@@ -8,8 +8,12 @@ define('GOOGLE_SHEET_ID', '1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw');
 define('GOOGLE_SHEET_RANGE', 'RawData');
 define('CREDENTIALS_PATH', __DIR__ . '/api-project-380174387781-9ef8571a2149.json');
 define('LOG_FILE', __DIR__ . '/sheets_debug.log');
+define('ENABLE_LOGGING', false); // Установите false для отключения логирования
 
 function sheetsLog($msg) {
+    if (!ENABLE_LOGGING) {
+        return;
+    }
     $line = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
     file_put_contents(LOG_FILE, $line, FILE_APPEND);
 }
