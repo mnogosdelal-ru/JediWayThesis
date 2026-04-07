@@ -31,6 +31,123 @@ import warnings
 import os
 import sys
 
+# ============================================================================
+# Jonckheere-Terpstra test (manual implementation)
+# ============================================================================
+# Назначение: непараметрический тест для проверки упорядоченных альтернатив.
+# Проверяет, что медианы k ≥ 2 независимых групп монотонно возрастают
+# или убывают в заданном порядке.
+#
+# Нулевая гипотеза H0: распределения всех групп одинаковы.
+# Альтернатива: медианы упорядочены (θ₁ ≤ θ₂ ≤ ... ≤ θ_k, хотя бы одно строго).
+#
+# Статистика J = Σ_{i<j} U_{ij}, где U_{ij} — число пар (x из группы i, y из группы j),
+# для которых x < y, плюс 0.5 для каждой пары x = y.
+#
+# При H0:  E(J) = (N² - Σn_i²) / 4
+#          Var(J) = [N²(2N+3) - Σn_i²(2n_i+3)] / 72 - Σt(t-1)(2t+5) / 36
+#                   где t — размеры серий совпадающих значений (ties).
+#
+# Для больших выборок J ~ N(E(J), Var(J)), применяется continuity correction ±0.5.
+# ============================================================================
+
+def jonckheere_terpstra(groups, alternative='two-sided'):
+    """
+    Тест Джонкхира-Терпстры для упорядоченных альтернатив.
+
+    Параметры
+    ---------
+    groups : list of array-like
+        Выборки, упорядоченные в соответствии с направлением гипотезы.
+        groups[0] — первая (наименьшая по ожидаемому уровню) группа,
+        groups[-1] — последняя (наибольшая).
+    alternative : str
+        'increasing' — проверяет рост медиан (θ₁ ≤ θ₂ ≤ ... ≤ θ_k),
+        'decreasing' — проверяет убывание,
+        'two-sided' — двусторонний тест.
+
+    Возвращает
+    ----------
+    J : float
+        Статистика Джонкхира-Терпстры.
+    p : float
+        p-value (нормальная аппроксимация с continuity correction).
+    """
+    k = len(groups)
+    n = [len(g) for g in groups]
+    N = sum(n)
+
+    if k < 2:
+        raise ValueError("Нужно хотя бы 2 группы")
+    if any(ni < 1 for ni in n):
+        raise ValueError("Каждая группа должна содержать хотя бы 1 наблюдение")
+
+    # ── Шаг 1: Вычисляем J = Σ_{i<j} U_{ij} ──────────────────────────
+    J = 0.0
+    for i in range(k):
+        for j in range(i + 1, k):
+            for x in groups[i]:
+                for y in groups[j]:
+                    if x < y:
+                        J += 1.0
+                    elif x == y:
+                        J += 0.5
+
+    # ── Шаг 2: Матожидание E(J) при H0 ────────────────────────────────
+    E_J = (N ** 2 - sum(ni ** 2 for ni in n)) / 4.0
+
+    # ── Шаг 3: Дисперсия Var(J) с поправкой на связи ──────────────────
+    # Базовая формула без учёта связей
+    term1 = N ** 2 * (2 * N + 3)
+    term2 = sum(ni ** 2 * (2 * ni + 3) for ni in n)
+    var_J = (term1 - term2) / 72.0
+
+    # Поправка на связи (tie correction)
+    # Собираем все значения, сортируем и находим серии одинаковых значений
+    all_values = np.concatenate([np.asarray(g) for g in groups])
+    sorted_vals = np.sort(all_values)
+
+    i = 0
+    tie_lengths = []
+    while i < len(sorted_vals):
+        j = i
+        while j < len(sorted_vals) and sorted_vals[j] == sorted_vals[i]:
+            j += 1
+        tie_len = j - i
+        if tie_len > 1:
+            tie_lengths.append(tie_len)
+        i = j
+
+    # Корректировка: вычитаем Σt(t-1)(2t+5)/36
+    if tie_lengths:
+        tie_correction = sum(t * (t - 1) * (2 * t + 5) for t in tie_lengths)
+        var_J -= tie_correction / 36.0
+
+    # Защита от нулевой/отрицательной дисперсии (крайне редкий случай)
+    if var_J <= 0:
+        var_J = 1e-10
+
+    # ── Шаг 4: Z-статистика с continuity correction ───────────────────
+    # continuity correction = 0.5 сдвигает J к E(J), делая тест консервативнее
+    if alternative == 'increasing':
+        z = (J - E_J - 0.5) / np.sqrt(var_J)
+    elif alternative == 'decreasing':
+        z = (E_J - J - 0.5) / np.sqrt(var_J)
+    else:  # two-sided
+        z = (abs(J - E_J) - 0.5) / np.sqrt(var_J)
+
+    # ── Шаг 5: p-value из стандартного нормального распределения ──────
+    from scipy.stats import norm
+    if alternative == 'two-sided':
+        p = 2.0 * (1.0 - norm.cdf(abs(z)))
+    else:
+        p = 1.0 - norm.cdf(z)
+
+    # Ограничиваем [0, 1]
+    p = max(0.0, min(1.0, p))
+
+    return J, p
+
 # Настройка matplotlib для корректного отображения
 plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 11
@@ -92,17 +209,23 @@ RG_RATIO_EPS = 1  # Значение 1 обеспечивает диапазон
 
 # Уровни профилей (К=красное/срочное, З=зеленое/целевое, С=серое/операционное)
 PROFILE_LEVELS = {
-    6: 'Дзен (С>З>К)',
-    5: 'Рост (З>С>К)',
-    4: 'Не сдаёмся (З>К>С)',
-    3: 'Кризис (К>С>З или С>К>З)',
+    7: 'Дзен (С>З>К)',
+    6: 'Рост (З>С>К)',
+    5: 'Не сдаёмся (З>К>С)',
+    4: 'Кризис (К>С>З)',
+    3: 'Апатия (С>К>З)',
     2: 'Выживание (К>З>С)',
-    1: 'Хаос (все зоны равны)'
+    1: 'Хаос (2-2-2)'
 }
 
 # Гипотезы исследования
 HYPOTHESES = {
-    'H0': 'Различия между уровнями 1-6 по MBI, прокрастинации и SWLS',
+    'H0': 'Различия между уровнями 1-7 по MBI, прокрастинации и SWLS',
+    'H0a': 'Тренд по позиции 🟢 (все респонденты): MBI и прокрастинация X < Y < Z, SWLS X > Y > Z',
+    'H0b': 'Тренд по позиции 🟢 (rep=0): MBI и прокрастинация X < Y < Z, SWLS X > Y > Z',
+    'H0c': 'Тренд по позиции 🔴 (все респонденты): MBI и прокрастинация R1 > R2 > R3, SWLS R1 < R2 < R3',
+    'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных',
+    'H13': 'В IT больше прокрастинация, выгорание и ниже удовлетворённость жизнью, чем в других сферах',
     'H1': '🔴 положительно коррелирует с прокрастинацией и MBI',
     'H2': '🟢 положительно коррелирует с SWLS и отрицательно с MBI',
     'H3': 'Низкое 🔴 связано с более низким выгоранием',
@@ -181,65 +304,51 @@ class JediBoxesAnalyzer:
     
     def _add_level_column(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Добавление колонки с уровнем профиля (1-6).
-        
-        Алгоритм классификации из research_plan.md:
-        - Сортируем зоны по убыванию
-        - Применяем правила для "ничьих"
+        Добавление колонки с уровнем профиля (1-7).
+
+        Алгоритм классификации:
+        - Сортируем зоны по убыванию (с приоритетом при ничьих)
+        - Определяем primary и secondary
         - Присваиваем уровень
         """
         df = df.copy()
-        
+
         def classify_profile(row):
             r = row.get('cubes_reactive', 0) or 0
             g = row.get('cubes_proactive', 0) or 0
             o = row.get('cubes_operational', 0) or 0
-            
-            # Создаём список зон с их значениями
-            zones = [('reactive', r), ('proactive', g), ('operational', o)]
-            
-            # Сортируем по убыванию
-            zones_sorted = sorted(zones, key=lambda x: x[1], reverse=True)
-            
-            # Правила для ничьих (иерархия: reactive > proactive > operational)
-            if r == g == o:
-                return 1  # Хаос (2-2-2)
 
-            # Сортируем зоны по убыванию для определения primary и secondary
-            # zones_sorted уже отсортирован: [('zone_name', value), ...]
-            # При равенстве значений порядок определяется исходным порядком в zones
-            # (stable sort), поэтому нужно явно обработать ничьи
-            
-            # Определяем порядок зон с учётом иерархии при ничьих
-            # Иерархия зон: proactive > reactive > operational
-            # (проактивность важнее реактивности, реактивность важнее операционности)
+            zones = [('reactive', r), ('proactive', g), ('operational', o)]
+
+            if r == g == o:
+                return 1  # Хаос: 2-2-2
+
             zone_priority = {'proactive': 2, 'reactive': 1, 'operational': 0}
-            
-            # Сортируем: сначала по значению (убывание), затем по приоритету (убывание)
             zones_sorted = sorted(zones, key=lambda x: (x[1], zone_priority[x[0]]), reverse=True)
-            
-            # Извлекаем порядок зон
             order = [z[0] for z in zones_sorted]
-            
-            # Определяем уровень по порядку доминирования
+
             primary = order[0]
             secondary = order[1] if len(order) > 1 else None
-            
+
             if primary == 'operational' and secondary == 'proactive':
-                return 6  # Дзен: ⚪ > 🟢 > 🔴
+                return 7  # Дзен: ⚪ > 🟢 > 🔴
             elif primary == 'operational' and secondary == 'reactive':
-                return 3  # Кризис: ⚪ > 🔴 > 🟢 (операционное доминирует, но срочное второе)
-            elif primary == 'proactive' and (secondary == 'operational' or secondary is None):
-                return 5  # Рост: 🟢 > ⚪ > 🔴
+                return 3  # Апатия: ⚪ > 🔴 > 🟢
+            elif primary == 'proactive' and secondary == 'operational':
+                return 6  # Рост: 🟢 > ⚪ > 🔴
             elif primary == 'proactive' and secondary == 'reactive':
-                return 4  # Не сдаёмся: 🟢 > 🔴 > ⚪
+                return 5  # Не сдаёмся: 🟢 > 🔴 > ⚪
             elif primary == 'reactive' and secondary == 'operational':
-                return 3  # Кризис: 🔴 > ⚪ > 🟢
-            elif primary == 'reactive' and (secondary == 'proactive' or secondary is None):
+                return 4  # Кризис: 🔴 > ⚪ > 🟢
+            elif primary == 'reactive' and secondary == 'proactive':
                 return 2  # Выживание: 🔴 > 🟢 > ⚪
+            elif primary == 'proactive' and secondary is None:
+                return 6  # Рост: только 🟢
+            elif primary == 'reactive' and secondary is None:
+                return 2  # Выживание: только 🔴
             else:
-                return 1  # Хаос (должно быть покрыто выше)
-            
+                return 2  # По умолчанию — Выживание
+
         df['level'] = df.apply(classify_profile, axis=1)
         return df
     
@@ -505,7 +614,7 @@ class JediBoxesAnalyzer:
         fig, ax = plt.subplots(figsize=(10, 5))
 
         level_counts = self.completed['level'].value_counts().sort_index()
-        colors = ['#e74c3c', '#e67e22', '#f39c12', '#27ae60', '#2ecc71', '#1abc9c']
+        colors = ['#e74c3c', '#e67e22', '#d35400', '#f39c12', '#27ae60', '#2ecc71', '#1abc9c']
         bars = ax.bar([PROFILE_LEVELS[l] for l in level_counts.index],
                      level_counts.values, color=colors[:len(level_counts)])
 
@@ -749,7 +858,7 @@ class JediBoxesAnalyzer:
             
             # Группировка по уровням - фильтруем пустые группы
             groups = []
-            for level in range(1, 7):
+            for level in range(1, 8):
                 group_data = self.completed[self.completed['level'] == level][scale].dropna()
                 if len(group_data) > 0:
                     groups.append(group_data)
@@ -821,14 +930,210 @@ class JediBoxesAnalyzer:
             if p_value < 0.05:
                 self.add_paragraph("*Post-hoc сравнения доступны в детальном анализе*")
             
-            # Описательная статистика по группам
+            # Описательная статистика по группам — сортировка по убыванию M
             table_data = []
-            for level in range(1, 7):
+            for level in range(1, 8):
                 g = self.completed[self.completed['level'] == level][scale].dropna()
                 if len(g) > 0:
-                    table_data.append([level, f"{g.mean():.1f}", f"{g.std():.1f}", len(g)])
-            
-            self.add_table(['Уровень', 'M', 'SD', 'n'], table_data)
+                    profile_name = PROFILE_LEVELS.get(level, f'Уровень {level}')
+                    table_data.append((g.mean(), [f"{level} — {profile_name}", f"{g.mean():.1f}", f"{g.std():.1f}", len(g)]))
+
+            # Сортируем по убыванию среднего
+            table_data.sort(key=lambda x: x[0], reverse=True)
+            sorted_rows = [row for _, row in table_data]
+
+            self.add_table(['Уровень', 'M', 'SD', 'n'], sorted_rows)
+
+    def _analyze_zone_position_trend(self, df, section_title, hyp_key, sample_desc,
+                                     zone_col, zone_emoji, zone_name_ru,
+                                     scales_increasing, scales_decreasing):
+        """
+        Универсальный метод: тренд по позиции заданной зоны.
+
+        Параметры
+        ---------
+        zone_col : str
+            Имя колонки зоны ('cubes_reactive', 'cubes_proactive', 'cubes_operational').
+        zone_emoji : str
+            Эмодзи зоны для отображения.
+        zone_name_ru : str
+            Русское название зоны.
+        scales_increasing : list
+            Шкалы, для которых ожидается рост (позиция 1→2→3 → шкала растёт).
+        scales_decreasing : list
+            Шкалы, для которых ожидается убывание (позиция 1→2→3 → шкала падает).
+        """
+        self.add_section(section_title, 2)
+        self.add_paragraph(HYPOTHESES[hyp_key])
+
+        # Строим описание ожидаемого тренда
+        trend_desc_parts = []
+        for sc in scales_increasing:
+            trend_desc_parts.append(f"{sc[1]} растёт: R1 < R2 < R3")
+        for sc in scales_decreasing:
+            trend_desc_parts.append(f"{sc[1]} убывает: R1 > R2 > R3")
+        trend_desc = ", ".join(trend_desc_parts)
+
+        self.add_paragraph(f"""
+**Описание ({sample_desc}):**
+
+Все респонденты делятся на 3 группы по позиции зоны «{zone_name_ru}» ({zone_emoji}) при сортировке зон по убыванию:
+- **Уровень R1:** {zone_emoji} на 1-м месте (или все зоны равны)
+- **Уровень R2:** {zone_emoji} на 2-м месте
+- **Уровень R3:** {zone_emoji} на 3-м месте
+
+Направленная гипотеза:
+{trend_desc}
+
+Для проверки используется **тест Джонкхира-Терпстры (Jonckheere-Terpstra)** — непараметрический тест для упорядоченных альтернатив.
+""")
+
+        # Классификация по позиции заданной зоны
+        def zone_position(row):
+            r = row.get('cubes_reactive', 0) or 0
+            g = row.get('cubes_proactive', 0) or 0
+            o = row.get('cubes_operational', 0) or 0
+
+            # Если все зоны равны → R1 (1-е место для любой зоны)
+            if r == g == o:
+                return 0
+
+            zones = [('reactive', r), ('proactive', g), ('operational', o)]
+            zones_sorted = sorted(zones, key=lambda x: x[1], reverse=True)
+            for i, (name, val) in enumerate(zones_sorted):
+                if name == zone_col.replace('cubes_', ''):
+                    return i
+            return 1  # fallback
+
+        df = df.copy()
+        df['zone_pos'] = df.apply(zone_position, axis=1)
+        pos_labels = {0: f'R1 ({zone_emoji} 1-е)', 1: f'R2 ({zone_emoji} 2-е)', 2: f'R3 ({zone_emoji} 3-е)'}
+
+        self.add_paragraph(f"**Распределение по позициям {zone_emoji} ({sample_desc}):**")
+        desc_data = []
+        for pos in [0, 1, 2]:
+            grp = df[df['zone_pos'] == pos]
+            if len(grp) > 0:
+                desc_data.append([pos_labels[pos], len(grp)])
+        self.add_table(['Позиция ' + zone_emoji, 'n'], desc_data)
+
+        # Шкалы с ожидаемым направлением
+        scale_configs = []
+        for sc in scales_increasing:
+            scale_configs.append((sc[0], sc[1], 'increasing'))
+        for sc in scales_decreasing:
+            scale_configs.append((sc[0], sc[1], 'decreasing'))
+
+        for scale, name, direction in scale_configs:
+            self.add_paragraph(f"\n**{name}:**")
+
+            table_rows = []
+            groups_ordered = []
+            for pos in [0, 1, 2]:
+                grp = df[df['zone_pos'] == pos][scale].dropna()
+                if len(grp) > 0:
+                    table_rows.append([pos_labels[pos], f"{grp.mean():.1f}", f"{grp.std():.1f}", len(grp)])
+                    groups_ordered.append(grp.values)
+
+            self.add_table(['Позиция ' + zone_emoji, 'M', 'SD', 'n'], table_rows)
+
+            if len(groups_ordered) < 3:
+                self.add_paragraph("⚠️ Недостаточно групп для теста")
+                continue
+
+            try:
+                J_stat, p = jonckheere_terpstra(groups_ordered, alternative=direction)
+
+                if direction == 'increasing':
+                    expected = "R1 < R2 < R3 (рост)"
+                else:
+                    expected = "R1 > R2 > R3 (убывание)"
+
+                confirmed = p < 0.05
+
+                self.add_paragraph(f"- **Ожидаемый тренд:** {expected}")
+                self.add_paragraph(f"- **Jonckheere-Terpstra:** J = {J_stat:.0f}, p = {p:.6f}")
+
+                if confirmed:
+                    self.add_paragraph(f"- ✅ **Подтверждается**: направленная гипотеза подтверждается (p < 0.05)")
+                else:
+                    self.add_paragraph(f"- ❌ **Не подтверждается**: p = {p:.4f} > 0.05")
+
+                # Попарные сравнения (Манн-Уитни U с поправкой Бонферрони α/3)
+                self.add_paragraph(f"\n**Попарные сравнения (U-тест, α = 0.0167, Бонферрони):**")
+
+                pair_labels = [(0, 1, 'R1 vs R2'), (1, 2, 'R2 vs R3'), (0, 2, 'R1 vs R3')]
+                for i, j, lbl in pair_labels:
+                    grp_i = df[df['zone_pos'] == i][scale].dropna()
+                    grp_j = df[df['zone_pos'] == j][scale].dropna()
+                    if len(grp_i) >= 2 and len(grp_j) >= 2:
+                        u_stat, u_p = stats.mannwhitneyu(grp_i, grp_j, alternative='two-sided')
+                        u_p_bonf = min(u_p * 3, 1.0)  # поправка Бонферрони (3 сравнения)
+                        mean_i, mean_j = grp_i.mean(), grp_j.mean()
+                        diff = mean_j - mean_i
+                        sig = u_p_bonf < 0.05
+                        sig_mark = "✅" if sig else "❌"
+                        self.add_paragraph(f"- **{lbl}:** M({mean_i:.1f}) vs M({mean_j:.1f}), Δ = {diff:+.1f}, U = {u_stat:.0f}, p = {u_p:.4f}, p_adj = {u_p_bonf:.4f} {sig_mark}")
+                    else:
+                        self.add_paragraph(f"- **{lbl}:** недостаточно данных")
+            except Exception as e:
+                self.add_paragraph(f"⚠️ Ошибка при расчёте: {e}")
+
+    def analyze_h0a_green_position_trend(self):
+        """H0a: Тренд по позиции 🟢 — все респонденты."""
+        self._analyze_zone_position_trend(
+            self.completed,
+            "H0a: Тренд по позиции 🟢 (все респонденты, Jonckheere-Terpstra)",
+            'H0a', 'полная выборка',
+            zone_col='cubes_proactive', zone_emoji='🟢', zone_name_ru='Целевое',
+            scales_increasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ],
+            scales_decreasing=[
+                ('swls_total', 'SWLS'),
+            ]
+        )
+
+    def analyze_h0b_green_position_typical(self):
+        """H0b: Тренд по позиции 🟢 — только rep=0."""
+        df_t = self.completed[self.completed['representative'] == 0].copy()
+        n_t = len(df_t)
+        if n_t < 10:
+            self.add_section("H0b: Тренд по позиции 🟢 (rep=0, Jonckheere-Terpstra)", 2)
+            self.add_paragraph(HYPOTHESES['H0b'])
+            self.add_paragraph(f"⚠️ Недостаточно данных: n = {n_t} для rep=0")
+            return
+
+        self._analyze_zone_position_trend(
+            df_t,
+            "H0b: Тренд по позиции 🟢 (типовая неделя rep=0, Jonckheere-Terpstra)",
+            'H0b', f'типовая неделя (n = {n_t})',
+            zone_col='cubes_proactive', zone_emoji='🟢', zone_name_ru='Целевое',
+            scales_increasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ],
+            scales_decreasing=[
+                ('swls_total', 'SWLS'),
+            ]
+        )
+
+    def analyze_h0c_reactive_position_trend(self):
+        """H0c: Тренд по позиции 🔴 — все респонденты."""
+        self._analyze_zone_position_trend(
+            self.completed,
+            "H0c: Тренд по позиции 🔴 (все респонденты, Jonckheere-Terpstra)",
+            'H0c', 'полная выборка',
+            zone_col='cubes_reactive', zone_emoji='🔴', zone_name_ru='Срочное',
+            scales_increasing=[
+                ('swls_total', 'SWLS'),
+            ],
+            scales_decreasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ]
+        )
     
     def analyze_h1_correlations_reactive(self):
         """
@@ -982,10 +1287,10 @@ class JediBoxesAnalyzer:
         
         self.add_paragraph(HYPOTHESES['H4'])
         
-        green_levels = self.completed[self.completed['level'].isin([5, 6])]['swls_total'].dropna()
-        other_levels = self.completed[~self.completed['level'].isin([5, 6])]['swls_total'].dropna()
-        
-        self.add_paragraph(f"- Уровни 5-6 (доминирование 🟢): n = {len(green_levels)}, "
+        green_levels = self.completed[self.completed['level'].isin([6, 7])]['swls_total'].dropna()
+        other_levels = self.completed[~self.completed['level'].isin([6, 7])]['swls_total'].dropna()
+
+        self.add_paragraph(f"- Уровни 6-7 (доминирование 🟢): n = {len(green_levels)}, "
                           f"M = {green_levels.mean():.1f}, SD = {green_levels.std():.1f}")
         self.add_paragraph(f"- Другие уровни: n = {len(other_levels)}, "
                           f"M = {other_levels.mean():.1f}, SD = {other_levels.std():.1f}")
@@ -1251,7 +1556,7 @@ class JediBoxesAnalyzer:
     
     def analyze_h12_zen_deficit(self):
         """
-        H12: Профиль "Дзен" (уровень 6) связан с наименьшим энергетическим дефицитом.
+        H12: Профиль "Дзен" (уровень 7) связан с наименьшим энергетическим дефицитом.
         
         Метод: Сравнение средних
         """
@@ -1259,24 +1564,24 @@ class JediBoxesAnalyzer:
         
         self.add_paragraph(HYPOTHESES['H12'])
         
-        zen = self.completed[self.completed['level'] == 6]['energy_deficit'].dropna()
-        other = self.completed[self.completed['level'] != 6]['energy_deficit'].dropna()
-        
+        zen = self.completed[self.completed['level'] == 7]['energy_deficit'].dropna()
+        other = self.completed[self.completed['level'] != 7]['energy_deficit'].dropna()
+
         if len(zen) >= 3:
-            self.add_paragraph(f"- Уровень 6 (Дзен): n = {len(zen)}, M = {zen.mean():.2f}")
+            self.add_paragraph(f"- Уровень 7 (Дзен): n = {len(zen)}, M = {zen.mean():.2f}")
             self.add_paragraph(f"- Другие уровни: n = {len(other)}, M = {other.mean():.2f}")
-            
+
             u_stat, p = stats.mannwhitneyu(zen, other, alternative='less')
-            
+
             # Проверка на None/NaN
             if p is None or (isinstance(p, float) and np.isnan(p)):
                 self.add_paragraph("⚠️ Недостаточно данных для надёжного расчёта")
                 return
-            
+
             conclusion = "Подтверждается" if p < 0.05 else "Не подтверждается"
             self.add_test_result("U-критерий Манна-Уитни", u_stat, p, conclusion)
         else:
-            self.add_paragraph("⚠️ Недостаточно данных (мало респондентов с уровнем 6)")
+            self.add_paragraph("⚠️ Недостаточно данных (мало респондентов с уровнем 7)")
     
 
     def analyze_h7a_linear_regression(self):
@@ -1524,7 +1829,141 @@ class JediBoxesAnalyzer:
         else:
             self.add_paragraph("⚠️ Недостаточно данных для анализа (нужно минимум 5 в каждой группе)")
 
+    def analyze_h13_it_comparison(self):
+        """
+        H13: Сравнение IT и не-IT респондентов по прокрастинации, MBI и SWLS.
+        """
+        self.add_section("H13: IT vs другие сферы", 3)
 
+        self.add_paragraph(HYPOTHESES['H13'])
+
+        self.add_paragraph("""
+**Описание:**
+
+Сравниваем респондентов из IT с остальными по трём шкалам:
+- **Прокрастинация:** выше в IT?
+- **MBI (выгорание):** выше в IT?
+- **SWLS (удовлетворённость жизнью):** ниже в IT?
+
+IT определяется по колонке `profession` (содержит 'IT' или 'it') или `position`.
+""")
+
+        # Определяем IT-респондентов по profession
+        df = self.completed.copy()
+        df['is_it'] = df['profession'].str.contains('IT|it|ит|ИТ|айти|Айти', na=False, regex=True)
+
+        it_group = df[df['is_it'] == True]
+        other_group = df[df['is_it'] == False]
+
+        n_it = len(it_group)
+        n_other = len(other_group)
+
+        self.add_paragraph(f"**Размер групп:**")
+        self.add_paragraph(f"- IT: n = {n_it}")
+        self.add_paragraph(f"- Другие сферы: n = {n_other}")
+
+        if n_it < 5 or n_other < 5:
+            self.add_paragraph("⚠️ Недостаточно данных для анализа (нужно минимум 5 в каждой группе)")
+            return
+
+        # Кубики
+        self.add_paragraph(f"\n**Распределение кубиков:**")
+        cube_data = []
+        for zone_col, zone_name in [('cubes_reactive', '🔴 Срочное'),
+                                     ('cubes_proactive', '🟢 Целевое'),
+                                     ('cubes_operational', '⚪ Операционное')]:
+            it_mean = it_group[zone_col].mean()
+            other_mean = other_group[zone_col].mean()
+            u_stat, p = stats.mannwhitneyu(it_group[zone_col], other_group[zone_col])
+            sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+            cube_data.append([zone_name, f"{it_mean:.2f}", f"{other_mean:.2f}",
+                            f"{it_mean - other_mean:+.2f}", f"{p:.4f} {sig}"])
+
+        self.add_table(['Зона', 'IT (M)', 'Другие (M)', 'Разница', 'p-value'], cube_data)
+
+        # Валидационные шкалы
+        self.add_paragraph(f"\n**Валидационные шкалы:**")
+
+        scale_data = []
+        for scale_col, scale_name, direction in [
+            ('proc_total', 'Прокрастинация', 'greater'),
+            ('mbi_total', 'MBI (выгорание)', 'greater'),
+            ('swls_total', 'SWLS', 'less')
+        ]:
+            it_mean = it_group[scale_col].mean()
+            it_sd = it_group[scale_col].std()
+            other_mean = other_group[scale_col].mean()
+            other_sd = other_group[scale_col].std()
+
+            u_stat, p = stats.mannwhitneyu(it_group[scale_col], other_group[scale_col],
+                                           alternative='greater' if direction == 'greater' else 'less')
+
+            sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+            confirmed = "✅" if p < 0.05 else "❌"
+
+            scale_data.append([scale_name, f"{it_mean:.1f} ± {it_sd:.1f}",
+                             f"{other_mean:.1f} ± {other_sd:.1f}",
+                             f"{it_mean - other_mean:+.1f}", f"{p:.4f} {sig}", confirmed])
+
+            self.add_paragraph(f"- **{scale_name}:** IT = {it_mean:.1f} ± {it_sd:.1f}, Другие = {other_mean:.1f} ± {other_sd:.1f}, p = {p:.4f} {sig} {confirmed}")
+
+        self.add_table(['Шкала', 'IT (M ± SD)', 'Другие (M ± SD)', 'Разница', 'p-value', 'Гипотеза'], scale_data)
+
+        # Визуализация
+        fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+        colors_it = '#e67e22'
+        colors_other = '#3498db'
+
+        for idx, (scale_col, scale_name) in enumerate([
+            ('proc_total', 'Прокрастинация'),
+            ('mbi_total', 'MBI'),
+            ('swls_total', 'SWLS')
+        ]):
+            axes[idx].hist(it_group[scale_col].dropna(), bins=15, color=colors_it, alpha=0.6, label='IT', edgecolor='white')
+            axes[idx].hist(other_group[scale_col].dropna(), bins=15, color=colors_other, alpha=0.6, label='Другие', edgecolor='white')
+            axes[idx].axvline(it_group[scale_col].mean(), color=colors_it, linestyle='--', linewidth=2)
+            axes[idx].axvline(other_group[scale_col].mean(), color=colors_other, linestyle='--', linewidth=2)
+            axes[idx].set_xlabel('Балл', fontproperties=LABEL_FONT)
+            axes[idx].set_ylabel('Частота', fontproperties=LABEL_FONT)
+            axes[idx].set_title(f'{scale_name}: IT vs Другие', fontproperties=TITLE_FONT)
+            axes[idx].legend(prop=TICK_FONT)
+            for label in axes[idx].get_xticklabels() + axes[idx].get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle('H13: Сравнение IT и других сфер', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('h13_it_comparison')
+        self.add_paragraph(f"\n![H13: IT vs Другие](figures/h13_it_comparison.png)")
+
+        # Выводы
+        self.add_paragraph(f"\n**Выводы по H13:**")
+        it_higher = 0
+        it_lower = 0
+        for scale_col, scale_name, direction in [
+            ('proc_total', 'Прокрастинация', 'greater'),
+            ('mbi_total', 'MBI (выгорание)', 'greater'),
+            ('swls_total', 'SWLS', 'less')
+        ]:
+            it_mean = it_group[scale_col].mean()
+            other_mean = other_group[scale_col].mean()
+            u_stat, p = stats.mannwhitneyu(it_group[scale_col], other_group[scale_col],
+                                           alternative='greater' if direction == 'greater' else 'less')
+            if p < 0.05:
+                if direction == 'greater':
+                    it_higher += 1
+                    self.add_paragraph(f"- ✅ {scale_name} значимо **выше** в IT (p = {p:.4f})")
+                else:
+                    it_lower += 1
+                    self.add_paragraph(f"- ✅ {scale_name} значимо **ниже** в IT (p = {p:.4f})")
+            else:
+                self.add_paragraph(f"- ❌ {scale_name}: нет значимых различий (p = {p:.4f})")
+
+        if it_higher >= 2 and it_lower >= 1:
+            self.add_paragraph(f"\n**Итог:** Гипотеза **подтверждается** — в IT выше и прокрастинация, и выгорание, и ниже удовлетворённость")
+        elif it_higher >= 2:
+            self.add_paragraph(f"\n**Итог:** Гипотеза **частично подтверждается** — в IT выше негативные показатели, но SWLS не отличается")
+        else:
+            self.add_paragraph(f"\n**Итог:** Гипотеза **не подтверждается** — значимых различий по ожидаемым направлениям нет")
 
 
     def analyze_productivity_index(self):
@@ -1942,6 +2381,11 @@ ProductivityIndex — это логарифм по основанию 2 отно
         
         # Выполняем все анализы
         self.analyze_h0_anova_levels()
+        self.analyze_h0a_green_position_trend()
+        self.analyze_h0b_green_position_typical()
+        self.analyze_h0c_reactive_position_trend()
+        self.analyze_h10a_position_comparison()
+        self.analyze_h13_it_comparison()
         self.analyze_h1_correlations_reactive()
         self.analyze_h2_correlations_proactive()
         self.analyze_h3_low_reactive()
