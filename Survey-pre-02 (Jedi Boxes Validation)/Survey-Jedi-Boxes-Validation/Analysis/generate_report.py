@@ -224,6 +224,9 @@ HYPOTHESES = {
     'H0a': 'Тренд по позиции 🟢 (все респонденты): MBI и прокрастинация X < Y < Z, SWLS X > Y > Z',
     'H0b': 'Тренд по позиции 🟢 (rep=0): MBI и прокрастинация X < Y < Z, SWLS X > Y > Z',
     'H0c': 'Тренд по позиции 🔴 (все респонденты): MBI и прокрастинация R1 > R2 > R3, SWLS R1 < R2 < R3',
+    'H0a1': 'Тренд по числу кубиков 🟢 (0→7, все респонденты): MBI и прокрастинация ↓, SWLS ↑',
+    'H0b1': 'Тренд по числу кубиков 🟢 (0→7, rep=0): MBI и прокрастинация ↓, SWLS ↑',
+    'H0c1': 'Тренд по числу кубиков 🔴 (0→7, все респонденты): MBI и прокрастинация ↑, SWLS ↓',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных',
     'H13': 'В IT больше прокрастинация, выгорание и ниже удовлетворённость жизнью, чем в других сферах',
     'H1': '🔴 положительно коррелирует с прокрастинацией и MBI',
@@ -1132,6 +1135,239 @@ class JediBoxesAnalyzer:
             scales_decreasing=[
                 ('mbi_total', 'MBI (выгорание)'),
                 ('proc_total', 'Прокрастинация'),
+            ]
+        )
+
+    def _analyze_zone_count_trend(self, df, section_title, hyp_key, sample_desc,
+                                  zone_col, zone_emoji, zone_name_ru,
+                                  scales_increasing, scales_decreasing):
+        """
+        Универсальный метод: тренд по количеству кубиков в заданной зоне (0-7).
+
+        Параметры
+        ---------
+        zone_col : str
+            Имя колонки зоны ('cubes_reactive', 'cubes_proactive', 'cubes_operational').
+        zone_emoji : str
+            Эмодзи зоны для отображения.
+        zone_name_ru : str
+            Русское название зоны.
+        scales_increasing : list
+            Шкалы, для которых ожидается рост (число кубиков 0→7 → шкала растёт).
+        scales_decreasing : list
+            Шкалы, для которых ожидается убывание (число кубиков 0→7 → шкала падает).
+        """
+        self.add_section(section_title, 2)
+        self.add_paragraph(HYPOTHESES[hyp_key])
+
+        # Строим описание ожидаемого тренда
+        trend_desc_parts = []
+        for sc in scales_increasing:
+            trend_desc_parts.append(f"{sc[1]} растёт: 0 < 1 < 2 < ... < 7")
+        for sc in scales_decreasing:
+            trend_desc_parts.append(f"{sc[1]} убывает: 0 > 1 > 2 > ... > 7")
+        trend_desc = ", ".join(trend_desc_parts)
+
+        self.add_paragraph(f"""
+**Описание ({sample_desc}):**
+
+Все респонденты группируются по количеству кубиков в зоне «{zone_name_ru}» ({zone_emoji}) от 0 до 7:
+- **0 кубиков {zone_emoji}** — зона полностью отсутствует
+- **1 кубик {zone_emoji}**
+- ...
+- **7 кубиков {zone_emoji}** — все кубики в {zone_name_ru}
+
+Направленная гипотеза:
+{trend_desc}
+
+Для проверки используется **тест Джонкхира-Терпстры (Jonckheere-Terpstra)** — непараметрический тест для упорядоченных альтернатив.
+""")
+
+        # Группировка по количеству кубиков в заданной зоне
+        df = df.copy()
+        df['zone_count'] = df[zone_col].astype(int)
+
+        self.add_paragraph(f"**Распределение по количеству кубиков {zone_emoji} ({sample_desc}):**")
+        desc_data = []
+        for count in range(0, 8):
+            grp = df[df['zone_count'] == count]
+            if len(grp) > 0:
+                desc_data.append([f"{count} кубик(ов) {zone_emoji}", len(grp)])
+        self.add_table(['Уровень (' + zone_emoji + ')', 'n'], desc_data)
+
+        # Шкалы с ожидаемым направлением
+        scale_configs = []
+        for sc in scales_increasing:
+            scale_configs.append((sc[0], sc[1], 'increasing'))
+        for sc in scales_decreasing:
+            scale_configs.append((sc[0], sc[1], 'decreasing'))
+
+        for scale, name, direction in scale_configs:
+            self.add_paragraph(f"\n**{name}:**")
+
+            table_rows = []
+            groups_ordered = []
+            for count in range(0, 8):
+                grp = df[df['zone_count'] == count][scale].dropna()
+                if len(grp) >= 10:
+                    table_rows.append([f"{count} {zone_emoji}", f"{grp.mean():.1f}", f"{grp.std():.1f}", len(grp)])
+                    groups_ordered.append(grp.values)
+                elif len(grp) > 0:
+                    table_rows.append([f"{count} {zone_emoji}", f"{grp.mean():.1f}", f"{grp.std():.1f}", f"{len(grp)} (n<10, искл.)"])
+
+            self.add_table(['Уровень (' + zone_emoji + ')', 'M', 'SD', 'n'], table_rows)
+
+            if len(groups_ordered) < 2:
+                self.add_paragraph("⚠️ Недостаточно групп для теста")
+                continue
+
+            try:
+                J_stat, p = jonckheere_terpstra(groups_ordered, alternative=direction)
+
+                if direction == 'increasing':
+                    expected = "рост с 0 до 7 кубиков"
+                else:
+                    expected = "убывание с 0 до 7 кубиков"
+
+                confirmed = p < 0.05
+
+                self.add_paragraph(f"- **Ожидаемый тренд:** {expected}")
+                self.add_paragraph(f"- **Jonckheere-Terpstra:** J = {J_stat:.0f}, p = {p:.6f}")
+
+                if confirmed:
+                    self.add_paragraph(f"- ✅ **Подтверждается**: направленная гипотеза подтверждается (p < 0.05)")
+                else:
+                    self.add_paragraph(f"- ❌ **Не подтверждается**: p = {p:.4f} > 0.05")
+
+                # Попарные сравнения (Манн-Уитни U с поправкой Бонферрони)
+                # Количество попарных сравнений = C(k,2) где k — число групп
+                k_groups = len(groups_ordered)
+                n_comparisons = k_groups * (k_groups - 1) // 2
+                alpha_bonf = 0.05 / n_comparisons if n_comparisons > 0 else 0.05
+
+                self.add_paragraph(f"\n**Попарные сравнения (U-тест, α = {alpha_bonf:.4f}, Бонферрони, {n_comparisons} сравнений):**")
+
+                # Выполняем все попарные сравнения (только для групп с n>=10)
+                counts_present = [c for c in range(0, 8) if len(df[df['zone_count'] == c][scale].dropna()) >= 10]
+                n_comparisons_made = 0
+                for i_idx, count_i in enumerate(counts_present):
+                    for count_j in counts_present[i_idx + 1:]:
+                        grp_i = df[df['zone_count'] == count_i][scale].dropna()
+                        grp_j = df[df['zone_count'] == count_j][scale].dropna()
+                        if len(grp_i) >= 2 and len(grp_j) >= 2:
+                            u_stat, u_p = stats.mannwhitneyu(grp_i, grp_j, alternative='two-sided')
+                            u_p_bonf = min(u_p * n_comparisons, 1.0)
+                            mean_i, mean_j = grp_i.mean(), grp_j.mean()
+                            diff = mean_j - mean_i
+                            sig = u_p_bonf < 0.05
+                            sig_mark = "✅" if sig else "❌"
+                            self.add_paragraph(f"- **{count_i} vs {count_j} {zone_emoji}:** M({mean_i:.1f}) vs M({mean_j:.1f}), Δ = {diff:+.1f}, U = {u_stat:.0f}, p = {u_p:.4f}, p_adj = {u_p_bonf:.4f} {sig_mark}")
+                            n_comparisons_made += 1
+                if n_comparisons_made == 0:
+                    self.add_paragraph(f"⚠️ Нет пар с достаточным количеством данных (нужно ≥2 в каждой группе)")
+            except Exception as e:
+                self.add_paragraph(f"⚠️ Ошибка при расчёте: {e}")
+
+        # Визуализация тренда
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+        scales_to_plot = [
+            ('mbi_total', 'MBI (выгорание)', '#e74c3c'),
+            ('proc_total', 'Прокрастинация', '#f39c12'),
+            ('swls_total', 'SWLS', '#27ae60'),
+        ]
+
+        for ax_idx, (scale_col, scale_name, color) in enumerate(scales_to_plot):
+            means = []
+            stds = []
+            counts = []
+            for count in range(0, 8):
+                grp = df[df['zone_count'] == count][scale_col].dropna()
+                if len(grp) >= 10:
+                    means.append(grp.mean())
+                    stds.append(grp.std())
+                    counts.append(count)
+
+            if len(means) > 1:
+                axes[ax_idx].errorbar(counts, means, yerr=stds, color=color, marker='o',
+                                     linewidth=2, capsize=5, markersize=8)
+                axes[ax_idx].set_xlabel(f'Количество кубиков {zone_emoji}', fontproperties=LABEL_FONT)
+                axes[ax_idx].set_ylabel(scale_name, fontproperties=LABEL_FONT)
+                axes[ax_idx].set_title(scale_name, fontproperties=TITLE_FONT)
+                # Линейный тренд
+                z = np.polyfit(counts, means, 1)
+                p_line = np.poly1d(z)
+                x_line = np.linspace(min(counts), max(counts), 100)
+                axes[ax_idx].plot(x_line, p_line(x_line), '--', color=color, alpha=0.5)
+            else:
+                axes[ax_idx].text(0.5, 0.5, 'Нет данных', ha='center', va='center',
+                                 transform=axes[ax_idx].transAxes, fontproperties=LABEL_FONT)
+                axes[ax_idx].set_title(scale_name, fontproperties=TITLE_FONT)
+
+            for label in axes[ax_idx].get_xticklabels() + axes[ax_idx].get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle(f'Тренд по количеству кубиков {zone_emoji} ({sample_desc})', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        safe_zone = zone_col.replace('cubes_', '')
+        # Уникальное имя файла на основе ключа гипотезы
+        file_suffix = hyp_key.lower().replace('h0', 'h0_')
+        path = self.save_figure(f'{file_suffix}_{safe_zone}_trend')
+        self.add_paragraph(f"\n![Тренд {zone_emoji}]({path})")
+
+    def analyze_h0a1_green_count_trend(self):
+        """H0a1: Тренд по числу кубиков 🟢 (0→7) — все респонденты."""
+        self._analyze_zone_count_trend(
+            self.completed,
+            "H0a1: Тренд по числу кубиков 🟢 (0→7, все респонденты, Jonckheere-Terpstra)",
+            'H0a1', 'полная выборка',
+            zone_col='cubes_proactive', zone_emoji='🟢', zone_name_ru='Целевое',
+            scales_increasing=[
+                ('swls_total', 'SWLS'),
+            ],
+            scales_decreasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ]
+        )
+
+    def analyze_h0b1_green_count_typical(self):
+        """H0b1: Тренд по числу кубиков 🟢 (0→7) — только rep=0."""
+        df_t = self.completed[self.completed['representative'] == 0].copy()
+        n_t = len(df_t)
+        if n_t < 10:
+            self.add_section("H0b1: Тренд по числу кубиков 🟢 (0→7, rep=0, Jonckheere-Terpstra)", 2)
+            self.add_paragraph(HYPOTHESES['H0b1'])
+            self.add_paragraph(f"⚠️ Недостаточно данных: n = {n_t} для rep=0")
+            return
+
+        self._analyze_zone_count_trend(
+            df_t,
+            f"H0b1: Тренд по числу кубиков 🟢 (0→7, типовая неделя rep=0, Jonckheere-Terpstra, n = {n_t})",
+            'H0b1', f'типовая неделя (n = {n_t})',
+            zone_col='cubes_proactive', zone_emoji='🟢', zone_name_ru='Целевое',
+            scales_increasing=[
+                ('swls_total', 'SWLS'),
+            ],
+            scales_decreasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ]
+        )
+
+    def analyze_h0c1_red_count_trend(self):
+        """H0c1: Тренд по числу кубиков 🔴 (0→7) — все респонденты."""
+        self._analyze_zone_count_trend(
+            self.completed,
+            "H0c1: Тренд по числу кубиков 🔴 (0→7, все респонденты, Jonckheere-Terpstra)",
+            'H0c1', 'полная выборка',
+            zone_col='cubes_reactive', zone_emoji='🔴', zone_name_ru='Срочное',
+            scales_increasing=[
+                ('mbi_total', 'MBI (выгорание)'),
+                ('proc_total', 'Прокрастинация'),
+            ],
+            scales_decreasing=[
+                ('swls_total', 'SWLS'),
             ]
         )
     
@@ -2384,6 +2620,9 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h0a_green_position_trend()
         self.analyze_h0b_green_position_typical()
         self.analyze_h0c_reactive_position_trend()
+        self.analyze_h0a1_green_count_trend()
+        self.analyze_h0b1_green_count_typical()
+        self.analyze_h0c1_red_count_trend()
         self.analyze_h10a_position_comparison()
         self.analyze_h13_it_comparison()
         self.analyze_h1_correlations_reactive()

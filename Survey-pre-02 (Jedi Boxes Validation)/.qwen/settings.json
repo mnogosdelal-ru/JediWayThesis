@@ -4,7 +4,8 @@
       "Bash(python *)",
       "Bash(findstr *)",
       "Bash(del *)",
-      "Bash(php *)"
+      "Bash(php *)",
+      "Bash(dir *)"
     ]
   },
   "$version": 3
