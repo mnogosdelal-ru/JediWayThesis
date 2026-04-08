@@ -227,6 +227,9 @@ HYPOTHESES = {
     'H0a1': 'Тренд по числу кубиков 🟢 (0→7, все респонденты): MBI и прокрастинация ↓, SWLS ↑',
     'H0b1': 'Тренд по числу кубиков 🟢 (0→7, rep=0): MBI и прокрастинация ↓, SWLS ↑',
     'H0c1': 'Тренд по числу кубиков 🔴 (0→7, все респонденты): MBI и прокрастинация ↑, SWLS ↓',
+    'H14': 'Связь MBI и SWLS: линейная или нелинейная (квадратичная)?',
+    'H15': 'Множественная регрессия: MBI, Прокрастинация и SWLS предсказываются кубиками 🟢, 🔴, балансом работа/личное и дефицитом энергии',
+    'H5a': 'Детальное сравнение респондентов «по памяти» (1-2) и «по записям» (4-5): кубики, шкалы, демография, контекст',
     'H10a': 'Владельцы бизнеса и высшее руководство отличаются по распределению кубиков от остальных',
     'H13': 'В IT больше прокрастинация, выгорание и ниже удовлетворённость жизнью, чем в других сферах',
     'H1': '🔴 положительно коррелирует с прокрастинацией и MBI',
@@ -263,12 +266,13 @@ class JediBoxesAnalyzer:
     def __init__(self, csv_path: str):
         """
         Инициализация анализатора.
-        
+
         Параметры:
             csv_path: путь к CSV-файлу с данными
         """
         print(f"Загрузка данных из {csv_path}...")
         self.data = self._load_data(csv_path)
+        self.data = self._fix_mojibake(self.data)
         self.completed = self._filter_completed()
         self.report = []
         self.figures = []  # Список путей к сохранённым графикам
@@ -286,16 +290,51 @@ class JediBoxesAnalyzer:
                         return df
                 except:
                     continue
-            
+
             # Если не удалось - используем pandas с автоопределением
             return pd.read_csv(csv_path, encoding='utf-8', on_bad_lines='skip')
         except Exception as e:
             print(f"Ошибка загрузки: {e}")
             sys.exit(1)
+
+    def _fix_mojibake(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Исправление mojibake в текстовых колонках.
+        Данные сохранены как UTF-8, но прочитаны как cp1252/latin-1.
+        Исправление: encode('cp1251') -> decode('utf-8')
+        """
+        df = df.copy()
+        for col in ['position', 'profession', 'gender']:
+            if col in df.columns:
+                def fix_val(v):
+                    if pd.isna(v):
+                        return v
+                    try:
+                        return v.encode('cp1251').decode('utf-8')
+                    except (UnicodeEncodeError, UnicodeDecodeError):
+                        return v
+                df[col] = df[col].apply(fix_val)
+        return df
     
     def _filter_completed(self) -> pd.DataFrame:
         """Фильтрация только завершённых анкет и вычисление дополнительных метрик."""
         df = self.data[self.data['status'] == 'completed'].copy()
+
+        # Фильтрация некорректных записей: если total=0, но есть вопросы с NaN
+        # Это ошибка в расчёте суммы (NaN.sum() = 0 вместо NaN)
+        # Проверяем каждую шкалу
+        for scale, questions in [
+            ('proc_total', ['proc_'+str(i) for i in range(1, 9)]),
+            ('swls_total', ['swls_'+str(i) for i in range(1, 6)]),
+        ]:
+            if scale in df.columns and all(q in df.columns for q in questions):
+                # Если total=0, но все вопросы NaN — это некорректная запись
+                all_nan = df[questions].isna().all(axis=1)
+                zero_total = df[scale] == 0
+                invalid = all_nan & zero_total
+                if invalid.sum() > 0:
+                    print(f"⚠️  Удалено {invalid.sum()} записей с некорректным {scale}=0 (все ответы NaN)")
+                    df.loc[invalid, scale] = np.nan
 
         # Вычисление ProductivityIndex (логарифм по основанию 2 отношения целевого к срочному с эпсилоном)
         # ProductivityIndex = log₂((Целевое + eps) / (Срочное + eps))
@@ -602,9 +641,16 @@ class JediBoxesAnalyzer:
             axes[i].set_xticks(x_pos)
             axes[i].set_xticklabels([str(int(v)) for v in unique_vals], fontproperties=TICK_FONT)
             axes[i].set_xlim(x_pos[0] - 0.6, x_pos[-1] + 0.6)
-            mode_pos = np.argmax(counts)
-            axes[i].axvline(mode_pos, color='red', linestyle='--', alpha=0.5)
-            axes[i].text(mode_pos, max(counts)*0.9, f'M = {vals.mean():.1f}',
+            
+            # Вычисляем позицию среднего через интерполяцию
+            mean_val = vals.mean()
+            # Находим два ближайших значения в unique_vals
+            unique_arr = np.array(unique_vals)
+            # Интерполируем позицию: если среднее = 1.8, а значения [0,1,2,3,4], позиция = 1.8
+            mean_x_pos = mean_val - unique_vals[0]  # Позиция относительно первого значения
+            
+            axes[i].axvline(mean_x_pos, color='red', linestyle='--', alpha=0.5)
+            axes[i].text(mean_x_pos, max(counts)*0.9, f'M = {mean_val:.1f}',
                         color='red', fontsize=10, ha='center', fontproperties=TICK_FONT)
 
         plt.suptitle('Распределение кубиков по зонам', fontsize=14, fontweight='bold',
@@ -672,27 +718,34 @@ class JediBoxesAnalyzer:
         if len(ages) > 0:
             age_min = int(ages.min())
             age_max = int(ages.max())
-            all_ages = list(range(age_min, age_max + 1))
-            age_counts = [int((ages == a).sum()) for a in all_ages]
-
-            ax.bar(range(len(all_ages)), age_counts, color='teal', edgecolor='white', align='center', width=1.0)
+            age_range = age_max - age_min
+            
+            # Группируем возрасты в интервалы по 2 года (сокращаем в 2 раза)
+            bin_width = 2
+            n_bins = max(1, (age_range + 1) // bin_width)
+            if (age_range + 1) % bin_width != 0:
+                n_bins += 1
+            
+            # Создаём бины
+            bin_edges = [age_min + i * bin_width for i in range(n_bins + 1)]
+            # Убеждаемся, что последний бин включает max
+            if bin_edges[-1] < age_max:
+                bin_edges[-1] = age_max + 1
+            
+            counts, _ = np.histogram(ages, bins=bin_edges)
+            bin_centers = [(bin_edges[i] + bin_edges[i+1]) / 2 for i in range(len(bin_edges) - 1)]
+            
+            x_pos = list(range(n_bins))
+            ax.bar(x_pos, counts, color='teal', edgecolor='white', align='center', width=1.0)
             ax.set_xlabel('Возраст', fontproperties=LABEL_FONT)
             ax.set_ylabel('Количество респондентов', fontproperties=LABEL_FONT)
             ax.set_title('Распределение по возрасту', fontproperties=TITLE_FONT)
-            ax.set_xticks(range(len(all_ages)))
-            # Показываем не все метки, если возрастов много
-            if len(all_ages) <= 20:
-                ax.set_xticklabels([str(a) for a in all_ages], fontproperties=TICK_FONT, rotation=45, ha='right')
-            else:
-                # Показываем каждую 2-ю или 3-ю
-                step = max(1, len(all_ages) // 15)
-                tick_pos = list(range(0, len(all_ages), step))
-                tick_labels = [str(all_ages[i]) for i in tick_pos]
-                ax.set_xticks(tick_pos)
-                ax.set_xticklabels(tick_labels, fontproperties=TICK_FONT, rotation=45, ha='right')
-            ax.set_xlim(-0.6, len(all_ages) - 0.4)
+            ax.set_xticks(x_pos)
+            ax.set_xticklabels([f'{int(bin_edges[i])}-{int(bin_edges[i+1])-1}' for i in range(n_bins)], 
+                             fontproperties=TICK_FONT, rotation=45, ha='right')
+            ax.set_xlim(-0.6, n_bins - 0.4)
 
-            for i, count in enumerate(age_counts):
+            for i, count in enumerate(counts):
                 if count > 0:
                     ax.text(i, count + 0.2, str(count), ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
 
@@ -821,6 +874,51 @@ class JediBoxesAnalyzer:
             path = self.save_figure('correlation_matrix_exact')
             self.add_paragraph(f"\n![Корреляционная матрица — точно типовая]({path})")
 
+        # 4c. Корреляционная матрица Кендалла (для сравнения со Спирменом)
+        fig, ax = plt.subplots(figsize=(14, 12))
+        corr_matrix_kendall = self.completed[cols].corr(method='kendall')
+
+        # Вычисляем p-values для корреляций Кендалла
+        from scipy.stats import kendalltau
+        p_matrix_kendall = np.zeros_like(corr_matrix_kendall)
+        for i in range(len(cols)):
+            for j in range(len(cols)):
+                if i != j:
+                    _, p = kendalltau(self.completed[cols[i]], self.completed[cols[j]])
+                    p_matrix_kendall[i, j] = p
+                else:
+                    p_matrix_kendall[i, j] = 0
+
+        sns.heatmap(corr_matrix_kendall, annot=True, fmt='.2f', cmap='RdBu_r',
+                   center=0, vmin=-1, vmax=1, xticklabels=labels,
+                   yticklabels=labels, ax=ax, cbar_kws={'shrink': 0.8})
+        ax.set_title('Корреляционная матрица (Кендалл τ)', fontproperties=TITLE_FONT)
+
+        # Добавляем p-values под корреляциями
+        for i in range(len(cols)):
+            for j in range(len(cols)):
+                if i != j:
+                    p_val = p_matrix_kendall[i, j]
+                    if p_val < 0.001:
+                        p_text = '***'
+                    elif p_val < 0.01:
+                        p_text = '**'
+                    elif p_val < 0.05:
+                        p_text = '*'
+                    else:
+                        p_text = 'n.s.'
+                    ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
+                           fontsize=8, color='black', fontproperties=TICK_FONT)
+
+        # Настраиваем шрифт для меток
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('correlation_matrix_kendall', 'Корреляции Кендалла')
+        self.add_paragraph(f"\n![Корреляционная матрица — Кендалл]({path})")
+        self.add_paragraph(f"*Корреляция Кендалла (τ): *** p<0.001, ** p<0.01, * p<0.05, n.s. - не значимо | eps={RG_RATIO_EPS}*")
+
         # 5. Распределение шкал
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
@@ -828,10 +926,42 @@ class JediBoxesAnalyzer:
                                            ('swls_total', 'SWLS'),
                                            ('mbi_total', 'MBI')]):
             vals = self.completed[scale].dropna()
-            axes[i].hist(vals, bins=15, color='steelblue', edgecolor='white', alpha=0.8)
+            min_val = int(vals.min())
+            max_val = int(vals.max())
+            data_range = max_val - min_val
+            
+            # Определяем число столбцов (не больше 10)
+            n_bins = min(10, data_range + 1)
+            # Ищем хороший делитель
+            if data_range > 10:
+                for n in range(10, 4, -1):
+                    if data_range % n == 0:
+                        n_bins = n
+                        break
+                else:
+                    # Расширяем диапазон
+                    for n in range(10, 4, -1):
+                        remainder = data_range % n
+                        if remainder == 0 or (max_val + (n - remainder)) <= (max_val + 5):
+                            n_bins = n
+                            max_val = max_val + (n - remainder) if remainder > 0 else max_val
+                            break
+            
+            # Создаём бины
+            bin_edges = np.linspace(min_val, max_val, n_bins + 1)
+            counts, _ = np.histogram(vals, bins=bin_edges)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            
+            x_pos = list(range(n_bins))
+            axes[i].bar(x_pos, counts, color='steelblue', edgecolor='white', alpha=0.8, align='center', width=1.0)
             axes[i].set_title(name, fontproperties=LABEL_FONT)
             axes[i].set_xlabel('Балл', fontproperties=LABEL_FONT)
             axes[i].set_ylabel('Частота', fontproperties=LABEL_FONT)
+            axes[i].set_xticks(x_pos)
+            # Подписываем тики в формате диапазона min...max
+            tick_labels = [f'{int(bin_edges[j])}...{int(bin_edges[j+1])}' for j in range(n_bins)]
+            axes[i].set_xticklabels(tick_labels, fontproperties=TICK_FONT, rotation=45, ha='right')
+            axes[i].set_xlim(-0.6, n_bins - 0.4)
             axes[i].axvline(vals.mean(), color='red', linestyle='--', label=f'M = {vals.mean():.1f}')
             axes[i].legend(prop=TICK_FONT)
             # Настраиваем шрифт для tick labels
@@ -842,6 +972,155 @@ class JediBoxesAnalyzer:
         plt.tight_layout()
         path = self.save_figure('scale_distributions', 'Шкалы')
         self.add_paragraph(f"![Шкалы]({path})")
+
+        # Тесты на нормальность распределений
+        self._test_normality_scales()
+
+    def _test_normality_scales(self):
+        """
+        Проверка нормальности распределений шкал SWLS, MBI и Прокрастинации.
+        
+        Используемые тесты:
+        1. Тест Шапиро-Уилка (Shapiro-Wilk) — чувствителен к отклонениям от нормальности
+        2. Тест Д'Агостино (D'Agostino-Pearson) — проверяет асимметрию и эксцесс
+        3. Оценка асимметрии (skewness) и эксцесса (kurtosis) с Z-критерием
+        4. QQ-plot для визуальной проверки
+        """
+        self.add_section("Проверка нормальности распределений шкал", 3)
+        
+        self.add_paragraph(
+            "Для оценки соответствия распределений шкал нормальному закону проведены:\n"
+            "- **Тест Шапиро-Уилка** (Shapiro-Wilk): чувствителен к различным отклонениям от нормальности\n"
+            "- **Тест Д'Агостино** (D'Agostino-Pearson): основан на проверке асимметрии и эксцесса\n"
+            "- **Z-критерий для асимметрии и эксцесса**: |Z| > 1.96 указывает на значимое отклонение\n"
+            "- **QQ-plot**: визуальная проверка (точки должны лежать на прямой)"
+        )
+        
+        scales = [
+            ('proc_total', 'Прокрастинация'),
+            ('swls_total', 'SWLS'),
+            ('mbi_total', 'MBI')
+        ]
+        
+        table_rows = []
+        
+        for scale, name in scales:
+            vals = self.completed[scale].dropna()
+            n = len(vals)
+            
+            # Тест Шапиро-Уилка
+            try:
+                sw_stat, sw_p = stats.shapiro(vals)
+                sw_result = f"W = {sw_stat:.4f}, p = {sw_p:.4f}"
+                sw_significant = sw_p < 0.05
+            except Exception as e:
+                sw_result = f"Ошибка: {e}"
+                sw_significant = None
+                sw_p = None
+            
+            # Тест Д'Агостино (проверка асимметрии и эксцесса)
+            try:
+                dp_stat, dp_p = stats.normaltest(vals)
+                dp_result = f"K² = {dp_stat:.3f}, p = {dp_p:.4f}"
+                dp_significant = dp_p < 0.05
+            except Exception as e:
+                dp_result = f"Ошибка: {e}"
+                dp_significant = None
+                dp_p = None
+            
+            # Асимметрия и эксцесс с Z-критерием
+            skewness = stats.skew(vals)
+            kurtosis = stats.kurtosis(vals)  # Fisher's kurtosis (нормальное = 0)
+            
+            # Стандартные ошибки
+            se_skew = np.sqrt(6 * n * (n - 1) / ((n - 2) * (n + 1) * (n + 3))) if n > 3 else 1
+            se_kurt = np.sqrt(
+                (4 * (n**2 - 1) * (n - 3)) / ((n + 1)**2 * (n + 3) * (n + 5))
+            ) if n > 5 else 1
+            
+            z_skew = skewness / se_skew
+            z_kurt = kurtosis / se_kurt
+            
+            skew_significant = abs(z_skew) > 1.96
+            kurt_significant = abs(z_kurt) > 1.96
+            
+            # Вывод по шкале
+            normality_violated = (
+                (sw_significant if sw_significant is not None else False) or
+                (dp_significant if dp_significant is not None else False) or
+                skew_significant or
+                kurt_significant
+            )
+            
+            conclusion = "❌ Значимое отклонение от нормальности" if normality_violated else "✅ Нет свидетельств отклонения от нормальности"
+            
+            table_rows.append([
+                name,
+                f"{n}, M = {vals.mean():.1f}, SD = {vals.std():.1f}",
+                sw_result,
+                dp_result,
+                f"{skewness:.3f} (Z = {z_skew:.2f})",
+                f"{kurtosis:.3f} (Z = {z_kurt:.2f})",
+                conclusion
+            ])
+        
+        self.add_table(
+            ['Шкала', 'Описательная стат.', 'Шапиро-Уилк', 'Д\'Агостино', 'Асимметрия', 'Эксцесс', 'Вывод'],
+            table_rows
+        )
+        
+        # Интерпретация результатов
+        self.add_paragraph("**Интерпретация:**\n")
+        
+        for scale, name in scales:
+            vals = self.completed[scale].dropna()
+            skewness = stats.skew(vals)
+            kurtosis = stats.kurtosis(vals)
+            n = len(vals)
+            
+            se_skew = np.sqrt(6 * n * (n - 1) / ((n - 2) * (n + 1) * (n + 3))) if n > 3 else 1
+            z_skew = skewness / se_skew
+            
+            self.add_paragraph(f"**{name}:**")
+            
+            if abs(z_skew) < 0.5:
+                direction = "практически симметрично"
+            elif z_skew > 0:
+                direction = f"правосторонняя асимметрия (склон к низким значениям, Z = {z_skew:.2f})"
+            else:
+                direction = f"левосторонняя асимметрия (склон к высоким значениям, Z = {z_skew:.2f})"
+            
+            if abs(stats.kurtosis(vals) / np.sqrt(
+                (4 * (n**2 - 1) * (n - 3)) / ((n + 1)**2 * (n + 3) * (n + 5))
+            )) > 1.96:
+                kurt_text = "значимый эксцесс (тяжёлые/лёгкие хвосты)"
+            else:
+                kurt_text = "эксцесс не значим"
+            
+            self.add_paragraph(f"Распределение {direction}, {kurt_text}.\n")
+        
+        # QQ-plot для визуальной проверки
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        
+        for i, (scale, name) in enumerate(scales):
+            vals = self.completed[scale].dropna()
+            stats.probplot(vals, dist="norm", plot=axes[i])
+            axes[i].set_title(name, fontproperties=LABEL_FONT)
+            # Настраиваем шрифт для tick labels
+            for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+        
+        plt.suptitle('QQ-plot для проверки нормальности распределений', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('qqplot_normality')
+        self.add_paragraph(f"\n![QQ-plot нормальности]({path})")
+        
+        self.add_paragraph(
+            "**Примечание:** При больших выборках (n > 200) тесты на нормальность обладают высокой "
+            "мощностью и часто отвергают H₀ о нормальности даже при незначительных отклонениях. "
+            "Для таких случаев рекомендуется использовать непараметрические тесты (Kruskal-Wallis, "
+            "Манна-Уитни, Jonckheere-Terpstra), которые не требуют предположения о нормальности."
+        )
 
     def analyze_h0_anova_levels(self):
         """
@@ -1277,21 +1556,25 @@ class JediBoxesAnalyzer:
             ('swls_total', 'SWLS', '#27ae60'),
         ]
 
+        # Текстовое имя зоны для графиков (без эмодзи)
+        zone_label_map = {'cubes_proactive': 'Целевое', 'cubes_reactive': 'Срочное', 'cubes_operational': 'Операционное'}
+        zone_label = zone_label_map.get(zone_col, zone_col.replace('cubes_', ''))
+
         for ax_idx, (scale_col, scale_name, color) in enumerate(scales_to_plot):
             means = []
-            stds = []
+            sems = []
             counts = []
             for count in range(0, 8):
                 grp = df[df['zone_count'] == count][scale_col].dropna()
                 if len(grp) >= 10:
                     means.append(grp.mean())
-                    stds.append(grp.std())
+                    sems.append(grp.std() / np.sqrt(len(grp)))  # SEM — стандартная ошибка среднего
                     counts.append(count)
 
             if len(means) > 1:
-                axes[ax_idx].errorbar(counts, means, yerr=stds, color=color, marker='o',
+                axes[ax_idx].errorbar(counts, means, yerr=sems, color=color, marker='o',
                                      linewidth=2, capsize=5, markersize=8)
-                axes[ax_idx].set_xlabel(f'Количество кубиков {zone_emoji}', fontproperties=LABEL_FONT)
+                axes[ax_idx].set_xlabel(f'Количество кубиков ({zone_label})', fontproperties=LABEL_FONT)
                 axes[ax_idx].set_ylabel(scale_name, fontproperties=LABEL_FONT)
                 axes[ax_idx].set_title(scale_name, fontproperties=TITLE_FONT)
                 # Линейный тренд
@@ -1307,7 +1590,7 @@ class JediBoxesAnalyzer:
             for label in axes[ax_idx].get_xticklabels() + axes[ax_idx].get_yticklabels():
                 label.set_fontproperties(TICK_FONT)
 
-        plt.suptitle(f'Тренд по количеству кубиков {zone_emoji} ({sample_desc})', fontproperties=TITLE_FONT)
+        plt.suptitle(f'Тренд по количеству кубиков — {zone_label} ({sample_desc})', fontproperties=TITLE_FONT)
         plt.tight_layout()
         safe_zone = zone_col.replace('cubes_', '')
         # Уникальное имя файла на основе ключа гипотезы
@@ -2155,13 +2438,79 @@ IT определяется по колонке `profession` (содержит '
             ('mbi_total', 'MBI'),
             ('swls_total', 'SWLS')
         ]):
-            axes[idx].hist(it_group[scale_col].dropna(), bins=15, color=colors_it, alpha=0.6, label='IT', edgecolor='white')
-            axes[idx].hist(other_group[scale_col].dropna(), bins=15, color=colors_other, alpha=0.6, label='Другие', edgecolor='white')
-            axes[idx].axvline(it_group[scale_col].mean(), color=colors_it, linestyle='--', linewidth=2)
-            axes[idx].axvline(other_group[scale_col].mean(), color=colors_other, linestyle='--', linewidth=2)
+            it_vals = it_group[scale_col].dropna()
+            other_vals = other_group[scale_col].dropna()
+
+            # Находим общий диапазон значений (округляем до целых)
+            min_val = int(round(min(it_vals.min(), other_vals.min())))
+            max_val = int(round(max(it_vals.max(), other_vals.max())))
+            data_range = max_val - min_val
+
+            # Определяем число столбцов (не больше 10)
+            # Сначала ищем хороший делитель (≥ 5) data_range ≤ 10
+            n_bins = 1
+            found_good_divisor = False
+            if data_range > 0:
+                # Ищем делитель от 10 до 5
+                for n in range(min(10, data_range), 4, -1):
+                    if data_range % n == 0:
+                        n_bins = n
+                        found_good_divisor = True
+                        break
+                
+                # Если не нашли хороший делитель, расширяем диапазон
+                if not found_good_divisor:
+                    for n in range(10, 4, -1):
+                        remainder = data_range % n
+                        if remainder == 0:
+                            n_bins = n
+                            found_good_divisor = True
+                            break
+                        else:
+                            additional = n - remainder
+                            if additional <= 5:
+                                n_bins = n
+                                max_val = max_val + additional
+                                data_range = max_val - min_val
+                                found_good_divisor = True
+                                break
+                
+                # Если всё ещё не нашли хороший делитель, ищем любой делитель
+                if not found_good_divisor:
+                    for n in range(4, 1, -1):
+                        if data_range % n == 0:
+                            n_bins = n
+                            break
+            
+            # Если всё ещё не нашли, используем 10 столбцов
+            if n_bins == 1 and data_range > 0:
+                n_bins = min(10, data_range)
+            
+            # Создаём бины с помощью numpy
+            bin_edges = np.linspace(min_val, max_val, n_bins + 1)
+            
+            # Считаем частоты для каждой группы
+            counts_it, _ = np.histogram(it_vals, bins=bin_edges)
+            counts_other, _ = np.histogram(other_vals, bins=bin_edges)
+            
+            # Центры бинов для отображения
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+            x_pos = list(range(n_bins))
+            width = 0.4
+            
+            axes[idx].bar([x - width/2 for x in x_pos], counts_it, width=width,
+                         color=colors_it, alpha=0.7, label='IT', edgecolor='white', align='center')
+            axes[idx].bar([x + width/2 for x in x_pos], counts_other, width=width,
+                         color=colors_other, alpha=0.7, label='Другие', edgecolor='white', align='center')
+            axes[idx].axvline(it_vals.mean(), color=colors_it, linestyle='--', linewidth=2, zorder=10)
+            axes[idx].axvline(other_vals.mean(), color=colors_other, linestyle='--', linewidth=2, zorder=10)
             axes[idx].set_xlabel('Балл', fontproperties=LABEL_FONT)
             axes[idx].set_ylabel('Частота', fontproperties=LABEL_FONT)
             axes[idx].set_title(f'{scale_name}: IT vs Другие', fontproperties=TITLE_FONT)
+            axes[idx].set_xticks(x_pos)
+            axes[idx].set_xticklabels([str(int(round(v))) for v in bin_centers], fontproperties=TICK_FONT)
+            axes[idx].set_xlim(-0.6, n_bins - 0.4)
             axes[idx].legend(prop=TICK_FONT)
             for label in axes[idx].get_xticklabels() + axes[idx].get_yticklabels():
                 label.set_fontproperties(TICK_FONT)
@@ -2282,12 +2631,16 @@ ProductivityIndex — это логарифм по основанию 2 отно
 
         # Визуализация распределения ProductivityIndex
         fig, ax = plt.subplots(figsize=(9, 5))
-        ax.hist(productivity_index, bins=20, color='purple', edgecolor='white', alpha=0.8)
+        # Для непрерывной переменной используем гистограмму с правильными бинами
+        n_bins = 20
+        counts, bins, patches = ax.hist(productivity_index, bins=n_bins, color='purple', edgecolor='white', alpha=0.8, align='mid')
+        
         ax.axvline(productivity_index.mean(), color='red', linestyle='--', label=f'M = {productivity_index.mean():.2f}')
         ax.axvline(0.0, color='black', linestyle=':', linewidth=2, label='Баланс (PI=0)')
         ax.set_xlabel('ProductivityIndex (log₂(Целевое/Срочное))', fontproperties=LABEL_FONT)
         ax.set_ylabel('Число респондентов', fontproperties=LABEL_FONT)
         ax.set_title('Распределение индекса ProductivityIndex', fontproperties=TITLE_FONT)
+        ax.set_xlim(bins[0], bins[-1])
         ax.legend(prop=TICK_FONT)
         for label in ax.get_xticklabels() + ax.get_yticklabels():
             label.set_fontproperties(TICK_FONT)
@@ -2574,6 +2927,670 @@ ProductivityIndex — это логарифм по основанию 2 отно
             else:
                 self.add_paragraph(f"- Значимых корреляций (p < 0.05) не обнаружено")
 
+    def analyze_h14_mbi_swls_relationship(self):
+        """
+        H14: Связь MBI и SWLS — линейная или нелинейная (квадратичная)?
+
+        Метод: Сравнение линейной и квадратичной регрессий,
+        тест на добавление квадратичного члена (F-test / ANOVA).
+        """
+        self.add_section("H14: Линейная или нелинейная связь MBI и SWLS", 3)
+
+        self.add_paragraph(HYPOTHESES['H14'])
+
+        self.add_paragraph("""
+**Описание:**
+
+Выгорание (MBI) и удовлетворённость жизнью (SWLS) тесно связаны.
+Остаётся вопрос: является ли эта связь строго линейной,
+или она имеет нелинейный (квадратичный) характер?
+
+Подход:
+1. **Линейная модель:** SWLS = β₀ + β₁ × MBI
+2. **Квадратичная модель:** SWLS = β₀ + β₁ × MBI + β₂ × MBI²
+3. **Сравнение моделей:** F-тест (ANOVA) — улучшает ли квадратичный член модель?
+4. **Проверка квадратичного члена:** t-тест для β₂
+""")
+
+        x = self.completed['mbi_total'].values
+        y = self.completed['swls_total'].values
+        n = len(x)
+
+        # ── 1. Линейная модель ──────────────────────────────────────
+        X_lin = np.column_stack([np.ones(n), x])
+        beta_lin = np.linalg.lstsq(X_lin, y, rcond=None)[0]
+        y_pred_lin = X_lin @ beta_lin
+        ss_res_lin = np.sum((y - y_pred_lin) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2_lin = 1 - ss_res_lin / ss_tot
+
+        # ── 2. Квадратичная модель ──────────────────────────────────
+        X_quad = np.column_stack([np.ones(n), x, x ** 2])
+        beta_quad = np.linalg.lstsq(X_quad, y, rcond=None)[0]
+        y_pred_quad = X_quad @ beta_quad
+        ss_res_quad = np.sum((y - y_pred_quad) ** 2)
+        r2_quad = 1 - ss_res_quad / ss_tot
+
+        # ── 3. F-тест для сравнения вложенных моделей ───────────────
+        # H0: β₂ = 0 (линейная модель достаточна)
+        # H1: β₂ ≠ 0 (квадратичная модель лучше)
+        df_diff = 1  # одна дополнительная переменная
+        df_residual = n - 3  # 3 параметра в квадратичной модели
+        f_stat = ((ss_res_lin - ss_res_quad) / df_diff) / (ss_res_quad / df_residual)
+        from scipy.stats import f as f_dist
+        f_p = 1 - f_dist.cdf(f_stat, df_diff, df_residual)
+
+        # ── 4. t-тест для β₂ ────────────────────────────────────────
+        p_num = 2  # число предикторов (без intercept)
+        mse = ss_res_quad / (n - p_num - 1)
+        var_beta = mse * np.linalg.inv(X_quad.T @ X_quad)
+        se_beta2 = np.sqrt(var_beta[2, 2])
+        t_beta2 = beta_quad[2] / se_beta2
+        from scipy.stats import t as t_dist
+        p_beta2 = 2 * (1 - t_dist.cdf(np.abs(t_beta2), df=df_residual))
+
+        # ── Выводы ──────────────────────────────────────────────────
+        self.add_paragraph(f"**Размер выборки:** n = {n}")
+
+        self.add_paragraph(f"\n**Линейная модель:**")
+        self.add_paragraph(f"- SWLS = {beta_lin[0]:.2f} + ({beta_lin[1]:.3f}) × MBI")
+        self.add_paragraph(f"- R² = {r2_lin:.3f} ({r2_lin * 100:.1f}% дисперсии объясняется)")
+
+        self.add_paragraph(f"\n**Квадратичная модель:**")
+        self.add_paragraph(f"- SWLS = {beta_quad[0]:.2f} + ({beta_quad[1]:.3f}) × MBI + ({beta_quad[2]:.4f}) × MBI²")
+        self.add_paragraph(f"- R² = {r2_quad:.3f} ({r2_quad * 100:.1f}% дисперсии объясняется)")
+
+        self.add_paragraph(f"\n**Сравнение моделей (F-тест):**")
+        self.add_paragraph(f"- F({df_diff}, {df_residual}) = {f_stat:.3f}, p = {f_p:.4f}")
+        if f_p < 0.05:
+            self.add_paragraph(f"- ✅ Квадратичная модель **значимо лучше** линейной (p < 0.05)")
+        else:
+            self.add_paragraph(f"- ❌ Квадратичная модель **не значимо лучше** линейной (p = {f_p:.4f} > 0.05)")
+
+        self.add_paragraph(f"\n**Тест для квадратичного члена β₂:**")
+        self.add_paragraph(f"- β₂ = {beta_quad[2]:.4f}, SE = {se_beta2:.4f}, t = {t_beta2:.3f}, p = {p_beta2:.4f}")
+        if p_beta2 < 0.05:
+            self.add_paragraph(f"- ✅ Квадратичный член **значим** (p < 0.05)")
+        else:
+            self.add_paragraph(f"- ❌ Квадратичный член **не значим** (p = {p_beta2:.4f} > 0.05)")
+
+        # Итоговый вывод
+        self.add_paragraph(f"\n**Итог:**")
+        if f_p < 0.05 and p_beta2 < 0.05:
+            if beta_quad[2] > 0:
+                self.add_paragraph(f"- Связь MBI–SWLS **нелинейная (U-образная)**: при очень высоком выгорании снижение SWLS замедляется")
+            else:
+                self.add_paragraph(f"- Связь MBI–SWLS **нелинейная (инвертированная U)**: при среднем выгорании связь сильнее")
+            self.add_paragraph(f"- Квадратичная модель объясняет дополнительно {(r2_quad - r2_lin) * 100:.1f}% дисперсии")
+        else:
+            self.add_paragraph(f"- Связь MBI–SWLS **линейная**: квадратичный член не улучшает модель")
+            self.add_paragraph(f"- Линейная модель: R² = {r2_lin:.3f}")
+
+        # ── Визуализация ────────────────────────────────────────────
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Точки
+        ax.scatter(x, y, alpha=0.4, color='steelblue', s=20, label='Данные')
+
+        # Линейная линия
+        x_sorted = np.linspace(x.min(), x.max(), 200)
+        y_lin_line = beta_lin[0] + beta_lin[1] * x_sorted
+        ax.plot(x_sorted, y_lin_line, 'r-', linewidth=2, label=f'Линейная (R²={r2_lin:.3f})')
+
+        # Квадратичная линия
+        y_quad_line = beta_quad[0] + beta_quad[1] * x_sorted + beta_quad[2] * x_sorted ** 2
+        ax.plot(x_sorted, y_quad_line, 'g-', linewidth=2, label=f'Квадратичная (R²={r2_quad:.3f})')
+
+        ax.set_xlabel('MBI (выгорание)', fontproperties=LABEL_FONT)
+        ax.set_ylabel('SWLS (удовлетворённость жизнью)', fontproperties=LABEL_FONT)
+        ax.set_title('Связь MBI и SWLS: линейная vs квадратичная', fontproperties=TITLE_FONT)
+        ax.legend(prop=TICK_FONT)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('h14_mbi_swls_relationship')
+        self.add_paragraph(f"\n![Связь MBI–SWLS]({path})")
+
+        # ── Дополнительно: корреляция Спирмена ──────────────────────
+        r_spearman, p_spearman = stats.spearmanr(x, y)
+        self.add_paragraph(f"\n**Корреляция Спирмена:** r = {r_spearman:.3f}, p = {p_spearman:.4f}")
+
+    def analyze_h15_regression_predictors(self):
+        """
+        H15: Множественная линейная регрессия для предсказания MBI, Прокрастинации и SWLS
+        на основе четырёх предикторов:
+          - кубики в целевой зоне (🟢)
+          - кубики в срочной зоне (🔴)
+          - баланс работа/личное
+          - энергетический дефицит
+        """
+        self.add_section("H15: Множественная регрессия — предсказание по 🟢, 🔴, балансу и дефициту", 3)
+
+        self.add_paragraph(HYPOTHESES['H15'])
+
+        self.add_paragraph("""
+**Описание:**
+
+Множественная линейная регрессия: `Шкала = β₀ + β₁×🟢 + β₂×🔴 + β₃×Баланс + β₄×Дефицит`
+
+Предикторы:
+- **🟢 Целевое** — количество кубиков в целевой зоне
+- **🔴 Срочное** — количество кубиков в срочной зоне
+- **Баланс работа/личное** — шкала от −3 (всё на работу) до +3 (всё на личное)
+- **Дефицит энергии** — шкала от −3 (избыток) до +9 (острый дефицит)
+
+Зависимые переменные: MBI, Прокрастинация, SWLS.
+""")
+
+        # Предикторы
+        predictors = ['cubes_proactive', 'cubes_reactive', 'work_life', 'energy_deficit']
+        pred_labels = ['🟢 Целевое', '🔴 Срочное', 'Баланс работа/личное', 'Дефицит энергии']
+        pred_colors = ['#27ae60', '#e74c3c', '#3498db', '#e67e22']
+
+        targets = [
+            ('mbi_total', 'MBI (выгорание)'),
+            ('proc_total', 'Прокрастинация'),
+            ('swls_total', 'SWLS'),
+        ]
+
+        df = self.completed.copy()
+        # Убираем строки с пропущенными значениями в предикторах
+        valid_mask = df[predictors].notna().all(axis=1)
+        df_valid = df[valid_mask].copy()
+        n = len(df_valid)
+
+        self.add_paragraph(f"**Размер выборки (полные данные):** n = {n}")
+
+        # Храним результаты для графиков
+        all_results = {}
+
+        # ==================== СВОДНАЯ ТАБЛИЦА ====================
+        self.add_paragraph("\n**Сводная таблица регрессий:**\n")
+
+        summary_headers = ['Показатель', 'R²', 'Adj R²', 'F', 'p(F)']
+        summary_rows = []
+
+        for target_col, target_name in targets:
+            y = df_valid[target_col].values
+            # Убираем пропуски в зависимой переменной
+            y_valid = df_valid[target_col].dropna()
+            valid_idx = y_valid.index
+            y_vals = y_valid.values
+            X_vals = df_valid.loc[valid_idx, predictors].values
+
+            n_valid = len(y_vals)
+            p_num = len(predictors)
+
+            # Добавляем intercept
+            X_int = np.column_stack([np.ones(n_valid), X_vals])
+
+            try:
+                beta = np.linalg.lstsq(X_int, y_vals, rcond=None)[0]
+                y_pred = X_int @ beta
+                ss_res = np.sum((y_vals - y_pred) ** 2)
+                ss_tot = np.sum((y_vals - np.mean(y_vals)) ** 2)
+                r_squared = 1 - ss_res / ss_tot
+
+                # Adjusted R²
+                adj_r2 = 1 - (1 - r_squared) * (n_valid - 1) / (n_valid - p_num - 1)
+
+                # F-тест
+                ms_reg = (ss_tot - ss_res) / p_num
+                ms_res = ss_res / (n_valid - p_num - 1)
+                f_stat = ms_reg / ms_res
+                from scipy.stats import f as f_dist
+                f_p = 1 - f_dist.cdf(f_stat, p_num, n_valid - p_num - 1)
+
+                # Стандартные ошибки и t-тесты для коэффициентов
+                mse = ss_res / (n_valid - p_num - 1)
+                var_beta = mse * np.linalg.inv(X_int.T @ X_int)
+                se_beta = np.sqrt(np.diag(var_beta))
+                t_stats = beta / se_beta
+                from scipy.stats import t as t_dist
+                p_values = 2 * (1 - t_dist.cdf(np.abs(t_stats), df=n_valid - p_num - 1))
+
+                sig = lambda p: "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+
+                summary_rows.append([
+                    target_name,
+                    f"{r_squared:.3f}",
+                    f"{adj_r2:.3f}",
+                    f"{f_stat:.1f}",
+                    f"{f_p:.6f} {sig(f_p)}"
+                ])
+
+                all_results[target_col] = {
+                    'beta': beta, 'se': se_beta, 'p': p_values,
+                    'r2': r_squared, 'adj_r2': adj_r2,
+                    'f': f_stat, 'f_p': f_p, 'n': n_valid
+                }
+            except Exception as e:
+                summary_rows.append([target_name, f'Ошибка: {e}'] + ['—'] * 4)
+                all_results[target_col] = None
+
+        self.add_table(summary_headers, summary_rows)
+        self.add_paragraph(f"\n*Значимость: *** p<0.001, ** p<0.01, * p<0.05*")
+
+        # ==================== ДЕТАЛЬНЫЕ РЕЗУЛЬТАТЫ ====================
+        for target_col, target_name in targets:
+            res = all_results.get(target_col)
+            if res is None:
+                continue
+
+            self.add_paragraph(f"\n**{target_name}:**")
+            self.add_paragraph(f"- R² = {res['r2']:.3f}, Adj R² = {res['adj_r2']:.3f}")
+            self.add_paragraph(f"- F({len(predictors)}, {res['n'] - len(predictors) - 1}) = {res['f']:.1f}, p = {res['f_p']:.6f}")
+
+            # Коэффициенты
+            self.add_paragraph(f"\n**Коэффициенты:**")
+            coef_headers = ['Предиктор', 'β', 'SE', 't', 'p', '']
+            coef_rows = []
+            coef_rows.append([
+                'Intercept',
+                f"{res['beta'][0]:.3f}",
+                f"{res['se'][0]:.3f}",
+                f"{res['beta'][0]/res['se'][0]:.2f}",
+                f"{res['p'][0]:.4f}",
+                "***" if res['p'][0] < 0.001 else "**" if res['p'][0] < 0.01 else "*" if res['p'][0] < 0.05 else ""
+            ])
+            for i, (pred, label) in enumerate(zip(predictors, pred_labels)):
+                idx = i + 1
+                coef_rows.append([
+                    label,
+                    f"{res['beta'][idx]:.3f}",
+                    f"{res['se'][idx]:.3f}",
+                    f"{res['beta'][idx]/res['se'][idx]:.2f}",
+                    f"{res['p'][idx]:.4f}",
+                    "***" if res['p'][idx] < 0.001 else "**" if res['p'][idx] < 0.01 else "*" if res['p'][idx] < 0.05 else ""
+                ])
+            self.add_table(coef_headers, coef_rows)
+
+            # Интерпретация
+            self.add_paragraph(f"\n**Интерпретация:**")
+            for i, label in enumerate(pred_labels):
+                idx = i + 1
+                direction = "положительная" if res['beta'][idx] > 0 else "отрицательная"
+                sig_mark = "✅ значим" if res['p'][idx] < 0.05 else "❌ не значим"
+                self.add_paragraph(f"- {label}: β = {res['beta'][idx]:.3f} ({direction}), {sig_mark}")
+
+        # ==================== ГРАФИКИ ====================
+        # 1. Сравнение R²
+        fig, ax = plt.subplots(figsize=(8, 5))
+        x_pos = np.arange(len(targets))
+        colors_bar = ['#e74c3c', '#f39c12', '#27ae60']
+
+        r2_vals = [all_results[t[0]]['r2'] if all_results.get(t[0]) else 0 for t in targets]
+        adj_r2_vals = [all_results[t[0]]['adj_r2'] if all_results.get(t[0]) else 0 for t in targets]
+
+        w = 0.35
+        bars1 = ax.bar(x_pos - w/2, r2_vals, w, label='R²', color=colors_bar, alpha=0.7, edgecolor='white')
+        bars2 = ax.bar(x_pos + w/2, adj_r2_vals, w, label='Adj R²', color='white', edgecolor=colors_bar, linewidth=2, alpha=0.9)
+
+        ax.set_ylabel('R²', fontproperties=LABEL_FONT)
+        ax.set_title('Доля объяснённой дисперсии по шкалам', fontproperties=TITLE_FONT)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels([t[1] for t in targets], fontproperties=TICK_FONT)
+        ax.legend(prop=TICK_FONT)
+        ax.set_ylim(0, max(max(r2_vals), max(adj_r2_vals)) * 1.2)
+        for label in ax.get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        # Подписи значений
+        for bar, val in zip(bars1, r2_vals):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
+                   f'{val:.3f}', ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
+        for bar, val in zip(bars2, adj_r2_vals):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
+                   f'{val:.3f}', ha='center', va='bottom', fontproperties=SMALL_TEXT_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('h15_r2_comparison')
+        self.add_paragraph(f"\n![Сравнение R²]({path})")
+
+        # 2. Графики предсказанных vs наблюдаемых значений
+        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+        for ax_idx, (target_col, target_name) in enumerate(targets):
+            res = all_results.get(target_col)
+            if res is None:
+                axes[ax_idx].text(0.5, 0.5, 'Нет данных', ha='center', va='center',
+                                 transform=axes[ax_idx].transAxes, fontproperties=LABEL_FONT)
+                axes[ax_idx].set_title(target_name, fontproperties=TITLE_FONT)
+                continue
+
+            y_valid = df_valid[target_col].dropna()
+            valid_idx = y_valid.index
+            y_vals = y_valid.values
+            X_vals = df_valid.loc[valid_idx, predictors].values
+            X_int = np.column_stack([np.ones(len(y_vals)), X_vals])
+            y_pred = X_int @ res['beta']
+
+            axes[ax_idx].scatter(y_vals, y_pred, alpha=0.4, color='steelblue', s=15)
+
+            # Линия идеального предсказания
+            y_min, y_max = min(y_vals.min(), y_pred.min()), max(y_vals.max(), y_pred.max())
+            axes[ax_idx].plot([y_min, y_max], [y_min, y_max], 'r--', linewidth=2, alpha=0.7, label='Идеально')
+
+            axes[ax_idx].set_xlabel(f'Наблюдаемое ({target_name})', fontproperties=LABEL_FONT)
+            axes[ax_idx].set_ylabel(f'Предсказанное', fontproperties=LABEL_FONT)
+            axes[ax_idx].set_title(f'{target_name} (R²={res["r2"]:.3f})', fontproperties=TITLE_FONT)
+            axes[ax_idx].legend(prop=TICK_FONT)
+            for label in axes[ax_idx].get_xticklabels() + axes[ax_idx].get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle('H15: Наблюдаемые vs предсказанные значения', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('h15_predicted_vs_actual')
+        self.add_paragraph(f"\n![Наблюдаемые vs предсказанные]({path})")
+
+        # 3. Стандартизованные коэффициенты (beta weights)
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Стандартизация предикторов и зависимых переменных
+        std_coefs = {}
+        for target_col, target_name in targets:
+            res = all_results.get(target_col)
+            if res is None:
+                continue
+
+            y_valid = df_valid[target_col].dropna()
+            valid_idx = y_valid.index
+            y_vals = y_valid.values
+            X_vals = df_valid.loc[valid_idx, predictors].values
+
+            # Стандартизация
+            y_std = (y_vals - y_vals.mean()) / y_vals.std()
+            X_std = (X_vals - X_vals.mean(axis=0)) / X_vals.std(axis=0)
+            X_int_std = np.column_stack([np.ones(len(y_std)), X_std])
+
+            beta_std = np.linalg.lstsq(X_int_std, y_std, rcond=None)[0]
+            std_coefs[target_col] = beta_std[1:]  # без intercept
+
+        x_pos = np.arange(len(pred_labels))
+        w_bar = 0.25
+        colors_target = ['#e74c3c', '#f39c12', '#27ae60']
+
+        for ti, (target_col, target_name) in enumerate(targets):
+            if target_col in std_coefs:
+                offset = (ti - 1) * w_bar
+                bars = ax.bar(x_pos + offset, std_coefs[target_col], w_bar,
+                             label=target_name, color=colors_target[ti], alpha=0.8, edgecolor='white')
+
+        ax.axhline(y=0, color='black', linewidth=1, alpha=0.5)
+        ax.set_ylabel('Стандартизованный β', fontproperties=LABEL_FONT)
+        ax.set_title('Стандартизованные коэффициенты регрессии', fontproperties=TITLE_FONT)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(pred_labels, fontproperties=TICK_FONT, rotation=15, ha='right')
+        ax.legend(prop=TICK_FONT)
+        for label in ax.get_yticklabels():
+            label.set_fontproperties(TICK_FONT)
+
+        plt.tight_layout()
+        path = self.save_figure('h15_standardized_coefs')
+        self.add_paragraph(f"\n![Стандартизованные коэффициенты]({path})")
+
+        # ==================== ВЫВОДЫ ====================
+        self.add_paragraph(f"\n**Выводы по H15:**")
+        for target_col, target_name in targets:
+            res = all_results.get(target_col)
+            if res is None:
+                continue
+            sig_preds = [pred_labels[i] for i in range(len(predictors)) if res['p'][i + 1] < 0.05]
+            strongest_idx = np.argmin(res['p'][1:]) + 1
+            self.add_paragraph(f"- **{target_name}:** R²={res['r2']:.3f}, значимые предикторы: {', '.join(sig_preds) if sig_preds else 'нет'}, сильнейший — {pred_labels[strongest_idx - 1]} (β={res['beta'][strongest_idx]:.3f}, p={res['p'][strongest_idx]:.4f})")
+
+    def analyze_h5a_records_vs_memory(self):
+        """
+        H5a: Детальное сравнение респондентов «по памяти» (1-2) и «по записям» (4-5)
+        по всем параметрам: кубики, шкалы валидации, демография, контекстные показатели.
+        """
+        self.add_section("H5a: Детальное сравнение «по памяти» (1-2) vs «по записям» (4-5)", 3)
+
+        self.add_paragraph(HYPOTHESES['H5a'])
+
+        self.add_paragraph("""
+**Описание:**
+
+На вопрос *«Когда вы распределяли "энергию" по коробочкам, то какую часть вы восстановили по памяти, а какую по своим записям (дневники, ежедневник, календарь, список задач и т.п.)?»*
+респонденты отвечали по шкале от 1 до 5:
+- **1-2:** опирались преимущественно на **память**
+- **4-5:** опирались преимущественно на **записи**
+
+Сравниваем обе группы по всем доступным параметрам.
+""")
+
+        df = self.completed.copy()
+        by_memory = df[df['memory_vs_records'] <= 2].copy()
+        by_records = df[df['memory_vs_records'] >= 4].copy()
+
+        n_mem = len(by_memory)
+        n_rec = len(by_records)
+
+        self.add_paragraph(f"**Размер групп:**")
+        self.add_paragraph(f"- По памяти (1-2): n = {n_mem}")
+        self.add_paragraph(f"- По записям (4-5): n = {n_rec}")
+
+        if n_mem < 5 or n_rec < 5:
+            self.add_paragraph("⚠️ Недостаточно данных для анализа (нужно минимум 5 в каждой группе)")
+            return
+
+        # ── 1. Кубики ──────────────────────────────────────────────
+        self.add_paragraph(f"\n**Распределение кубиков по зонам:**")
+
+        cube_data = []
+        for zone_col, zone_name in [('cubes_reactive', '🔴 Срочное'),
+                                     ('cubes_proactive', '🟢 Целевое'),
+                                     ('cubes_operational', '⚪ Операционное')]:
+            mem_vals = by_memory[zone_col].dropna()
+            rec_vals = by_records[zone_col].dropna()
+            mem_mean = mem_vals.mean()
+            rec_mean = rec_vals.mean()
+            # Тест Манна-Уитни (ранговые данные)
+            u_stat, p = stats.mannwhitneyu(mem_vals, rec_vals, alternative='two-sided')
+            sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+            cube_data.append([zone_name, f"{mem_mean:.2f} ± {mem_vals.std():.2f}",
+                            f"{rec_mean:.2f} ± {rec_vals.std():.2f}",
+                            f"{rec_mean - mem_mean:+.2f}", f"{p:.4f} {sig}"])
+
+        self.add_table(['Зона', 'По памяти (M ± SD)', 'По записям (M ± SD)', 'Разница', 'p-value'], cube_data)
+
+        # ── 2. Шкалы валидации ─────────────────────────────────────
+        self.add_paragraph(f"\n**Шкалы валидации:**")
+
+        scale_data = []
+        for scale_col, scale_name in [('proc_total', 'Прокрастинация'),
+                                       ('swls_total', 'SWLS'),
+                                       ('mbi_total', 'MBI (выгорание)')]:
+            mem_vals = by_memory[scale_col].dropna()
+            rec_vals = by_records[scale_col].dropna()
+            mem_mean = mem_vals.mean()
+            rec_mean = rec_vals.mean()
+            # Единообразно используем U-тест Манна-Уитни (непараметрический)
+            u_stat, p = stats.mannwhitneyu(mem_vals, rec_vals, alternative='two-sided')
+            sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+            scale_data.append([scale_name, f"{mem_mean:.1f} ± {mem_vals.std():.1f}",
+                             f"{rec_mean:.1f} ± {rec_vals.std():.1f}",
+                             f"{rec_mean - mem_mean:+.1f}", f"{p:.4f} {sig}", "U-тест"])
+
+        self.add_table(['Шкала', 'По памяти (M ± SD)', 'По записям (M ± SD)', 'Разница', 'p-value', 'Тест'], scale_data)
+
+        # ── 3. Контекстные показатели ──────────────────────────────
+        self.add_paragraph(f"\n**Контекстные показатели:**")
+
+        context_data = []
+        for col, name in [('representative', 'Типичность недели'),
+                          ('work_life', 'Баланс работа/личное'),
+                          ('energy_deficit', 'Энергетический дефицит')]:
+            mem_vals = by_memory[col].dropna()
+            rec_vals = by_records[col].dropna()
+            if len(mem_vals) > 0 and len(rec_vals) > 0:
+                u_stat, p = stats.mannwhitneyu(mem_vals, rec_vals, alternative='two-sided')
+                sig = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
+                context_data.append([name, f"{mem_vals.median():.0f} [{mem_vals.quantile(0.25):.0f}; {mem_vals.quantile(0.75):.0f}]",
+                                   f"{rec_vals.median():.0f} [{rec_vals.quantile(0.25):.0f}; {rec_vals.quantile(0.75):.0f}]",
+                                   f"{p:.4f} {sig}"])
+
+        self.add_table(['Показатель', 'По памяти (Медиана [Q1;Q3])', 'По записям (Медиана [Q1;Q3])', 'p-value'], context_data)
+
+        # ── 4. Профиль уровней ─────────────────────────────────────
+        self.add_paragraph(f"\n**Распределение уровней профиля:**")
+
+        by_memory = self._add_level_column(by_memory)
+        by_records = self._add_level_column(by_records)
+
+        level_data = []
+        for level in range(1, 8):
+            mem_count = len(by_memory[by_memory['level'] == level])
+            rec_count = len(by_records[by_records['level'] == level])
+            if mem_count > 0 or rec_count > 0:
+                mem_pct = mem_count / n_mem * 100 if n_mem > 0 else 0
+                rec_pct = rec_count / n_rec * 100 if n_rec > 0 else 0
+                profile_name = PROFILE_LEVELS.get(level, f'Уровень {level}')
+                level_data.append([f"{level} — {profile_name}", f"{mem_count} ({mem_pct:.1f}%)",
+                                 f"{rec_count} ({rec_pct:.1f}%)"])
+
+        self.add_table(['Профиль', 'По памяти', 'По записям'], level_data)
+
+        # Тест на различие распределения уровней (Манна-Уитни)
+        mem_levels = by_memory['level'].values
+        rec_levels = by_records['level'].values
+        u_level, p_level = stats.mannwhitneyu(mem_levels, rec_levels, alternative='two-sided')
+        self.add_paragraph(f"\n- **Тест различия уровней:** U = {u_level:.0f}, p = {p_level:.4f}")
+        if p_level < 0.05:
+            self.add_paragraph(f"- ✅ Распределение уровней **значимо различается**")
+        else:
+            self.add_paragraph(f"- ❌ Распределение уровней **не различается** значимо")
+
+        # ── 5. Демография ──────────────────────────────────────────
+        self.add_paragraph(f"\n**Демография:**")
+
+        # Возраст
+        mem_age = by_memory['age'].dropna()
+        rec_age = by_records['age'].dropna()
+        if len(mem_age) > 0 and len(rec_age) > 0:
+            try:
+                _, p_norm_mem_a = stats.shapiro(mem_age) if len(mem_age) >= 3 else (0, 0)
+                _, p_norm_rec_a = stats.shapiro(rec_age) if len(rec_age) >= 3 else (0, 0)
+            except:
+                p_norm_mem_a, p_norm_rec_a = 0, 0
+
+            if p_norm_mem_a > 0.05 and p_norm_rec_a > 0.05 and len(mem_age) >= 10 and len(rec_age) >= 10:
+                t_age, p_age = stats.ttest_ind(mem_age, rec_age)
+                test_age = "t-тест"
+            else:
+                u_age, p_age = stats.mannwhitneyu(mem_age, rec_age, alternative='two-sided')
+                test_age = "U-тест"
+
+            sig_age = "***" if p_age < 0.001 else "**" if p_age < 0.01 else "*" if p_age < 0.05 else ""
+            self.add_paragraph(f"- **Возраст:** память = {mem_age.mean():.1f} ± {mem_age.std():.1f}, "
+                              f"записи = {rec_age.mean():.1f} ± {rec_age.std():.1f} ({test_age}, p = {p_age:.4f} {sig_age})")
+
+        # Пол
+        if 'gender' in by_memory.columns:
+            mem_gender = by_memory['gender'].value_counts()
+            rec_gender = by_records['gender'].value_counts()
+            gender_labels_map = {'male': 'Мужской', 'female': 'Женский'}
+            self.add_paragraph(f"- **Пол:**")
+            for g in ['male', 'female']:
+                label = gender_labels_map.get(g, g)
+                mem_n = int(mem_gender.get(g, 0))
+                rec_n = int(rec_gender.get(g, 0))
+                mem_p = mem_n / n_mem * 100 if n_mem > 0 else 0
+                rec_p = rec_n / n_rec * 100 if n_rec > 0 else 0
+                self.add_paragraph(f"  - {label}: память = {mem_n} ({mem_p:.1f}%), записи = {rec_n} ({rec_p:.1f}%)")
+
+            # Хи-квадрат тест для пола
+            try:
+                # Создаём таблицу сопряжённости
+                all_genders = sorted(set(by_memory['gender'].dropna().unique()) | set(by_records['gender'].dropna().unique()))
+                contingency = []
+                for grp in [by_memory, by_records]:
+                    row = [int((grp['gender'] == g).sum()) for g in all_genders]
+                    contingency.append(row)
+                chi2, p_chi, _, _ = stats.chi2_contingency(contingency)
+                sig_chi = "***" if p_chi < 0.001 else "**" if p_chi < 0.01 else "*" if p_chi < 0.05 else ""
+                self.add_paragraph(f"- **Тест на различие пола:** χ² = {chi2:.2f}, p = {p_chi:.4f} {sig_chi}")
+            except:
+                pass
+
+        # ── 6. ProductivityIndex ───────────────────────────────────
+        self.add_paragraph(f"\n**ProductivityIndex:**")
+        mem_pi = by_memory['productivity_index'].dropna()
+        rec_pi = by_records['productivity_index'].dropna()
+        if len(mem_pi) > 0 and len(rec_pi) > 0:
+            u_pi, p_pi = stats.mannwhitneyu(mem_pi, rec_pi, alternative='two-sided')
+            sig_pi = "***" if p_pi < 0.001 else "**" if p_pi < 0.01 else "*" if p_pi < 0.05 else ""
+            self.add_paragraph(f"- Память: M = {mem_pi.mean():.2f}, SD = {mem_pi.std():.2f}")
+            self.add_paragraph(f"- Записи: M = {rec_pi.mean():.2f}, SD = {rec_pi.std():.2f}")
+            self.add_paragraph(f"- U-тест: p = {p_pi:.4f} {sig_pi}")
+
+        # ── 7. Визуализация ────────────────────────────────────────
+        fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+
+        # Кубики
+        zones = ['cubes_reactive', 'cubes_proactive', 'cubes_operational']
+        zone_names_ru = ['🔴 Срочное', '🟢 Целевое', '⚪ Операционное']
+        zone_colors = ['#e74c3c', '#27ae60', '#95a5a6']
+
+        for i, (zone, zname, zcolor) in enumerate(zip(zones, zone_names_ru, zone_colors)):
+            ax = axes[0, i]
+            mem_vals = by_memory[zone].dropna()
+            rec_vals = by_records[zone].dropna()
+            ax.boxplot([mem_vals, rec_vals], labels=['Память', 'Записи'], patch_artist=True,
+                       boxprops=dict(facecolor=zcolor, alpha=0.6),
+                       medianprops=dict(color='black'))
+            ax.set_title(zname, fontproperties=TICK_FONT)
+            ax.set_ylabel('Кубики', fontproperties=LABEL_FONT)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        # Шкалы
+        for i, (scale, sname) in enumerate([('mbi_total', 'MBI'), ('proc_total', 'Прокрастинация'), ('swls_total', 'SWLS')]):
+            ax = axes[1, i]
+            mem_vals = by_memory[scale].dropna()
+            rec_vals = by_records[scale].dropna()
+            ax.boxplot([mem_vals, rec_vals], labels=['Память', 'Записи'], patch_artist=True,
+                       boxprops=dict(facecolor='steelblue', alpha=0.6),
+                       medianprops=dict(color='black'))
+            ax.set_title(sname, fontproperties=TICK_FONT)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+
+        plt.suptitle('H5a: Сравнение «по памяти» vs «по записям»', fontproperties=TITLE_FONT)
+        plt.tight_layout()
+        path = self.save_figure('h5a_memory_vs_records')
+        self.add_paragraph(f"\n![Сравнение память vs записи]({path})")
+
+        # ── 8. Итоговый вывод ──────────────────────────────────────
+        self.add_paragraph(f"\n**Итог по H5a:**")
+        sig_count = sum(1 for row in scale_data if '*' in row[4])
+        if sig_count > 0:
+            self.add_paragraph(f"- Обнаружены значимые различия по {sig_count} шкале(ам) валидации")
+        else:
+            self.add_paragraph(f"- Значимых различий по шкалам валидации не обнаружено")
+
+        sig_cubes = sum(1 for row in cube_data if '*' in row[4])
+        if sig_cubes > 0:
+            self.add_paragraph(f"- Значимые различия по {sig_cubes} зоне(ам) кубиков")
+
+        # Подсчитаем общие значимые
+        all_sig = []
+        for row in scale_data:
+            if '*' in row[4]:
+                all_sig.append(row[0])
+        for row in cube_data:
+            if '*' in row[4]:
+                all_sig.append(row[0])
+        for row in context_data:
+            if '*' in row[3]:
+                all_sig.append(row[0])
+
+        if all_sig:
+            self.add_paragraph(f"- **Значимые параметры:** {', '.join(all_sig)}")
+        else:
+            self.add_paragraph(f"- **Значимых различий не обнаружено ни по одному параметру**")
+
 
     # =========================================================================
     # ГЕНЕРАЦИЯ ОТЧЁТА
@@ -2630,6 +3647,7 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h3_low_reactive()
         self.analyze_h4_green_dominance()
         self.analyze_h5_moderation_records()
+        self.analyze_h5a_records_vs_memory()
         self.analyze_h6_moderation_red()
         self.analyze_h7_curvilinear_green()
         self.analyze_h8_balance_moderation()
@@ -2637,6 +3655,8 @@ ProductivityIndex — это логарифм по основанию 2 отно
         self.analyze_h10_gender_differences()
         self.analyze_h11_age_trend()
         self.analyze_h12_zen_deficit()
+        self.analyze_h14_mbi_swls_relationship()
+        self.analyze_h15_regression_predictors()
         self.analyze_h7a_linear_regression()
         self.analyze_h10a_position_comparison()
         self.analyze_productivity_index()
