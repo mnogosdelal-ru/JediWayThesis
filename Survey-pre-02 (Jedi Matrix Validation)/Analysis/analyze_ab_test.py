@@ -55,6 +55,19 @@ def compare_correlations(r1, n1, r2, n2):
     p = 2 * (1 - stats.norm.cdf(abs(z)))
     return z, p
 
+def get_numeric_values(data_list, key):
+    """Безопасное извлечение числовых значений из списка словарей"""
+    result = []
+    for d in data_list:
+        val = d.get(key)
+        if val is not None and val != '' and isinstance(val, (int, float)):
+            result.append(float(val))
+    return result
+
+def safe_numeric(val):
+    """Проверка, что значение - число (не None, не пустая строка)"""
+    return val is not None and val != '' and isinstance(val, (int, float))
+
 class ABTestAnalyzer:
     """Класс для анализа A/B теста"""
     
@@ -413,10 +426,13 @@ class ABTestAnalyzer:
                 life_col = d.get('_life_col')
                 if life_col:
                     col = f'{life_col}_{zone}'
-                    if d.get('variant') == 'standard' and d.get(col) is not None:
-                        standard_life.append(d[col])
-                    elif d.get('variant') == 'horizontal' and d.get(col) is not None:
-                        horizontal_life.append(d[col])
+                    val = d.get(col)
+                    # Отфильтровываем None, пустые строки и нечисловые значения
+                    if val is not None and val != '' and isinstance(val, (int, float)):
+                        if d.get('variant') == 'standard':
+                            standard_life.append(float(val))
+                        elif d.get('variant') == 'horizontal':
+                            horizontal_life.append(float(val))
             
             if standard_life and horizontal_life:
                 t_stat, p_value = stats.ttest_ind(standard_life, horizontal_life)
@@ -455,10 +471,13 @@ class ABTestAnalyzer:
                 work_col = d.get('_work_col')
                 if work_col:
                     col = f'{work_col}_{zone}'
-                    if d.get('variant') == 'standard' and d.get(col) is not None:
-                        standard_work.append(d[col])
-                    elif d.get('variant') == 'horizontal' and d.get(col) is not None:
-                        horizontal_work.append(d[col])
+                    val = d.get(col)
+                    # Отфильтровываем None, пустые строки и нечисловые значения
+                    if val is not None and val != '' and isinstance(val, (int, float)):
+                        if d.get('variant') == 'standard':
+                            standard_work.append(float(val))
+                        elif d.get('variant') == 'horizontal':
+                            horizontal_work.append(float(val))
             
             if standard_work and horizontal_work:
                 t_stat, p_value = stats.ttest_ind(standard_work, horizontal_work)
@@ -535,10 +554,16 @@ class ABTestAnalyzer:
         # Личная жизнь - standard (используем _life_col)
         table_std_life = []
         for zone in zones:
-            life_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in standard_life_first 
-                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
-            work_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in standard_work_first 
-                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            life_first_data = []
+            for d in standard_life_first:
+                val = d.get(f'{d["_life_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    life_first_data.append(float(val))
+            work_first_data = []
+            for d in standard_work_first:
+                val = d.get(f'{d["_life_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    work_first_data.append(float(val))
             
             if life_first_data and work_first_data:
                 t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
@@ -566,10 +591,16 @@ class ABTestAnalyzer:
         # Работа - standard (используем _work_col)
         table_std_work = []
         for zone in zones:
-            life_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in standard_life_first 
-                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
-            work_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in standard_work_first 
-                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            life_first_data = []
+            for d in standard_life_first:
+                val = d.get(f'{d["_work_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    life_first_data.append(float(val))
+            work_first_data = []
+            for d in standard_work_first:
+                val = d.get(f'{d["_work_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    work_first_data.append(float(val))
             
             if life_first_data and work_first_data:
                 t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
@@ -606,10 +637,16 @@ class ABTestAnalyzer:
         # Личная жизнь - horizontal (используем _life_col)
         table_hor_life = []
         for zone in zones:
-            life_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in horizontal_life_first 
-                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
-            work_first_data = [d[f'{d["_life_col"]}_{zone}'] for d in horizontal_work_first 
-                              if d.get(f'{d["_life_col"]}_{zone}') is not None]
+            life_first_data = []
+            for d in horizontal_life_first:
+                val = d.get(f'{d["_life_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    life_first_data.append(float(val))
+            work_first_data = []
+            for d in horizontal_work_first:
+                val = d.get(f'{d["_life_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    work_first_data.append(float(val))
             
             if life_first_data and work_first_data:
                 t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
@@ -637,10 +674,16 @@ class ABTestAnalyzer:
         # Работа - horizontal (используем _work_col)
         table_hor_work = []
         for zone in zones:
-            life_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in horizontal_life_first 
-                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
-            work_first_data = [d[f'{d["_work_col"]}_{zone}'] for d in horizontal_work_first 
-                              if d.get(f'{d["_work_col"]}_{zone}') is not None]
+            life_first_data = []
+            for d in horizontal_life_first:
+                val = d.get(f'{d["_work_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    life_first_data.append(float(val))
+            work_first_data = []
+            for d in horizontal_work_first:
+                val = d.get(f'{d["_work_col"]}_{zone}')
+                if val is not None and val != '' and isinstance(val, (int, float)):
+                    work_first_data.append(float(val))
             
             if life_first_data and work_first_data:
                 t_stat, p_value = stats.ttest_ind(life_first_data, work_first_data)
@@ -692,10 +735,24 @@ class ABTestAnalyzer:
         """H6: Корреляция между зонами и контрольными переменными одинакова"""
         self.add_section("H6: Эквивалентность корреляций", 3)
         
-        standard_data = [(d['p1_tl'], d['slider_desired']) for d in self.completed 
-                        if d.get('variant') == 'standard' and d.get('p1_tl') is not None and d.get('slider_desired') is not None]
-        horizontal_data = [(d['p1_tl'], d['slider_desired']) for d in self.completed 
-                          if d.get('variant') == 'horizontal' and d.get('p1_tl') is not None and d.get('slider_desired') is not None]
+        # Фильтруем данные с проверкой на пустые строки
+        standard_data = []
+        for d in self.completed:
+            p1_tl = d.get('p1_tl')
+            slider_desired = d.get('slider_desired')
+            if (d.get('variant') == 'standard' and p1_tl is not None and p1_tl != '' and 
+                isinstance(p1_tl, (int, float)) and slider_desired is not None and 
+                slider_desired != '' and isinstance(slider_desired, (int, float))):
+                standard_data.append((float(p1_tl), float(slider_desired)))
+        
+        horizontal_data = []
+        for d in self.completed:
+            p1_tl = d.get('p1_tl')
+            slider_desired = d.get('slider_desired')
+            if (d.get('variant') == 'horizontal' and p1_tl is not None and p1_tl != '' and 
+                isinstance(p1_tl, (int, float)) and slider_desired is not None and 
+                slider_desired != '' and isinstance(slider_desired, (int, float))):
+                horizontal_data.append((float(p1_tl), float(slider_desired)))
         
         if standard_data and horizontal_data:
             x1_std = [x[0] for x in standard_data]
@@ -732,7 +789,13 @@ class ABTestAnalyzer:
             
             for zone in zones:
                 col = f'p{page}_{zone}'
-                data = [(d[col], d['slider_desired']) for d in self.completed if d.get(col) is not None and d.get('slider_desired') is not None]
+                data = []
+                for d in self.completed:
+                    val1 = d.get(col)
+                    val2 = d.get('slider_desired')
+                    if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                        val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                        data.append((float(val1), float(val2)))
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
@@ -744,8 +807,11 @@ class ABTestAnalyzer:
         self.add_section("H7: Эквивалентность разницы работа/личное", 3)
         
         def calc_diff(row):
-            if row.get('p1_tr') is not None and row.get('p2_tr') is not None:
-                return row['p2_tr'] - row['p1_tr']
+            p1_tr = row.get('p1_tr')
+            p2_tr = row.get('p2_tr')
+            if (p1_tr is not None and p1_tr != '' and isinstance(p1_tr, (int, float)) and
+                p2_tr is not None and p2_tr != '' and isinstance(p2_tr, (int, float))):
+                return float(p2_tr) - float(p1_tr)
             return None
         
         standard = [calc_diff(d) for d in self.completed if d.get('variant') == 'standard']
@@ -775,8 +841,13 @@ class ABTestAnalyzer:
         
         table_data = []
         for zone in zones:
-            data = [(d[f'p1_{zone}'], d[f'p2_{zone}']) for d in self.completed 
-                   if d.get(f'p1_{zone}') is not None and d.get(f'p2_{zone}') is not None]
+            data = []
+            for d in self.completed:
+                val1 = d.get(f'p1_{zone}')
+                val2 = d.get(f'p2_{zone}')
+                if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                    val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                    data.append((float(val1), float(val2)))
             
             if len(data) >= 10:
                 r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
@@ -799,8 +870,13 @@ class ABTestAnalyzer:
             for page in [1, 2]:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
-                data = [(d[col], d['slider_balance']) for d in self.completed 
-                       if d.get(col) is not None and d.get('slider_balance') is not None]
+                data = []
+                for d in self.completed:
+                    val1 = d.get(col)
+                    val2 = d.get('slider_balance')
+                    if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                        val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                        data.append((float(val1), float(val2)))
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
@@ -821,8 +897,13 @@ class ABTestAnalyzer:
             for page in [1, 2]:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
-                data = [(d[col], d['slider_desired']) for d in self.completed 
-                       if d.get(col) is not None and d.get('slider_desired') is not None]
+                data = []
+                for d in self.completed:
+                    val1 = d.get(col)
+                    val2 = d.get('slider_desired')
+                    if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                        val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                        data.append((float(val1), float(val2)))
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
@@ -843,8 +924,13 @@ class ABTestAnalyzer:
             for page in [1, 2]:
                 page_name = "Личная жизнь" if page == 1 else "Работа"
                 col = f'p{page}_{zone}'
-                data = [(d[col], d.get('slider_others')) for d in self.completed 
-                       if d.get(col) is not None and d.get('slider_others') is not None]
+                data = []
+                for d in self.completed:
+                    val1 = d.get(col)
+                    val2 = d.get('slider_others')
+                    if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                        val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                        data.append((float(val1), float(val2)))
                 
                 if len(data) >= 10:
                     r, p = stats.pearsonr([x[0] for x in data], [x[1] for x in data])
@@ -879,8 +965,15 @@ class ABTestAnalyzer:
         
         for zone in zones:
             col = f'p1_{zone}'
-            male = [d[col] for d in self.completed if d.get('gender') == 'male' and d.get(col) is not None]
-            female = [d[col] for d in self.completed if d.get('gender') == 'female' and d.get(col) is not None]
+            male = []
+            female = []
+            for d in self.completed:
+                val = d.get(col)
+                if safe_numeric(val):
+                    if d.get('gender') == 'male':
+                        male.append(float(val))
+                    elif d.get('gender') == 'female':
+                        female.append(float(val))
             
             if male and female:
                 t_stat, p_value = stats.ttest_ind(male, female)
@@ -929,8 +1022,15 @@ class ABTestAnalyzer:
         
         for zone in zones:
             col = f'p2_{zone}'
-            male = [d[col] for d in self.completed if d.get('gender') == 'male' and d.get(col) is not None]
-            female = [d[col] for d in self.completed if d.get('gender') == 'female' and d.get(col) is not None]
+            male = []
+            female = []
+            for d in self.completed:
+                val = d.get(col)
+                if safe_numeric(val):
+                    if d.get('gender') == 'male':
+                        male.append(float(val))
+                    elif d.get('gender') == 'female':
+                        female.append(float(val))
             
             if male and female:
                 t_stat, p_value = stats.ttest_ind(male, female)
@@ -973,15 +1073,20 @@ class ABTestAnalyzer:
         """H10: Возраст является модератором связи гендер-баланс"""
         self.add_section("H10: Модерация возрастом", 3)
         
-        data_with_age = [d for d in self.completed if d.get('age') is not None and d.get('slider_balance') is not None]
+        data_with_age = []
+        for d in self.completed:
+            age = d.get('age')
+            balance = d.get('slider_balance')
+            if safe_numeric(age) and safe_numeric(balance):
+                data_with_age.append((float(age), float(balance)))
         
         if len(data_with_age) < 30:
             self.add_paragraph("⚠️ Недостаточно данных для анализа модерации")
             return
         
-        young = [d['slider_balance'] for d in data_with_age if d['age'] < 35]
-        middle = [d['slider_balance'] for d in data_with_age if 35 <= d['age'] < 50]
-        older = [d['slider_balance'] for d in data_with_age if d['age'] >= 50]
+        young = [b for a, b in data_with_age if a < 35]
+        middle = [b for a, b in data_with_age if 35 <= a < 50]
+        older = [b for a, b in data_with_age if a >= 50]
         
         self.add_paragraph(f"Баланс по возрастным группам:")
         self.add_paragraph(f"  До 35 лет: M = {np.mean(young):.1f}%, n = {len(young)}")
@@ -1014,8 +1119,16 @@ class ABTestAnalyzer:
         
         for zone in zones:
             col = f'p2_{zone}'
-            leader_data = [d[col] for d in leader_positions if d.get(col) is not None]
-            employee_data = [d[col] for d in employee_positions if d.get(col) is not None]
+            leader_data = []
+            employee_data = []
+            for d in leader_positions:
+                val = d.get(col)
+                if safe_numeric(val):
+                    leader_data.append(float(val))
+            for d in employee_positions:
+                val = d.get(col)
+                if safe_numeric(val):
+                    employee_data.append(float(val))
             
             if leader_data and employee_data:
                 t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
@@ -1077,8 +1190,16 @@ class ABTestAnalyzer:
         
         for zone in zones:
             col = f'p1_{zone}'
-            leader_data = [d[col] for d in leader_positions if d.get(col) is not None]
-            employee_data = [d[col] for d in employee_positions if d.get(col) is not None]
+            leader_data = []
+            employee_data = []
+            for d in leader_positions:
+                val = d.get(col)
+                if safe_numeric(val):
+                    leader_data.append(float(val))
+            for d in employee_positions:
+                val = d.get(col)
+                if safe_numeric(val):
+                    employee_data.append(float(val))
             
             if leader_data and employee_data:
                 t_stat, p_value = stats.ttest_ind(leader_data, employee_data)
@@ -1122,8 +1243,13 @@ class ABTestAnalyzer:
         """H13: Отрицательная корреляция между балансом и продуктивностью"""
         self.add_section("H13: Баланс работа/личное и продуктивность", 3)
         
-        data = [(d['slider_balance'], d['slider_desired']) for d in self.completed 
-               if d.get('slider_balance') is not None and d.get('slider_desired') is not None]
+        data = []
+        for d in self.completed:
+            val1 = d.get('slider_balance')
+            val2 = d.get('slider_desired')
+            if (val1 is not None and val1 != '' and isinstance(val1, (int, float)) and
+                val2 is not None and val2 != '' and isinstance(val2, (int, float))):
+                data.append((float(val1), float(val2)))
         
         if len(data) < 10:
             self.add_paragraph("⚠️ Недостаточно данных")

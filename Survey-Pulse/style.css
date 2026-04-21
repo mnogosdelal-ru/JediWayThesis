@@ -64,8 +64,8 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 
 /* === Легенда зон === */
 .zones-legend {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 15px;
     margin-bottom: 20px;
     padding: 20px;
@@ -188,6 +188,8 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 .btn-large { font-size: 1.1rem; padding: 14px 36px; }
 
 /* === Likert: центрированная шкала (-3..+3) === */
+.required-star { color: #e74c3c; margin-left: 4px; font-weight: 700; }
+
 .likert-scale-group { margin-bottom: 35px; }
 .likert-scale-group > label { font-weight: 700; margin-bottom: 12px; display: block; font-size: 1rem; }
 

@@ -1,6 +1,6 @@
 <?php
 // Глобальный параметр отладки
-define('DEBUG_MODE', true); // true = отключить валидацию обязательных полей
+define('DEBUG_MODE', false); // true = отключить валидацию обязательных полей
 
 require_once 'db_config.php';
 

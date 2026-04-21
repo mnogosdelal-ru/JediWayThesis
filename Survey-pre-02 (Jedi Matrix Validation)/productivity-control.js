@@ -92,6 +92,15 @@ class ProductivityControl {
                         <!-- Горизонтальный бегунок сверху -->
                         <div class="pc-h-slider-top" id="pc-h-slider-top">
                             <div class="pc-h-track">
+                                <div class="pc-h-track-ticks">
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                </div>
                                 <div class="pc-h-thumb" id="pc-h-thumb-top"></div>
                             </div>
                         </div>
@@ -106,7 +115,17 @@ class ProductivityControl {
 
                                 <!-- Вертикальный бегунок -->
                                 <div class="pc-v-slider" id="pc-v-slider">
-                                    <div class="pc-v-track"></div>
+                                    <div class="pc-v-track">
+                                        <div class="pc-v-track-ticks">
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                            <div class="pc-v-tick"></div>
+                                        </div>
+                                    </div>
                                     <div class="pc-v-handle" id="pc-v-handle"></div>
                                 </div>
                             </div>
@@ -123,6 +142,15 @@ class ProductivityControl {
                         <!-- Горизонтальный бегунок снизу -->
                         <div class="pc-h-slider-bottom" id="pc-h-slider-bottom">
                             <div class="pc-h-track">
+                                <div class="pc-h-track-ticks">
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                    <div class="pc-h-tick"></div>
+                                </div>
                                 <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
                             </div>
                         </div>
@@ -229,6 +257,15 @@ class ProductivityControl {
                     </div>
                     <div class="pc-h-slider" id="pc-v-slider-h">
                         <div class="pc-h-track">
+                            <div class="pc-h-track-ticks">
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                            </div>
                             <div class="pc-h-thumb" id="pc-v-thumb-h"></div>
                         </div>
                     </div>
@@ -243,6 +280,15 @@ class ProductivityControl {
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-top">
                         <div class="pc-h-track">
+                            <div class="pc-h-track-ticks">
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                            </div>
                             <div class="pc-h-thumb" id="pc-h-thumb-top"></div>
                         </div>
                     </div>
@@ -257,6 +303,15 @@ class ProductivityControl {
                     </div>
                     <div class="pc-h-slider" id="pc-h-slider-bottom">
                         <div class="pc-h-track">
+                            <div class="pc-h-track-ticks">
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                                <div class="pc-h-tick"></div>
+                            </div>
                             <div class="pc-h-thumb" id="pc-h-thumb-bottom"></div>
                         </div>
                     </div>
@@ -462,6 +517,27 @@ class ProductivityControl {
                 box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
             }
 
+            /* насечки на вертикальном треке */
+            .pc-v-track-ticks {
+                position: absolute;
+                left: 50%;
+                top: 8px;
+                bottom: 8px;
+                width: 14px;
+                transform: translateX(-50%);
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                pointer-events: none;
+            }
+
+            .pc-v-tick {
+                width: 14px;
+                height: 2px;
+                background: #ced4da;
+                border-radius: 1px;
+            }
+
             .pc-v-handle {
                 position: absolute;
                 left: 50%;
@@ -475,6 +551,7 @@ class ProductivityControl {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.25);
                 pointer-events: none;
                 transition: transform 0.1s;
+                z-index: 10;
             }
 
             /* Зоны */
@@ -516,6 +593,26 @@ class ProductivityControl {
                 box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
             }
 
+            /* насечки на горизонтальном треке */
+            .pc-h-track-ticks {
+                position: absolute;
+                left: 0;
+                top: 50%;
+                width: 100%;
+                height: 14px;
+                transform: translateY(-50%);
+                display: flex;
+                justify-content: space-between;
+                pointer-events: none;
+            }
+
+            .pc-h-tick {
+                width: 2px;
+                height: 14px;
+                background: #ced4da;
+                border-radius: 1px;
+            }
+
             .pc-h-thumb {
                 position: absolute;
                 top: 50%;
@@ -528,6 +625,7 @@ class ProductivityControl {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.25);
                 pointer-events: none;
                 transition: transform 0.1s;
+                z-index: 10;
             }
 
             /* Легенда */
@@ -765,6 +863,25 @@ class ProductivityControl {
     setupDrag(element, callback, isVertical, referenceElement) {
         let isDragging = false;
         let rect = null;
+        let currentVal = 50;
+
+        // Фиксированные положения (7 насечек): 0, 16.67, 33.33, 50, 66.67, 83.33, 100
+        const snapPositions = [0, 16.67, 33.33, 50, 66.67, 83.33, 100];
+
+        // Найти ближайшую насечку
+        const snapToTick = (val) => {
+            let closest = snapPositions[0];
+            let minDiff = Math.abs(val - closest);
+            
+            for (const pos of snapPositions) {
+                const diff = Math.abs(val - pos);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = pos;
+                }
+            }
+            return closest;
+        };
 
         const startDrag = (e) => {
             isDragging = true;
@@ -781,6 +898,11 @@ class ProductivityControl {
             document.body.classList.remove('pc-dragging');
             element.classList.remove('pc-active-slider');
             element.releasePointerCapture(e.pointerId);
+            
+            // Фиксация к ближайшей насечке
+            const snappedVal = snapToTick(currentVal);
+            callback(snappedVal);
+            
             rect = null;
         };
 
@@ -798,6 +920,7 @@ class ProductivityControl {
             }
 
             val = Math.max(0, Math.min(100, val));
+            currentVal = val;
             callback(val);
         };
 

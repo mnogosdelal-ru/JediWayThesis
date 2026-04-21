@@ -80,7 +80,7 @@ const texts = {
                 <li>Какие задачи в <strong>личной жизни</strong> (связанные с целями или нет) <strong>за последнюю неделю</strong> вы выполнили?</li>
             </ol>
 
-            <p>Не торопитесь. При необходимости возьмите лист бумаги и отдельно выпишите на нём свои цели и выполненные за последнюю неделю задачи или посмотрите в список завершенных задач в вашем инструменте (если он у вас есть).</p>
+            <p><strong>Не надо точно</strong>, можете дать приблизительную оценку, основанную на ощущениях.</p>
 
             <p>С помощью бегунков ниже покажите, как вы распределяли свой ресурс (время, силы, мыслетопливо) на задачи из разных категорий:</p>
             <p><strong>Вертикальный бегунок</strong> — раздел <strong>срочного</strong> и <strong>не срочного</strong>:</p>
@@ -113,7 +113,7 @@ const texts = {
                 <li>Какие задачи по <strong>работе</strong> (связанные с целями или нет) <strong>за последнюю неделю</strong> вы выполнили?</li>
             </ol>
 
-            <p>Не торопитесь. При необходимости возьмите лист бумаги и отдельно выпишите цели команды / компании и выполненные за последнюю неделю задачи или посмотрите в список завершенных задач в вашем таск-трекере (если пользуетесь).</p>
+            <p><strong>Не надо точно</strong>, можете дать приблизительную оценку, основанную на ощущениях.</p>
 
             <p>С помощью бегунков ниже покажите, как вы распределяли свой ресурс (время, силы, мыслетопливо) на задачи из разных категорий:</p>
             <p><strong>Вертикальный бегунок</strong> — раздел <strong>срочного</strong> и <strong>не срочного</strong>:</p>
@@ -279,11 +279,7 @@ document.getElementById('btn-next-1').addEventListener('click', async () => {
         time_page1_start: appState.time_page1_start,
         time_page1_end: appState.time_page1_end,
         time_page1_total: totalTimeSec,
-        p1_tl: vals.tl, p1_tr: vals.tr, p1_bl: vals.bl, p1_br: vals.br,
-        p1_ex_tl: document.getElementById('p1-ex-tl').value,
-        p1_ex_tr: document.getElementById('p1-ex-tr').value,
-        p1_ex_bl: document.getElementById('p1-ex-bl').value,
-        p1_ex_br: document.getElementById('p1-ex-br').value
+        p1_tl: vals.tl, p1_tr: vals.tr, p1_bl: vals.bl, p1_br: vals.br
     });
     showPage(2);
 });
@@ -305,11 +301,7 @@ document.getElementById('btn-next-2').addEventListener('click', async () => {
         time_page2_start: appState.time_page2_start,
         time_page2_end: appState.time_page2_end,
         time_page2_total: totalTimeSec,
-        p2_tl: vals.tl, p2_tr: vals.tr, p2_bl: vals.bl, p2_br: vals.br,
-        p2_ex_tl: document.getElementById('p2-ex-tl').value,
-        p2_ex_tr: document.getElementById('p2-ex-tr').value,
-        p2_ex_bl: document.getElementById('p2-ex-bl').value,
-        p2_ex_br: document.getElementById('p2-ex-br').value
+        p2_tl: vals.tl, p2_tr: vals.tr, p2_bl: vals.bl, p2_br: vals.br
     });
     showPage(3);
 });

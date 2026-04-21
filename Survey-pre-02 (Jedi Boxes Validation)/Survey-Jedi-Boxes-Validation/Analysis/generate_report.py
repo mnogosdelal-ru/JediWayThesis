@@ -320,20 +320,19 @@ class JediBoxesAnalyzer:
         """Фильтрация только завершённых анкет и вычисление дополнительных метрик."""
         df = self.data[self.data['status'] == 'completed'].copy()
 
-        # Фильтрация некорректных записей: если total=0, но есть вопросы с NaN
-        # Это ошибка в расчёте суммы (NaN.sum() = 0 вместо NaN)
-        # Проверяем каждую шкалу
+        # Фильтрация некорректных записей: если total=0, но все вопросы NaN
+        # Это ошибка в расчёте суммы на backend (NaN.sum() = 0 вместо NULL)
+        # Отбрасываем такие записи для корректного анализа
         for scale, questions in [
             ('proc_total', ['proc_'+str(i) for i in range(1, 9)]),
             ('swls_total', ['swls_'+str(i) for i in range(1, 6)]),
         ]:
             if scale in df.columns and all(q in df.columns for q in questions):
-                # Если total=0, но все вопросы NaN — это некорректная запись
                 all_nan = df[questions].isna().all(axis=1)
                 zero_total = df[scale] == 0
                 invalid = all_nan & zero_total
                 if invalid.sum() > 0:
-                    print(f"⚠️  Удалено {invalid.sum()} записей с некорректным {scale}=0 (все ответы NaN)")
+                    print(f"⚠️  Отброшено {invalid.sum()} записей с некорректным {scale}=0 (все ответы NaN)")
                     df.loc[invalid, scale] = np.nan
 
         # Вычисление ProductivityIndex (логарифм по основанию 2 отношения целевого к срочному с эпсилоном)
@@ -761,17 +760,29 @@ class JediBoxesAnalyzer:
                 'proc_total', 'swls_total', 'mbi_total']
         corr_matrix = self.completed[cols].corr(method='spearman')
 
-        # Вычисляем p-values для корреляций
+        # Вычисляем p-values для корреляций с обработкой NaN
         from scipy.stats import spearmanr
-        p_matrix = np.zeros_like(corr_matrix)
+        p_matrix = np.full_like(corr_matrix, np.nan, dtype=float)
         n = len(self.completed)
         for i in range(len(cols)):
             for j in range(len(cols)):
                 if i != j:
-                    _, p = spearmanr(self.completed[cols[i]], self.completed[cols[j]])
-                    p_matrix[i, j] = p
+                    # Используем joint non-NaN значения
+                    x = self.completed[cols[i]]
+                    y = self.completed[cols[j]]
+                    mask = x.notna() & y.notna()
+                    n_common = mask.sum()
+                    
+                    if n_common >= 3:
+                        try:
+                            _, p = spearmanr(x[mask], y[mask])
+                            p_matrix[i, j] = p if not np.isnan(p) else np.nan
+                        except Exception:
+                            p_matrix[i, j] = np.nan
+                    else:
+                        p_matrix[i, j] = np.nan  # Мало данных
                 else:
-                    p_matrix[i, j] = 0
+                    p_matrix[i, j] = 0  # Диагональ
 
         labels = ['Срочное ●', 'Целевое ●', 'Операционное ●', 'ProdIndex',
                   'Типичность', 'Работа/Личное', 'Дефицит', 'Записи',
@@ -788,7 +799,11 @@ class JediBoxesAnalyzer:
             for j in range(len(cols)):
                 if i != j:
                     p_val = p_matrix[i, j]
-                    if p_val < 0.001:
+                    
+                    # Проверка на NaN/недостаточно данных
+                    if np.isnan(p_val):
+                        p_text = '?'  # Ненадёжно
+                    elif p_val < 0.001:
                         p_text = '***'
                     elif p_val < 0.01:
                         p_text = '**'
@@ -796,8 +811,9 @@ class JediBoxesAnalyzer:
                         p_text = '*'
                     else:
                         p_text = 'n.s.'
+
                     ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
-                           fontsize=8, color='black', fontproperties=TICK_FONT)
+                           fontsize=8, color='black' if p_text != '?' else 'red', fontproperties=TICK_FONT)
 
         # Настраиваем шрифт для меток
         for label in ax.get_xticklabels() + ax.get_yticklabels():
@@ -806,19 +822,32 @@ class JediBoxesAnalyzer:
         plt.tight_layout()
         path = self.save_figure('correlation_matrix', 'Корреляции')
         self.add_paragraph(f"![Корреляционная матрица]({path})")
-        self.add_paragraph(f"*Значимость: *** p<0.001, ** p<0.01, * p<0.05, n.s. - не значимо | eps={RG_RATIO_EPS}*")
+        self.add_paragraph(f"*Значимость: *** p<0.001, ** p<0.01, * p<0.05, n.s. - не значимо, ? - ненадёжно (мало данных/константа) | eps={RG_RATIO_EPS}*")
 
         # 4a. Корреляционная матрица для почти типовой недели (-1..1)
         df_almost = self.completed[self.completed['representative'].between(-1, 1)]
         if len(df_almost) >= 5:
             fig, ax = plt.subplots(figsize=(14, 12))
             corr_almost = df_almost[cols].corr(method='spearman')
-            p_matrix_almost = np.zeros_like(corr_almost)
+            p_matrix_almost = np.full_like(corr_almost, np.nan, dtype=float)
             for i in range(len(cols)):
                 for j in range(len(cols)):
                     if i != j:
-                        _, p = spearmanr(df_almost[cols[i]], df_almost[cols[j]])
-                        p_matrix_almost[i, j] = p
+                        x = df_almost[cols[i]]
+                        y = df_almost[cols[j]]
+                        mask = x.notna() & y.notna()
+                        n_common = mask.sum()
+                        
+                        if n_common >= 3:
+                            try:
+                                _, p = spearmanr(x[mask], y[mask])
+                                p_matrix_almost[i, j] = p if not np.isnan(p) else np.nan
+                            except Exception:
+                                p_matrix_almost[i, j] = np.nan
+                        else:
+                            p_matrix_almost[i, j] = np.nan
+                    else:
+                        p_matrix_almost[i, j] = 0
 
             sns.heatmap(corr_almost, annot=True, fmt='.2f', cmap='RdBu_r',
                        center=0, vmin=-1, vmax=1, xticklabels=labels,
@@ -829,12 +858,14 @@ class JediBoxesAnalyzer:
                 for j in range(len(cols)):
                     if i != j:
                         p_val = p_matrix_almost[i, j]
-                        if p_val < 0.001: p_text = '***'
+                        if np.isnan(p_val):
+                            p_text = '?'
+                        elif p_val < 0.001: p_text = '***'
                         elif p_val < 0.01: p_text = '**'
                         elif p_val < 0.05: p_text = '*'
                         else: p_text = 'n.s.'
                         ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
-                               fontsize=8, color='black', fontproperties=TICK_FONT)
+                               fontsize=8, color='black' if p_text != '?' else 'red', fontproperties=TICK_FONT)
             for label in ax.get_xticklabels() + ax.get_yticklabels():
                 label.set_fontproperties(TICK_FONT)
             plt.tight_layout()
@@ -846,12 +877,25 @@ class JediBoxesAnalyzer:
         if len(df_exact) >= 5:
             fig, ax = plt.subplots(figsize=(14, 12))
             corr_exact = df_exact[cols].corr(method='spearman')
-            p_matrix_exact = np.zeros_like(corr_exact)
+            p_matrix_exact = np.full_like(corr_exact, np.nan, dtype=float)
             for i in range(len(cols)):
                 for j in range(len(cols)):
                     if i != j:
-                        _, p = spearmanr(df_exact[cols[i]], df_exact[cols[j]])
-                        p_matrix_exact[i, j] = p
+                        x = df_exact[cols[i]]
+                        y = df_exact[cols[j]]
+                        mask = x.notna() & y.notna()
+                        n_common = mask.sum()
+                        
+                        if n_common >= 3:
+                            try:
+                                _, p = spearmanr(x[mask], y[mask])
+                                p_matrix_exact[i, j] = p if not np.isnan(p) else np.nan
+                            except Exception:
+                                p_matrix_exact[i, j] = np.nan
+                        else:
+                            p_matrix_exact[i, j] = np.nan
+                    else:
+                        p_matrix_exact[i, j] = 0
 
             sns.heatmap(corr_exact, annot=True, fmt='.2f', cmap='RdBu_r',
                        center=0, vmin=-1, vmax=1, xticklabels=labels,
@@ -862,17 +906,69 @@ class JediBoxesAnalyzer:
                 for j in range(len(cols)):
                     if i != j:
                         p_val = p_matrix_exact[i, j]
-                        if p_val < 0.001: p_text = '***'
+                        if np.isnan(p_val):
+                            p_text = '?'
+                        elif p_val < 0.001: p_text = '***'
                         elif p_val < 0.01: p_text = '**'
                         elif p_val < 0.05: p_text = '*'
                         else: p_text = 'n.s.'
                         ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
-                               fontsize=8, color='black', fontproperties=TICK_FONT)
+                               fontsize=8, color='black' if p_text != '?' else 'red', fontproperties=TICK_FONT)
             for label in ax.get_xticklabels() + ax.get_yticklabels():
                 label.set_fontproperties(TICK_FONT)
             plt.tight_layout()
             path = self.save_figure('correlation_matrix_exact')
             self.add_paragraph(f"\n![Корреляционная матрица — точно типовая]({path})")
+
+        # 4b-k. Корреляционная матрица Кендалла для точно типовой недели (0)
+        df_exact = self.completed[self.completed['representative'] == 0]
+        if len(df_exact) >= 5:
+            fig, ax = plt.subplots(figsize=(14, 12))
+            corr_exact_kendall = df_exact[cols].corr(method='kendall')
+
+            from scipy.stats import kendalltau
+            p_matrix_exact_kendall = np.full_like(corr_exact_kendall, np.nan, dtype=float)
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        x = df_exact[cols[i]]
+                        y = df_exact[cols[j]]
+                        mask = x.notna() & y.notna()
+                        n_common = mask.sum()
+                        
+                        if n_common >= 3:
+                            try:
+                                _, p = kendalltau(x[mask], y[mask])
+                                p_matrix_exact_kendall[i, j] = p if not np.isnan(p) else np.nan
+                            except Exception:
+                                p_matrix_exact_kendall[i, j] = np.nan
+                        else:
+                            p_matrix_exact_kendall[i, j] = np.nan
+                    else:
+                        p_matrix_exact_kendall[i, j] = 0
+
+            sns.heatmap(corr_exact_kendall, annot=True, fmt='.2f', cmap='RdBu_r',
+                       center=0, vmin=-1, vmax=1, xticklabels=labels,
+                       yticklabels=labels, ax=ax, cbar_kws={'shrink': 0.8})
+            ax.set_title(f'Корреляционная матрица Кендалла — Точно типовая неделя (n={len(df_exact)})', fontproperties=TITLE_FONT)
+
+            for i in range(len(cols)):
+                for j in range(len(cols)):
+                    if i != j:
+                        p_val = p_matrix_exact_kendall[i, j]
+                        if np.isnan(p_val):
+                            p_text = '?'
+                        elif p_val < 0.001: p_text = '***'
+                        elif p_val < 0.01: p_text = '**'
+                        elif p_val < 0.05: p_text = '*'
+                        else: p_text = 'n.s.'
+                        ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
+                               fontsize=8, color='black' if p_text != '?' else 'red', fontproperties=TICK_FONT)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(TICK_FONT)
+            plt.tight_layout()
+            path = self.save_figure('correlation_matrix_exact_kendall')
+            self.add_paragraph(f"\n![Корреляционная матрица Кендалла — точно типовая]({path})")
 
         # 4c. Корреляционная матрица Кендалла (для сравнения со Спирменом)
         fig, ax = plt.subplots(figsize=(14, 12))
@@ -880,12 +976,23 @@ class JediBoxesAnalyzer:
 
         # Вычисляем p-values для корреляций Кендалла
         from scipy.stats import kendalltau
-        p_matrix_kendall = np.zeros_like(corr_matrix_kendall)
+        p_matrix_kendall = np.full_like(corr_matrix_kendall, np.nan, dtype=float)
         for i in range(len(cols)):
             for j in range(len(cols)):
                 if i != j:
-                    _, p = kendalltau(self.completed[cols[i]], self.completed[cols[j]])
-                    p_matrix_kendall[i, j] = p
+                    x = self.completed[cols[i]]
+                    y = self.completed[cols[j]]
+                    mask = x.notna() & y.notna()
+                    n_common = mask.sum()
+                    
+                    if n_common >= 3:
+                        try:
+                            _, p = kendalltau(x[mask], y[mask])
+                            p_matrix_kendall[i, j] = p if not np.isnan(p) else np.nan
+                        except Exception:
+                            p_matrix_kendall[i, j] = np.nan
+                    else:
+                        p_matrix_kendall[i, j] = np.nan
                 else:
                     p_matrix_kendall[i, j] = 0
 
@@ -899,7 +1006,9 @@ class JediBoxesAnalyzer:
             for j in range(len(cols)):
                 if i != j:
                     p_val = p_matrix_kendall[i, j]
-                    if p_val < 0.001:
+                    if np.isnan(p_val):
+                        p_text = '?'
+                    elif p_val < 0.001:
                         p_text = '***'
                     elif p_val < 0.01:
                         p_text = '**'
@@ -908,7 +1017,7 @@ class JediBoxesAnalyzer:
                     else:
                         p_text = 'n.s.'
                     ax.text(j + 0.5, i + 0.85, p_text, ha='center', va='top',
-                           fontsize=8, color='black', fontproperties=TICK_FONT)
+                           fontsize=8, color='black' if p_text != '?' else 'red', fontproperties=TICK_FONT)
 
         # Настраиваем шрифт для меток
         for label in ax.get_xticklabels() + ax.get_yticklabels():
@@ -929,7 +1038,7 @@ class JediBoxesAnalyzer:
             min_val = int(vals.min())
             max_val = int(vals.max())
             data_range = max_val - min_val
-            
+
             # Определяем число столбцов (не больше 10)
             n_bins = min(10, data_range + 1)
             # Ищем хороший делитель
@@ -1001,7 +1110,7 @@ class JediBoxesAnalyzer:
             ('swls_total', 'SWLS'),
             ('mbi_total', 'MBI')
         ]
-        
+
         table_rows = []
         
         for scale, name in scales:
@@ -1109,7 +1218,7 @@ class JediBoxesAnalyzer:
             # Настраиваем шрифт для tick labels
             for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
                 label.set_fontproperties(TICK_FONT)
-        
+
         plt.suptitle('QQ-plot для проверки нормальности распределений', fontproperties=TITLE_FONT)
         plt.tight_layout()
         path = self.save_figure('qqplot_normality')
@@ -1269,7 +1378,7 @@ class JediBoxesAnalyzer:
 
 Для проверки используется **тест Джонкхира-Терпстры (Jonckheere-Terpstra)** — непараметрический тест для упорядоченных альтернатив.
 """)
-
+        
         # Классификация по позиции заданной зоны
         def zone_position(row):
             r = row.get('cubes_reactive', 0) or 0
@@ -1461,7 +1570,7 @@ class JediBoxesAnalyzer:
 
 Для проверки используется **тест Джонкхира-Терпстры (Jonckheere-Terpstra)** — непараметрический тест для упорядоченных альтернатив.
 """)
-
+        
         # Группировка по количеству кубиков в заданной зоне
         df = df.copy()
         df['zone_count'] = df[zone_col].astype(int)
@@ -1562,17 +1671,27 @@ class JediBoxesAnalyzer:
 
         for ax_idx, (scale_col, scale_name, color) in enumerate(scales_to_plot):
             means = []
-            sems = []
+            ci_margins = []  # 95% Confidence Interval
             counts = []
             for count in range(0, 8):
                 grp = df[df['zone_count'] == count][scale_col].dropna()
                 if len(grp) >= 10:
                     means.append(grp.mean())
-                    sems.append(grp.std() / np.sqrt(len(grp)))  # SEM — стандартная ошибка среднего
+                    
+                    # ── 95% Confidence Interval вместо SEM ───────────────────
+                    n = len(grp)
+                    std = grp.std()
+                    sem = std / np.sqrt(n)
+                    # t-критерий для 95% CI (более консервативный при малых n)
+                    from scipy import stats as scipy_stats
+                    ci_margin = scipy_stats.t.ppf(0.975, df=n-1) * sem
+                    ci_margins.append(ci_margin)
+                    # ─────────────────────────────────────────────────────────
+                    
                     counts.append(count)
 
             if len(means) > 1:
-                axes[ax_idx].errorbar(counts, means, yerr=sems, color=color, marker='o',
+                axes[ax_idx].errorbar(counts, means, yerr=ci_margins, color=color, marker='o',
                                      linewidth=2, capsize=5, markersize=8)
                 axes[ax_idx].set_xlabel(f'Количество кубиков ({zone_label})', fontproperties=LABEL_FONT)
                 axes[ax_idx].set_ylabel(scale_name, fontproperties=LABEL_FONT)
@@ -1582,6 +1701,12 @@ class JediBoxesAnalyzer:
                 p_line = np.poly1d(z)
                 x_line = np.linspace(min(counts), max(counts), 100)
                 axes[ax_idx].plot(x_line, p_line(x_line), '--', color=color, alpha=0.5)
+                
+                # ── Надпись о 95% CI ────────────────────────────────────────
+                axes[ax_idx].text(0.02, 0.98, '95% CI', transform=axes[ax_idx].transAxes,
+                                 fontsize=9, va='top', ha='left',
+                                 bbox=dict(boxstyle='round', facecolor='white', edgecolor='gray', alpha=0.8))
+                # ────────────────────────────────────────────────────────────
             else:
                 axes[ax_idx].text(0.5, 0.5, 'Нет данных', ha='center', va='center',
                                  transform=axes[ax_idx].transAxes, fontproperties=LABEL_FONT)
@@ -1841,48 +1966,44 @@ class JediBoxesAnalyzer:
         self.add_paragraph(f"- По записям (4-5): n = {len(by_records)}")
         self.add_paragraph(f"- По памяти (1-2): n = {len(by_memory)}")
 
-        # Сравнение зон с p-value
+        # Сравнение зон с p-value и эмодзи
         table_data = []
-        for zone in ['cubes_proactive', 'cubes_reactive', 'cubes_operational']:
-            zone_name = ZONE_NAMES.get(zone.replace('cubes_', ''), zone)
-            r1 = by_records[zone].mean()
-            r2 = by_memory[zone].mean()
-            
+        for zone_col, zone_name_emoji in [('cubes_reactive', '🔴 Срочное'),
+                                           ('cubes_proactive', '🟢 Целевое'),
+                                           ('cubes_operational', '⚪ Операционное')]:
+            r1 = by_records[zone_col].mean()
+            r2 = by_memory[zone_col].mean()
+
             if len(by_records) >= 3 and len(by_memory) >= 3:
-                u_stat, p = stats.mannwhitneyu(by_records[zone], by_memory[zone])
+                u_stat, p = stats.mannwhitneyu(by_records[zone_col], by_memory[zone_col])
                 sig = "*" if p is not None and p < 0.05 else ""
                 p_str = f"p={p:.3f}{sig}"
             else:
                 p_str = "n/a"
-            
-            table_data.append([zone_name, f"{r1:.2f}", f"{r2:.2f}", f"{r1-r2:+.2f}", p_str])
+
+            table_data.append([zone_name_emoji, f"{r1:.2f}", f"{r2:.2f}", f"{r1-r2:+.2f}", p_str])
 
         self.add_table(['Зона', 'По записям', 'По памяти', 'Разница', 'p-value'], table_data)
 
-        # Прокрастинация с p-value
-        if len(by_records) >= 3 and len(by_memory) >= 3:
-            proc_by_records = by_records['proc_total'].mean()
-            proc_by_memory = by_memory['proc_total'].mean()
-            u_proc, p_proc = stats.mannwhitneyu(by_records['proc_total'], by_memory['proc_total'])
-            sig_proc = "*" if p_proc is not None and p_proc < 0.05 else ""
-            self.add_paragraph(f"\nПрокрастинация: по записям = {proc_by_records:.1f}, "
-                              f"по памяти = {proc_by_memory:.1f} (p={p_proc:.3f}{sig_proc})")
+        # Таблица шкал валидации (включая SWLS)
+        self.add_paragraph(f"\n**Шкалы валидации:**")
 
-            # MBI с p-value
-            mbi_by_records = by_records['mbi_total'].mean()
-            mbi_by_memory = by_memory['mbi_total'].mean()
-            u_mbi, p_mbi = stats.mannwhitneyu(by_records['mbi_total'], by_memory['mbi_total'])
-            sig_mbi = "*" if p_mbi is not None and p_mbi < 0.05 else ""
-            self.add_paragraph(f"MBI: по записям = {mbi_by_records:.1f}, по памяти = {mbi_by_memory:.1f} (p={p_mbi:.3f}{sig_mbi})")
-        else:
-            proc_by_records = by_records['proc_total'].mean() if len(by_records) > 0 else 0
-            proc_by_memory = by_memory['proc_total'].mean() if len(by_memory) > 0 else 0
-            self.add_paragraph(f"\nПрокрастинация: по записям = {proc_by_records:.1f}, "
-                              f"по памяти = {proc_by_memory:.1f}")
+        scale_data = []
+        for scale_col, scale_name in [('proc_total', 'Прокрастинация'),
+                                       ('swls_total', 'SWLS'),
+                                       ('mbi_total', 'MBI (выгорание)')]:
+            vals_records = by_records[scale_col].dropna()
+            vals_memory = by_memory[scale_col].dropna()
             
-            mbi_by_records = by_records['mbi_total'].mean() if len(by_records) > 0 else 0
-            mbi_by_memory = by_memory['mbi_total'].mean() if len(by_memory) > 0 else 0
-            self.add_paragraph(f"MBI: по записям = {mbi_by_records:.1f}, по памяти = {mbi_by_memory:.1f}")
+            if len(vals_records) >= 3 and len(vals_memory) >= 3:
+                m_records = vals_records.mean()
+                m_memory = vals_memory.mean()
+                u_stat, p = stats.mannwhitneyu(vals_records, vals_memory)
+                sig = "*" if p is not None and p < 0.05 else ""
+                p_str = f"p={p:.3f}{sig}"
+                scale_data.append([scale_name, f"{m_records:.1f}", f"{m_memory:.1f}", f"{m_records - m_memory:+.1f}", p_str])
+
+        self.add_table(['Шкала', 'По записям (M)', 'По памяти (M)', 'Разница', 'p-value'], scale_data)
 
         # Интерпретация
         self.add_paragraph("\n*Значимость: * p<0.05*")
@@ -2033,20 +2154,21 @@ class JediBoxesAnalyzer:
         self.add_paragraph(f"- Женщины: n = {len(female)}")
         
         table_data = []
-        for zone in ['cubes_reactive', 'cubes_proactive', 'cubes_operational']:
-            zone_name = ZONE_NAMES.get(zone.replace('cubes_', ''), zone)
-            
-            m_mean = male[zone].mean()
-            f_mean = female[zone].mean()
-            
+        for zone_col, zone_name_emoji in [('cubes_reactive', '🔴 Срочное'),
+                                           ('cubes_proactive', '🟢 Целевое'),
+                                           ('cubes_operational', '⚪ Операционное')]:
+
+            m_mean = male[zone_col].mean()
+            f_mean = female[zone_col].mean()
+
             if len(male) >= 3 and len(female) >= 3:
-                u_stat, p = stats.mannwhitneyu(male[zone], female[zone])
+                u_stat, p = stats.mannwhitneyu(male[zone_col], female[zone_col])
                 sig = "*" if p is not None and p < 0.05 else ""
             else:
                 p = 1.0
                 sig = ""
-            
-            table_data.append([zone_name, f"{m_mean:.2f}", f"{f_mean:.2f}", f"{m_mean-f_mean:+.2f}", f"p={p:.3f}{sig}"])
+
+            table_data.append([zone_name_emoji, f"{m_mean:.2f}", f"{f_mean:.2f}", f"{m_mean-f_mean:+.2f}", f"p={p:.3f}{sig}"])
         
         self.add_table(['Зона', 'Мужчины (M)', 'Женщины (M)', 'Разница', 'p-value'], table_data)
         
@@ -2314,16 +2436,17 @@ class JediBoxesAnalyzer:
         if len(leaders) >= 5 and len(others) >= 5:
             # Сравниваем распределение кубиков
             table_data = []
-            for zone in ['cubes_reactive', 'cubes_proactive', 'cubes_operational']:
-                zone_name = ZONE_NAMES.get(zone.replace('cubes_', ''), zone)
-                
-                leaders_mean = leaders[zone].mean()
-                others_mean = others[zone].mean()
-                
-                u_stat, p = stats.mannwhitneyu(leaders[zone], others[zone])
+            for zone_col, zone_name_emoji in [('cubes_reactive', '🔴 Срочное'),
+                                               ('cubes_proactive', '🟢 Целевое'),
+                                               ('cubes_operational', '⚪ Операционное')]:
+
+                leaders_mean = leaders[zone_col].mean()
+                others_mean = others[zone_col].mean()
+
+                u_stat, p = stats.mannwhitneyu(leaders[zone_col], others[zone_col])
                 sig = "*" if p is not None and p < 0.05 else ""
-                
-                table_data.append([zone_name, f"{leaders_mean:.2f}", f"{others_mean:.2f}", 
+
+                table_data.append([zone_name_emoji, f"{leaders_mean:.2f}", f"{others_mean:.2f}",
                                  f"{leaders_mean-others_mean:+.2f}", f"p={p:.3f}{sig}"])
 
             self.add_table(['Зона', 'Руководство (M)', 'Остальные (M)', 'Разница', 'p-value'], table_data)

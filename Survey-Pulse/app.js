@@ -23,6 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Валидация обязательных radio-вопросов
+        const requiredRadios = [
+            { name: 'memory_vs_records', label: 'Восстановление по памяти/записям' },
+            { name: 'representative', label: 'Показательность недели' },
+            { name: 'work_life', label: 'Распределение энергии между работой и личной жизнью' },
+            { name: 'energy_deficit', label: 'Энергетический дефицит' }
+        ];
+
+        for (const radio of requiredRadios) {
+            const selected = document.querySelector(`input[name="${radio.name}"]:checked`);
+            if (!selected) {
+                alert(`Пожалуйста, ответьте на вопрос: "${radio.label}"`);
+                return;
+            }
+        }
+
         const btn = document.getElementById('btn-submit');
         btn.disabled = true;
         btn.textContent = 'Отправляем...';

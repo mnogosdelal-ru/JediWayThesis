@@ -39,9 +39,9 @@ if ($stmt->fetch()) {
 }
 
 // Данные
-$tgId = $_POST['tg_id'] ?: null;
-$week = $_POST['week'] ?: null;
-$groupId = $_POST['group_id'] ?: null;
+$tgId = isset($_POST['tg_id']) && $_POST['tg_id'] !== '' ? $_POST['tg_id'] : null;
+$week = isset($_POST['week']) && $_POST['week'] !== '' ? $_POST['week'] : null;
+$groupId = isset($_POST['group_id']) && $_POST['group_id'] !== '' ? $_POST['group_id'] : null;
 $reactive = (int)($_POST['cubes_reactive'] ?? 0);
 $proactive = (int)($_POST['cubes_proactive'] ?? 0);
 $operational = (int)($_POST['cubes_operational'] ?? 0);
@@ -52,13 +52,13 @@ if ($reactive + $proactive + $operational !== 6) {
     exit;
 }
 
-$representative = $_POST['representative'] ?: null;
-$workLife = $_POST['work_life'] ?: null;
-$energyDeficit = $_POST['energy_deficit'] ?: null;
-$mvr = $_POST['memory_vs_records'] ?: null;
+$representative = isset($_POST['representative']) ? $_POST['representative'] : null;
+$workLife = isset($_POST['work_life']) ? $_POST['work_life'] : null;
+$energyDeficit = isset($_POST['energy_deficit']) ? $_POST['energy_deficit'] : null;
+$mvr = isset($_POST['memory_vs_records']) ? $_POST['memory_vs_records'] : null;
 $takeaway = trim($_POST['takeaway'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
-$timeTotal = $_POST['time_total'] ?: null;
+$timeTotal = isset($_POST['time_total']) ? $_POST['time_total'] : null;
 
 $ipHash = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? '');
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
