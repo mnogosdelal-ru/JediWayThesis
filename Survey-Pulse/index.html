@@ -24,47 +24,10 @@
         <div class="card">
             <p>Перед тем как ответить, подумайте о <strong>прошедшей неделе</strong> и задачах, на которые вы тратили свою энергию (время, силы, мыслетопливо).</p>
             <p><strong>У вас есть 6 кубиков</strong> — это весь ваш ресурс за неделю. Распределите их по трём зонам:</p>
-
-            <!-- Легенда зон -->
-            <div class="zones-legend">
-                <div class="legend-item reactive">
-                    <span class="legend-icon">🔴</span>
-                    <div>
-                        <strong>Срочное</strong>
-                        <p>Задачи, которые требовали немедленного решения (если бы вы их не сделали, то немедленно столкнулись бы с негативом)</p>
-                    </div>
-                </div>
-                <div class="legend-item proactive">
-                    <span class="legend-icon">🟢</span>
-                    <div>
-                        <strong>Целевое</strong>
-                        <p>Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей</p>
-                    </div>
-                </div>
-                <div class="legend-item operational">
-                    <span class="legend-icon">⚪</span>
-                    <div>
-                        <strong>Операционное</strong>
-                        <p>Рутинные задачи, поддержание текущих процессов или просто что-то несрочное без явной цели</p>
-                    </div>
-                </div>
-            </div>
-
             <p style="text-align: center; color: var(--text-muted);">Перетаскивайте кубики мышкой или пальцем (на мобильном).</p>
         </div>
 
-        <!-- Зона пула (источник кубиков) -->
-        <div class="pool-container" id="pool">
-            <div class="pool-label">Ваша энергия</div>
-            <div class="pool-slots" id="pool-slots">
-                <!-- Кубики будут добавлены через JS -->
-            </div>
-            <div class="pool-counter">
-                Осталось: <span id="available-cubes">—</span>
-            </div>
-        </div>
-
-        <!-- Три зоны -->
+        <!-- Три зоны для сброса кубиков (теперь выше пула) -->
         <div class="zones-container">
             <!-- Зона 1: Срочное -->
             <div class="zone reactive-zone" data-zone="reactive">
@@ -73,6 +36,9 @@
                     <h3>Срочное</h3>
                 </div>
                 <div class="zone-drop-area" id="reactive-zone">
+                    <div class="zone-definition">
+                        Задачи, которые требовали немедленного решения (если бы вы их не сделали, то немедленно столкнулись бы с негативом)
+                    </div>
                     <div class="zone-cubes" id="reactive-cubes"></div>
                 </div>
                 <div class="zone-counter">
@@ -87,6 +53,9 @@
                     <h3>Целевое</h3>
                 </div>
                 <div class="zone-drop-area" id="proactive-zone">
+                    <div class="zone-definition">
+                        Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей
+                    </div>
                     <div class="zone-cubes" id="proactive-cubes"></div>
                 </div>
                 <div class="zone-counter">
@@ -101,11 +70,25 @@
                     <h3>Операционное</h3>
                 </div>
                 <div class="zone-drop-area" id="operational-zone">
+                    <div class="zone-definition">
+                        Рутинные задачи, поддержание текущих процессов или просто что-то несрочное без явной цели
+                    </div>
                     <div class="zone-cubes" id="operational-cubes"></div>
                 </div>
                 <div class="zone-counter">
                     <span class="count-value">0</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Зона пула (источник кубиков) -->
+        <div class="pool-container" id="pool">
+            <div class="pool-label">Ваша энергия</div>
+            <div class="pool-slots" id="pool-slots">
+                <!-- Кубики будут добавлены через JS -->
+            </div>
+            <div class="pool-counter">
+                Осталось: <span id="available-cubes">—</span>
             </div>
         </div>
 

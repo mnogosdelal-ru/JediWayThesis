@@ -151,12 +151,24 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 
 .zone-drop-area {
     min-height: 80px; background: rgba(0, 0, 0, 0.03);
-    border-radius: var(--radius-sm); padding: 10px;
+    border-radius: var(--radius-sm); padding: 4px;
     display: flex; flex-wrap: wrap; gap: 8px;
     align-items: flex-start; justify-content: center;
     transition: var(--transition); flex: 1;
 }
 .zone-drop-area.drag-over { background: rgba(52, 152, 219, 0.1); border: 2px dashed var(--primary-color); }
+
+.zone-definition {
+    width: 100%;
+    font-size: 0.7rem;
+    color: var(--text-main);
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    padding: 6px 4px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 4px;
+}
 
 .zone-cubes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
@@ -318,7 +330,7 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 /* === Адаптивность === */
 @media (max-width: 768px) {
     .zones-container { gap: 10px; }
-    .zone { min-height: 150px; padding: 15px; }
+    .zone { min-height: 150px; padding: 5px; }
     .zone-drop-area { min-height: 60px; }
     .zones-legend { grid-template-columns: 1fr; gap: 10px; padding: 15px; }
     .likert-center-scale { grid-template-columns: auto repeat(7, 26px) auto; }
