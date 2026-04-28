@@ -109,37 +109,39 @@
             </div>
         </div>
 
-        <!-- Вопрос про память/записи -->
-        <div class="card" style="margin-top: 20px;">
+        <!-- Вопрос про удовлетворённость прогрессом -->
+        <div class="card">
             <div class="likert-scale-group">
-                <label>Когда вы распределяли "энергию" по коробочкам, то какую часть вы восстановили по памяти, а какую по своим записям (дневники, ежедневник, календарь, список задач и т.п.)?<span class="required-star">*</span></label>
-                <div class="radio-vertical-list">
-                    <div class="radio-item">
-                        <input type="radio" name="memory_vs_records" id="mvr-1" value="1">
-                        <label for="mvr-1">Всё восстановил(а) по памяти</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" name="memory_vs_records" id="mvr-2" value="2">
-                        <label for="mvr-2">Большую часть восстановил(а) по памяти, и кое-что по записям</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" name="memory_vs_records" id="mvr-3" value="3">
-                        <label for="mvr-3">Примерно половину по памяти, половину по записям</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" name="memory_vs_records" id="mvr-4" value="4">
-                        <label for="mvr-4">Большую часть по записям и немного откорректировал(а) по памяти</label>
-                    </div>
-                    <div class="radio-item">
-                        <input type="radio" name="memory_vs_records" id="mvr-5" value="5">
-                        <label for="mvr-5">Практически всё восстановил(а) по записям</label>
-                    </div>
+                <label>В какой мере вы согласны с утверждением: Я доволен своим прогрессом за неделю?<span class="required-star">*</span></label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Всецело разочарован</span>
+
+                    <input type="radio" name="satisfaction" id="sat-1" value="1">
+                    <label for="sat-1">1</label>
+
+                    <input type="radio" name="satisfaction" id="sat-2" value="2">
+                    <label for="sat-2">2</label>
+
+                    <input type="radio" name="satisfaction" id="sat-3" value="3">
+                    <label for="sat-3">3</label>
+
+                    <input type="radio" name="satisfaction" id="sat-4" value="4">
+                    <label for="sat-4">4</label>
+
+                    <input type="radio" name="satisfaction" id="sat-5" value="5">
+                    <label for="sat-5">5</label>
+
+                    <input type="radio" name="satisfaction" id="sat-6" value="6">
+                    <label for="sat-6">6</label>
+
+                    <input type="radio" name="satisfaction" id="sat-7" value="7">
+                    <label for="sat-7" class="hint-trigger">7</label>
+
+                    <span class="likert-center-label right hint-target">Полностью доволен</span>
+                    <p class="center-scale-note">Ни то, ни сё</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Контекстные вопросы -->
-        <div class="card">
             <!-- Насколько показательная неделя (-3 до +3) -->
             <div class="likert-scale-group">
                 <label>Насколько прошедшая неделя была похожа на ваш обычный режим работы?<span class="required-star">*</span></label>
@@ -228,7 +230,7 @@
                     <input type="radio" name="energy_deficit" id="def-9" value="9">
                     <label for="def-9">9</label>
 
-                    <span class="likert-deficit-label right">Минимум полтора раза по столько же не хватило</span>
+                    <span class="likert-deficit-label right">Минимум полтора раза по столько же</span>
                 </div>
             </div>
 

@@ -55,7 +55,7 @@ if ($reactive + $proactive + $operational !== 6) {
 $representative = isset($_POST['representative']) ? $_POST['representative'] : null;
 $workLife = isset($_POST['work_life']) ? $_POST['work_life'] : null;
 $energyDeficit = isset($_POST['energy_deficit']) ? $_POST['energy_deficit'] : null;
-$mvr = isset($_POST['memory_vs_records']) ? $_POST['memory_vs_records'] : null;
+$satisfaction = isset($_POST['satisfaction']) ? $_POST['satisfaction'] : null;
 $takeaway = trim($_POST['takeaway'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
 $timeTotal = isset($_POST['time_total']) ? $_POST['time_total'] : null;
@@ -68,13 +68,13 @@ $stmt = $pdo->prepare("
     INSERT INTO pulse_responses (
         session_id, status, tg_id, week, group_id,
         cubes_reactive, cubes_proactive, cubes_operational,
-        representative, work_life, energy_deficit, memory_vs_records,
+        representative, work_life, energy_deficit, memory_vs_records, satisfaction,
         takeaway, comment, time_total,
         user_agent, ip_hash, device_type
     ) VALUES (
         :sid, 'completed', :tg_id, :week, :group_id,
         :r, :g, :o,
-        :rep, :wl, :def, :mvr,
+        :rep, :wl, :def, :mvr, :sat,
         :takeaway, :comment, :tt,
         :ua, :ip, :device
     )
@@ -84,7 +84,7 @@ $stmt->execute([
     ':sid' => $sessionId,
     ':tg_id' => $tgId, ':week' => $week, ':group_id' => $groupId,
     ':r' => $reactive, ':g' => $proactive, ':o' => $operational,
-    ':rep' => $representative, ':wl' => $workLife, ':def' => $energyDeficit, ':mvr' => $mvr,
+    ':rep' => $representative, ':wl' => $workLife, ':def' => $energyDeficit, ':mvr' => $mvr, ':sat' => $satisfaction,
     ':takeaway' => $takeaway ?: null, ':comment' => $comment ?: null, ':tt' => $timeTotal ?: null,
     ':ua' => $ua, ':ip' => $ipHash, ':device' => $device
 ]);
@@ -102,7 +102,8 @@ try {
         'cubes_reactive' => $reactive,
         'cubes_proactive' => $proactive,
         'cubes_operational' => $operational,
-        'memory_vs_records' => $mvr,
+        'memory_vs_records' => '',
+        'satisfaction' => $satisfaction,
         'representative' => $representative,
         'work_life' => $workLife,
         'energy_deficit' => $energyDeficit,

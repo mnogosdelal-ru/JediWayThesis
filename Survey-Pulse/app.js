@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Валидация обязательных radio-вопросов
         const requiredRadios = [
-            { name: 'memory_vs_records', label: 'Восстановление по памяти/записям' },
+            { name: 'satisfaction', label: 'Удовлетворённость прогрессом' },
             { name: 'representative', label: 'Показательность недели' },
             { name: 'work_life', label: 'Распределение энергии между работой и личной жизнью' },
             { name: 'energy_deficit', label: 'Энергетический дефицит' }
@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('time_total', Math.round((Date.now() - appStartTime) / 1000));
 
             // Радио
-            const mvr = document.querySelector('input[name="memory_vs_records"]:checked');
-            if (mvr) fd.append('memory_vs_records', mvr.value);
+            const sat = document.querySelector('input[name="satisfaction"]:checked');
+            if (sat) fd.append('satisfaction', sat.value);
             const rep = document.querySelector('input[name="representative"]:checked');
             if (rep) fd.append('representative', rep.value);
             const wl = document.querySelector('input[name="work_life"]:checked');
