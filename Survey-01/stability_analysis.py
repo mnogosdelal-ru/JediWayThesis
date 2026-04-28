@@ -21,7 +21,7 @@ ROBUSTNESS_REPORT = os.path.join(REPORT_DIR, 'robustness_report.md')
 
 # Целевая шкала для анализа (можно менять)
 # Доступные: 'MIJS-2+', 'MIJS-3+', 'single_item', 'MIJS-2', 'MIJS'
-TARGET_SCALE = 'MIJS-2+'
+TARGET_SCALE = 'single_item'
 
 # Определения составов шкал
 SCALES = {
@@ -33,9 +33,9 @@ SCALES = {
 }
 
 # Настройки симуляции
-N_ITERATIONS = 1000 # Установлено 10 для отладки
-SAMPLE_SIZE = 180  # Уменьшено пользователем для большей жесткости отбора
-TOP_K = 15         
+N_ITERATIONS = 10000 # Установлено 10 для отладки
+SAMPLE_SIZE = 210  # Уменьшено пользователем для большей жесткости отбора
+P_VALUE_THRESHOLD = 0.01  # Порог значимости после коррекции на множественные сравнения
 CORE_THRESHOLD = 75 # Порог для включения в "Ядро"
 CONSENSUS_THRESHOLD = 3 # Порог для включения в "Консенсус"
 
@@ -154,7 +154,7 @@ def load_and_preprocess():
     return data, prac_cols, setup_cols, FEATURE_LABELS
 
 def get_top_consensus_practices(df_scales, prac_cols, setup_cols):
-    """Ядро алгоритма отбора (топ-15 консенсус)"""
+    """Ядро алгоритма отбора (практики со значимым p-value < P_VALUE_THRESHOLD)"""
     all_practices = prac_cols + setup_cols
     target_data = df_scales[TARGET_SCALE + '_total']
     
@@ -172,7 +172,8 @@ def get_top_consensus_practices(df_scales, prac_cols, setup_cols):
         _, p_adj, _, _ = multipletests(corr_pvals, method='fdr_bh')
         corr_results = [(f[0], p_adj[i], f[2]) for i, f in enumerate(corr_feats)]
         corr_results.sort(key=lambda x: (x[1], -abs(x[2])))
-        top_corr = [x[0] for x in corr_results[:TOP_K]]
+        # Отобрать все практики с p-value < порога (вместо TOP-K)
+        top_corr = [x[0] for x in corr_results if x[1] < P_VALUE_THRESHOLD]
     else:
         top_corr = []
 
@@ -191,7 +192,8 @@ def get_top_consensus_practices(df_scales, prac_cols, setup_cols):
         _, p_adj, _, _ = multipletests(anova_pvals, method='fdr_bh')
         anova_results = [(f[0], p_adj[i]) for i, f in enumerate(anova_feats)]
         anova_results.sort(key=lambda x: x[1])
-        top_anova = [x[0] for x in anova_results[:TOP_K]]
+        # Отобрать все практики с p-value < порога (вместо TOP-K)
+        top_anova = [x[0] for x in anova_results if x[1] < P_VALUE_THRESHOLD]
     else:
         top_anova = []
 
@@ -215,11 +217,12 @@ def get_top_consensus_practices(df_scales, prac_cols, setup_cols):
         _, p_adj, _, _ = multipletests(kw_pvals, method='fdr_bh')
         kw_results = [(f[0], p_adj[i]) for i, f in enumerate(kw_feats)]
         kw_results.sort(key=lambda x: x[1])
-        top_kw = [x[0] for x in kw_results[:TOP_K]]
+        # Отобрать все практики с p-value < порога (вместо TOP-K)
+        top_kw = [x[0] for x in kw_results if x[1] < P_VALUE_THRESHOLD]
     else:
         top_kw = []
 
-    # Consensus (appears in at least 2 top-15 lists)
+    # Consensus (appears in at least CONSENSUS_THRESHOLD lists)
     counts = {}
     for f in (top_corr + top_anova + top_kw):
         counts[f] = counts.get(f, 0) + 1
@@ -259,9 +262,11 @@ def run_stability_analysis():
     print(f"Генерация отчета в {ROBUSTNESS_REPORT}...")
     with open(ROBUSTNESS_REPORT, 'w', encoding='utf-8') as f:
         f.write("# Анализ устойчивости (Stability Selection)\n\n")
-        f.write(f"Параметры: {N_ITERATIONS} итераций, подвыборка {SAMPLE_SIZE} человек (~80%).\n")
+        f.write(f"Параметры: {N_ITERATIONS} итераций, подвыборка {SAMPLE_SIZE} человек (~{int(SAMPLE_SIZE / len(data) * 100)}%).\n")
         f.write(f"Целевая шкала: {TARGET_SCALE}\n")
-        f.write(f"Stability Score показывает, в каком проценте случаев практика попадала в 'Топ-15 консенсуса' в {CONSENSUS_THRESHOLD} из 3 алгоритмов при случайных изменениях в выборке.\n\n")
+        f.write(f"Отбор практик: все практики с скорректированным p-value < {P_VALUE_THRESHOLD} (FDR Benjamini-Hochberg).\n")
+        f.write(f"Консенсус: практика должна попасть в отобранные списки минимум {CONSENSUS_THRESHOLD} из 3 методов.\n")
+        f.write(f"Stability Score показывает, в каком проценте случаев практика попадала в список консенсуса при случайных изменениях в выборке.\n\n")
 
         f.write("![Stability Selection Graph](images/stability_selection.png)\n\n")
         
@@ -280,7 +285,7 @@ def run_stability_analysis():
     
     sns.barplot(data=df_plot, x='Stability', y='Label_Wrapped', hue='Stability', palette='viridis', legend=False)
     plt.axvline(CORE_THRESHOLD, color='red', linestyle='--', label=f'{CORE_THRESHOLD}% Threshold')
-    plt.title(f"Stability Selection: Частота попадания в ТОП-15 ({TARGET_SCALE})")
+    plt.title(f"Stability Selection: Частота попадания в список значимых практик (p < {P_VALUE_THRESHOLD}, {TARGET_SCALE})")
     plt.xlabel("Stability Score (%)")
     plt.ylabel("Практика")
     plt.tight_layout()
