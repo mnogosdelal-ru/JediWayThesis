@@ -36,7 +36,7 @@
                 proactive: document.getElementById('proactive-zone'),
                 operational: document.getElementById('operational-zone')
             },
-            cubes: {
+cubes: {
                 reactive: document.getElementById('reactive-cubes'),
                 proactive: document.getElementById('proactive-cubes'),
                 operational: document.getElementById('operational-cubes')
@@ -295,7 +295,7 @@
         if (sourceName === 'pool') { state.pool--; } else { state[sourceName]--; }
         if (targetZoneName === 'pool') { state.pool++; } else { state[targetZoneName]++; }
 
-        if (targetZoneName === 'pool') {
+if (targetZoneName === 'pool') {
             elements.poolSlots.appendChild(cube);
         } else {
             elements.dropAreas[targetZoneName].querySelector('.zone-cubes').appendChild(cube);
