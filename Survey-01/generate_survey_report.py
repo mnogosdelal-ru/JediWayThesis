@@ -18,6 +18,9 @@ REPORT_DIR = ''
 OUTPUT_FILE = REPORT_DIR + 'survey_report.md'
 IMAGES_DIR = REPORT_DIR + 'images'
 
+# Порог значимости после коррекции на множественные сравнения (FDR Benjamini-Hochberg)
+P_VALUE_THRESHOLD = 0.01
+
 # Целевая шкала для корреляционного анализа (можно менять)
 TARGET_SCALE = 'MIJS-2+'
 #TARGET_SCALE = 'MIJS-3+'
@@ -459,6 +462,9 @@ def generate_report():
         report_content += f"| {i} | {res['Label']} | {res['Rho']:.3f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
     report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). p < 0.05, ** p < 0.01, *** p < 0.001. Отрицательная корреляция означает, что использование приема связано с более низким баллом по шкале {TARGET_SCALE} (меньше стресса/завала).* \n\n"
 
+    # Отображаем только значимые корреляции
+    sig_corr_results = [r for r in corr_results if r.get('PVal_adj', 1.0) < P_VALUE_THRESHOLD]
+
     # --- Раздел 3.2: Сравнение средних (ANOVA) ---
     print("  Выполнение дисперсионного анализа (ANOVA)...")
     report_content += hm.get_header(2, "Сравнение средних (ANOVA)") + "\n\n"
@@ -506,6 +512,9 @@ def generate_report():
         report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
     report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). 0 — никогда/редко, 4 — всегда. В ячейках указан средний балл по шкале {TARGET_SCALE}. Чем ниже балл, тем выше продуктивность.* \n\n"
 
+    # Отображаем только значимые результаты ANOVA для частоты
+    sig_anova_prac = [r for r in anova_results_prac if r.get('PVal_adj', 1.0) < P_VALUE_THRESHOLD]
+
     # --- 3.2.2. Уровень внедрения приемов ---
     report_content += hm.get_header(3, "Уровень внедрения приемов") + "\n\n"
     report_content += "Респонденты разделены на группы по уровню внедрения (0 — не применил(а), 3 — применил(а) по максимуму).\n\n"
@@ -546,6 +555,9 @@ def generate_report():
         m_str = " | ".join([f"{m:.1f}" if not np.isnan(m) else "-" for m in res['Means']])
         report_content += f"| {i} | {res['Label']} | {m_str} | {res['F']:.2f} | {res['PVal']:.4f} | {res['PVal_adj']:.4f} | {res['Sig']} |\n"
     report_content += f"\n*Примечание: Значимость (*) указана на основе скорректированного p-value (FDR). 0 — не применил(а), 3 — по максимуму. В ячейках указан средний балл по шкале {TARGET_SCALE}.*\n\n"
+
+    # Отображаем только значимые результаты ANOVA для внедрения
+    sig_anova_setup = [r for r in anova_results_setup if r.get('PVal_adj', 1.0) < P_VALUE_THRESHOLD]
 
 
     # --- Раздел 3.3: Сравнение трёх групп продуктивности (Kruskal-Wallis + Dunn) ---
@@ -622,17 +634,15 @@ def generate_report():
             sig_marker = "✅" if r['reject'] else ""
             report_content += f"| {i} | {r['label']} | {r['mean_low']:.2f} | {r['mean_mid']:.2f} | {r['mean_high']:.2f} | {r['h']:.2f} | {r['p_val']:.4f} | {r['p_adj']:.4f} | {sig_marker} |\n"
 
-        # Выделим значимые
-        sig_kw = [r for r in kw_results if r['reject']]
-        report_content += f"\n**Значимых различий после коррекции (p<sub>adj</sub> < 0.05): {len(sig_kw)}**\n\n"
+        # Выделим значимые (по новому порогу)
+        sig_kw = [r for r in kw_results if r.get('p_adj', 1.0) < P_VALUE_THRESHOLD]
+        report_content += f"\n**Значимых различий после коррекции (p<sub>adj</sub> < {P_VALUE_THRESHOLD}): {len(sig_kw)}**\n\n"
 
         # Для значимых практик проводим post-hoc тест Данна и строим ящичные диаграммы
         if sig_kw:
-            # Ограничим число практик для детального анализа (например, первые 15)
-            top_sig = sig_kw[:15]
-            print(f"    Проведение попарных сравнений для {len(top_sig)} значимых практик...")
-            for idx, r in enumerate(top_sig, 1):
-                if idx % 5 == 0: print(f"      Прогресс: {idx}/{len(top_sig)}...")
+            print(f"    Проведение попарных сравнений для {len(sig_kw)} значимых практик...")
+            for idx, r in enumerate(sig_kw, 1):
+                if idx % 5 == 0: print(f"      Прогресс: {idx}/{len(sig_kw)}...")
                 feat = r['feat']
                 report_content += f"#### {r['label']}\n\n"
                 # Собираем данные по группам
@@ -701,21 +711,21 @@ def generate_report():
 
     # --- Раздел 3.4: Сводная таблица лучших практик по версии разных методов ---
     report_content += hm.get_header(2, "Сводная таблица лучших практик") + "\n\n"
-    report_content += "В этой таблице представлены практики, которые вошли в топ-15 по каждому из использованных методов анализа. "
-    report_content += "✅ означает, что практика входит в топ-15 по версии данного метода.\n\n"
+    report_content += f"В этой таблице представлены практики, которые показали значимое различие (p < {P_VALUE_THRESHOLD} после FDR-коррекции) по каждому из использованных методов анализа. "
+    report_content += "✅ означает, что практика проходит порог значимости по версии данного метода.\n\n"
 
-    # Собираем топ-15 из каждого метода
+    # Собираем значимые практики из каждого метода (по p-value < P_VALUE_THRESHOLD)
     # Корреляционный анализ (Spearman)
-    top15_corr = [r['Label'] for r in corr_results[:15]] if len(corr_results) >= 15 else [r['Label'] for r in corr_results]
+    sig_corr_labels = [r['Label'] for r in sig_corr_results]
     
     # ANOVA частота
-    top15_anova_prac = [r['Label'] for r in anova_results_prac[:15]] if len(anova_results_prac) >= 15 else [r['Label'] for r in anova_results_prac]
+    sig_anova_prac_labels = [r['Label'] for r in sig_anova_prac]
     
     # ANOVA внедрение
-    top15_anova_setup = [r['Label'] for r in anova_results_setup[:15]] if len(anova_results_setup) >= 15 else [r['Label'] for r in anova_results_setup]
+    sig_anova_setup_labels = [r['Label'] for r in sig_anova_setup]
     
     # Kruskal-Wallis
-    top15_kw = [r['label'] for r in kw_results[:15]] if len(kw_results) >= 15 else [r['label'] for r in kw_results]
+    sig_kw_labels = [r['label'] for r in sig_kw]
 
     # Все практики (только приемы, без дополнительных переменных)
     all_practice_labels = []
@@ -729,9 +739,9 @@ def generate_report():
     # Формируем строки таблицы
     table_rows = []
     for feat, label in all_practice_labels:
-        in_corr = "✅" if label in top15_corr else ""
-        in_anova_prac = "✅" if label in top15_anova_prac else ""
-        in_kw = "✅" if label in top15_kw else ""
+        in_corr = "✅" if label in sig_corr_labels else ""
+        in_anova_prac = "✅" if label in sig_anova_prac_labels else ""
+        in_kw = "✅" if label in sig_kw_labels else ""
         
         # Сумма галочек (считаем количество "✅")
         sum_checks = sum([1 for x in [in_corr, in_anova_prac, in_kw] if x == "✅"])
@@ -763,22 +773,22 @@ def generate_report():
     # --- Раздел 4: Анализ шкалы, составленной из практик, одобренных большинством методов ---
     print("Анализ консенсусной шкалы...")
     report_content += hm.get_header(1, "Анализ шкалы из практик, получивших наибольший консенсус") + "\n\n"
-    report_content += "В этом разделе мы отбираем практики, которые вошли в топ‑15 хотя бы трёх из четырёх использованных методов "
+    report_content += f"В этом разделе мы отбираем практики, которые показали значимое различие (p < {P_VALUE_THRESHOLD}) хотя бы в трёх из четырёх использованных методов "
     report_content += "(корреляционный анализ, ANOVA для частоты, критерий Краскела‑Уоллиса). "
     report_content += "Из этих практик формируется новая шкала, и проводится её детальный психометрический анализ.\n\n"
 
-    # Определяем, какие практики попали в топ‑15 по каждому методу (используем уже вычисленные списки)
-    top15_corr_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_corr]  # обратное сопоставление метки -> внутреннее имя
-    top15_anova_prac_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_anova_prac]
-    top15_kw_feats = [k for k, v in FEATURE_LABELS.items() if v in top15_kw]
+    # Определяем, какие практики попали в значимые списки по каждому методу (используем уже вычисленные списки)
+    sig_corr_feats = [k for k, v in FEATURE_LABELS.items() if v in sig_corr_labels]  # обратное сопоставление метки -> внутреннее имя
+    sig_anova_prac_feats = [k for k, v in FEATURE_LABELS.items() if v in sig_anova_prac_labels]
+    sig_kw_feats = [k for k, v in FEATURE_LABELS.items() if v in sig_kw_labels]
 
     # Для каждой практики считаем количество попаданий
     consensus_counts = {}
     for feat, label in all_practice_labels:
         count = 0
-        if feat in top15_corr_feats: count += 1
-        if feat in top15_anova_prac_feats: count += 1
-        if feat in top15_kw_feats: count += 1
+        if feat in sig_corr_feats: count += 1
+        if feat in sig_anova_prac_feats: count += 1
+        if feat in sig_kw_feats: count += 1
         consensus_counts[feat] = count
 
     # Отбираем практики с количеством попаданий >= 2
