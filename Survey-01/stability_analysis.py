@@ -21,7 +21,7 @@ ROBUSTNESS_REPORT = os.path.join(REPORT_DIR, 'robustness_report.md')
 
 # Целевая шкала для анализа (можно менять)
 # Доступные: 'MIJS-2+', 'MIJS-3+', 'single_item', 'MIJS-2', 'MIJS'
-TARGET_SCALE = 'single_item'
+TARGET_SCALE = 'MIJS-2+'
 
 # Определения составов шкал
 SCALES = {
@@ -37,6 +37,7 @@ N_ITERATIONS = 1000 # Установлено 10 для отладки
 SAMPLE_SIZE = 210  # Уменьшено пользователем для большей жесткости отбора
 P_VALUE_THRESHOLD = 0.05  # Порог значимости после коррекции на множественные сравнения
 CORE_THRESHOLD = 95 # Порог для включения в "Ядро"
+SCALE_THRESHOLD = 95 # Частота вхождения в "Ядро" для включения в шкалу
 CONSENSUS_THRESHOLD = 3 # Порог для включения в "Консенсус"
 
 if not os.path.exists(IMAGES_DIR):
@@ -293,7 +294,7 @@ def run_stability_analysis():
     plt.savefig(plot_path)
     plt.close()
     # --- Дополнительный анализ Ядра ---
-    core_feats = [r['Feature'] for r in results if r['Stability'] >= CORE_THRESHOLD]
+    core_feats = [r['Feature'] for r in results if r['Stability'] >= SCALE_THRESHOLD]
     
     if len(core_feats) >= 2:
         print(f"Анализ ядра ({len(core_feats)} практик)...")
@@ -302,7 +303,7 @@ def run_stability_analysis():
         with open(ROBUSTNESS_REPORT, 'a', encoding='utf-8') as f:
             f.write("\n---\n\n")
             f.write("# Психометрический анализ 'Ядра' практик\n\n")
-            f.write(f"В ядро вошли практики с устойчивостью >= {CORE_THRESHOLD}%.\n\n")
+            f.write(f"В ядро вошли практики с устойчивостью >= {SCALE_THRESHOLD}%.\n\n")
             
             # Надежность
             alpha = pg.cronbach_alpha(core_data)[0]

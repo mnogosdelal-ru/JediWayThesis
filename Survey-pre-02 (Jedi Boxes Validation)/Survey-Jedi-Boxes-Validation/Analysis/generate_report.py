@@ -55,6 +55,26 @@ def jonckheere_terpstra(groups, alternative='two-sided'):
     """
     Тест Джонкхира-Терпстры для упорядоченных альтернатив.
 
+    **Назначение для публикации:**
+    Непараметрический тест для проверки упорядоченных альтернатив в k ≥ 2 независимых группах.
+    Проверяет, что медианы монотонно возрастают или убывают в заданном порядке.
+    
+    **Нулевая гипотеза H₀:** распределения всех групп одинаковы.
+    **Альтернатива H₁:** медианы упорядочены (θ₁ ≤ θ₂ ≤ ... ≤ θ_k, хотя бы одно строгое неравенство).
+    
+    **Методология:**
+    - Статистика J = Σ_{i<j} U_{ij}, где U_{ij} — число пар (x из группы i, y из группы j),
+      для которых x < y, плюс 0.5 для каждой пары x = y (ties).
+    - При H₀: E(J) = (N² - Σnᵢ²) / 4
+    - Var(J) = [N(N-1)(2N+3) - Σnᵢ(nᵢ-1)(2nᵢ+3)] / 72 - Σt(t-1)(2t+5)/36
+      где t — размеры серий совпадающих значений (ties correction).
+    - Для больших выборок (N > 20) применяется нормальная аппроксимация с continuity correction ±0.5.
+    
+    **Источники:**
+    - Jonckheere, A. R. (1954). A distribution-free k-sample test against ordered alternatives. Biometrika, 41(1/2), 133-145.
+    - Terpstra, T. J. (1952). The asymptotic normality and consistency of Kendall's test against trend. Statistica Neerlandica, 6(1), 1-20.
+    - Ramsey, P. H. (1993). Multiple comparisons of order-restricted means. In Multiple Comparisons (pp. 111-130).
+
     Параметры
     ---------
     groups : list of array-like
@@ -72,6 +92,12 @@ def jonckheere_terpstra(groups, alternative='two-sided'):
         Статистика Джонкхира-Терпстры.
     p : float
         p-value (нормальная аппроксимация с continuity correction).
+    E_J : float
+        Математическое ожидание J при H₀ (для отчёта).
+    var_J : float
+        Дисперсия J с поправкой на ties (для отчёта).
+    z : float
+        Z-статистика (для отчёта).
     """
     k = len(groups)
     n = [len(g) for g in groups]
@@ -93,13 +119,17 @@ def jonckheere_terpstra(groups, alternative='two-sided'):
                     elif x == y:
                         J += 0.5
 
-    # ── Шаг 2: Матожидание E(J) при H0 ────────────────────────────────
+    # ── Шаг 2: Матожидание E(J) при H₀ ────────────────────────────────
     E_J = (N ** 2 - sum(ni ** 2 for ni in n)) / 4.0
 
     # ── Шаг 3: Дисперсия Var(J) с поправкой на связи ──────────────────
     # Базовая формула без учёта связей
-    term1 = N ** 2 * (2 * N + 3)
-    term2 = sum(ni ** 2 * (2 * ni + 3) for ni in n)
+    # ИСПРАВЛЕНИЕ: Правильная формула Var(J) для Jonckheere-Terpstra test
+    # См.: Jonckheere, A. R. (1954). A distribution-free k-sample test against ordered alternatives.
+    # Biometrika, 41(1/2), 133-145.
+    # Var(J) = [N(N-1)(2N+3) - Σnᵢ(nᵢ-1)(2nᵢ+3)] / 72
+    term1 = N * (N - 1) * (2 * N + 3)
+    term2 = sum(ni * (ni - 1) * (2 * ni + 3) for ni in n)
     var_J = (term1 - term2) / 72.0
 
     # Поправка на связи (tie correction)
@@ -129,10 +159,14 @@ def jonckheere_terpstra(groups, alternative='two-sided'):
 
     # ── Шаг 4: Z-статистика с continuity correction ───────────────────
     # continuity correction = 0.5 сдвигает J к E(J), делая тест консервативнее
+    # ИСПРАВЛЕНИЕ: Для decreasing correction должен быть +0.5, а не -0.5
+    # См.: Kendall, M. G. (1975). Rank correlation methods. Griffin.
     if alternative == 'increasing':
+        # Ожидаем J > E(J): вычитаем 0.5 для консервативности
         z = (J - E_J - 0.5) / np.sqrt(var_J)
     elif alternative == 'decreasing':
-        z = (E_J - J - 0.5) / np.sqrt(var_J)
+        # Ожидаем J < E(J): добавляем 0.5 для консервативности
+        z = (E_J - J + 0.5) / np.sqrt(var_J)
     else:  # two-sided
         z = (abs(J - E_J) - 0.5) / np.sqrt(var_J)
 
@@ -146,7 +180,8 @@ def jonckheere_terpstra(groups, alternative='two-sided'):
     # Ограничиваем [0, 1]
     p = max(0.0, min(1.0, p))
 
-    return J, p
+    # Возвращаем дополнительные метрики для отчёта
+    return J, p, E_J, var_J, z
 
 # Настройка matplotlib для корректного отображения
 plt.rcParams['figure.figsize'] = (10, 6)

@@ -1,0 +1,78 @@
+[2026-04-07 18:03:39] === saveToGoogleSheets called ===
+[2026-04-07 18:03:39] Session: b03677a32b50c2ae6ca9a26282aff5e0
+[2026-04-07 18:03:39] TG ID: N/A
+[2026-04-07 18:03:49] Token error response: 
+[2026-04-07 18:03:49] ERROR: Не удалось получить Google access token
+[2026-04-07 18:05:27] === saveToGoogleSheets called ===
+[2026-04-07 18:05:27] Session: d5a792e7037ce6734009330691cb6eb2
+[2026-04-07 18:05:27] TG ID: PREVED
+[2026-04-07 18:05:27] JWT created, length: 676
+[2026-04-07 18:05:27] Token obtained, expires_in: 3599
+[2026-04-07 18:05:27] Token obtained OK
+[2026-04-07 18:05:46] Headers written: timestamp, session_id, tg_id, cubes_reactive, cubes_proactive, cubes_operational, memory_vs_records, representative, work_life, energy_deficit, takeaway, comment, time_total, device_type
+[2026-04-07 18:05:46] Row data: ["2026-04-07 18:05:27","d5a792e7037ce6734009330691cb6eb2","PREVED",1,2,3,"3","2","2","","hdgfh","gfdhfgh","16","desktop"]
+[2026-04-07 18:05:47] Append API: HTTP 200, Response: {
+  "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+  "tableRange": "RawData!A1:N2",
+  "updates": {
+    "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+    "updatedRange": "RawData!A3:N3",
+    "updatedRows": 1,
+    "updatedColumns": 14,
+    "updatedCells": 14
+  }
+}
+
+[2026-04-07 18:05:47] SUCCESS
+[2026-04-07 18:23:44] === saveToGoogleSheets called ===
+[2026-04-07 18:23:44] Session: 8615c8de15b5d8b75e307817089444e0
+[2026-04-07 18:23:44] TG ID: PREVED
+[2026-04-07 18:23:44] JWT created, length: 676
+[2026-04-07 18:23:45] Token obtained, expires_in: 3599
+[2026-04-07 18:23:45] Token obtained OK
+[2026-04-07 18:23:47] Headers written: timestamp, session_id, tg_id, week, group_id, cubes_reactive, cubes_proactive, cubes_operational, memory_vs_records, representative, work_life, energy_deficit, takeaway, comment, time_total, device_type
+[2026-04-07 18:23:47] Row data: ["2026-04-07 18:23:44","8615c8de15b5d8b75e307817089444e0","PREVED","1","\u0417\u0410\u0419\u0427\u0410\u0422\u041a\u0418",3,2,1,"2","-3","-2","-1","\u043f\u0430\u0432\u0440\u0430\u043f\u0440","\u0430\u043f\u0440\u0430\u043f\u0440\u0430\u043f\u0440","153","desktop"]
+[2026-04-07 18:24:03] Append API: HTTP 0, Response: 
+[2026-04-07 18:24:03] ERROR: HTTP 0, Response: 
+[2026-04-07 18:25:11] === saveToGoogleSheets called ===
+[2026-04-07 18:25:11] Session: bc8cb2df0acde21fab1ec858a9b1e6dc
+[2026-04-07 18:25:11] TG ID: MEDVED
+[2026-04-07 18:25:11] JWT created, length: 676
+[2026-04-07 18:25:11] Token obtained, expires_in: 3599
+[2026-04-07 18:25:11] Token obtained OK
+[2026-04-07 18:25:12] Row data: ["2026-04-07 18:25:11","bc8cb2df0acde21fab1ec858a9b1e6dc","MEDVED","1","\u0421\u041b\u041e\u041d\u0418\u041a\u0418",6,0,0,"1","-3","-3","6","\u0412\u0441\u0435 \u0441\u0440\u043e\u0447\u043d\u043e\u0435, \u043d\u043e \u0432\u0441\u0435 \u043b\u0438\u0447\u043d\u043e\u0435","\u0412\u043e\u0442 \u0432\u0430\u043c \u043c\u043e\u0439 \u043a\u043e\u043c\u043c\u0435\u043d\u0442","35","desktop"]
+[2026-04-07 18:25:13] Append API: HTTP 200, Response: {
+  "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+  "tableRange": "RawData!A1:P2",
+  "updates": {
+    "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+    "updatedRange": "RawData!A3:P3",
+    "updatedRows": 1,
+    "updatedColumns": 16,
+    "updatedCells": 16
+  }
+}
+
+[2026-04-07 18:25:13] SUCCESS
+[2026-04-07 18:29:41] === saveToGoogleSheets called ===
+[2026-04-07 18:29:41] Session: e019bb27b2bdf46f86cea80edddbaffc
+[2026-04-07 18:29:41] TG ID: bzzz
+[2026-04-07 18:29:41] JWT created, length: 676
+[2026-04-07 18:29:56] cURL error: Connection timed out after 15001 milliseconds
+[2026-04-07 18:29:56] Retrying token request (attempt 2)...
+[2026-04-07 18:29:57] Token obtained, expires_in: 3599
+[2026-04-07 18:29:57] Token obtained OK
+[2026-04-07 18:29:59] Row data: ["2026-04-07 18:29:41","e019bb27b2bdf46f86cea80edddbaffc","bzzz","1","\u041f\u0447\u0435\u043b\u043a\u0438",1,4,1,"3","","","3","\u0440\u0430\u0431\u043e\u0442\u0430\u043b","\u0432\u0441\u0435 \u0445\u043e\u0440\u043e\u0448\u043e","22","desktop"]
+[2026-04-07 18:30:01] Append API: HTTP 200, Response: {
+  "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+  "tableRange": "RawData!A1:P3",
+  "updates": {
+    "spreadsheetId": "1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw",
+    "updatedRange": "RawData!A4:P4",
+    "updatedRows": 1,
+    "updatedColumns": 16,
+    "updatedCells": 16
+  }
+}
+
+[2026-04-07 18:30:01] SUCCESS

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пульс-опрос</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Главная страница -->
+    <section id="survey-page" class="page active">
+        <h1>Пульс-опрос</h1>
+
+        <div class="card intro-card">
+            <p>Как прошла ваша неделя? Распределите 6 кубиков энергии и ответьте на пару вопросов.</p>
+            <p>Займёт <strong>~2 минуты</strong>.</p>
+        </div>
+
+        <!-- Инструкция и легенда -->
+        <div class="card">
+            <p>Перед тем как ответить, подумайте о <strong>прошедшей неделе</strong> и задачах, на которые вы тратили свою энергию (время, силы, мыслетопливо).</p>
+            <p><strong>У вас есть 6 кубиков</strong> — это весь ваш ресурс за неделю. Распределите их по трём зонам:</p>
+            <p style="text-align: center; color: var(--text-muted);">Перетаскивайте кубики мышкой или пальцем (на мобильном).</p>
+        </div>
+
+        <!-- Три зоны для сброса кубиков (теперь выше пула) -->
+        <div class="zones-container">
+            <!-- Зона 1: Срочное -->
+            <div class="zone reactive-zone" data-zone="reactive">
+                <div class="zone-header">
+                    <span class="zone-icon">🔴</span>
+                    <h3>Срочное</h3>
+                </div>
+<div class="zone-drop-area" id="reactive-zone">
+                    <div class="zone-definition">
+                        Задачи, которые требовали немедленного решения (если бы вы их не сделали, то столкнулись бы с негативом)
+                    </div>
+                    <div class="zone-cubes" id="reactive-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+
+            <!-- Зона 2: Целевое -->
+            <div class="zone proactive-zone" data-zone="proactive">
+                <div class="zone-header">
+                    <span class="zone-icon">🟢</span>
+                    <h3>Целевое</h3>
+                </div>
+<div class="zone-drop-area" id="proactive-zone">
+                    <div class="zone-definition">
+                        Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей (личной или рабочей - не принципиально)
+                    </div>
+                    <div class="zone-cubes" id="proactive-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+
+            <!-- Зона 3: Операционное -->
+            <div class="zone operational-zone" data-zone="operational">
+                <div class="zone-header">
+                    <span class="zone-icon">⚪</span>
+                    <h3>Операционное</h3>
+                </div>
+<div class="zone-drop-area" id="operational-zone">
+                    <div class="zone-definition">
+                        Рутинные задачи, поддержание текущих процессов, отдых или просто что-то несрочное без явной цели
+                    </div>
+                    <div class="zone-cubes" id="operational-cubes"></div>
+                </div>
+                <div class="zone-counter">
+                    <span class="count-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Зона пула (источник кубиков) -->
+        <div class="pool-container" id="pool">
+            <div class="pool-label">Ваша энергия</div>
+            <div class="pool-slots" id="pool-slots">
+                <!-- Кубики будут добавлены через JS -->
+            </div>
+            <div class="pool-counter">
+                Осталось: <span id="available-cubes">—</span>
+            </div>
+        </div>
+
+        <!-- Вопрос про удовлетворённость прогрессом -->
+        <div class="card">
+            <div class="likert-scale-group">
+                <label>В какой мере вы согласны с утверждением: Я доволен своим прогрессом за неделю?<span class="required-star">*</span></label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Всецело разочарован</span>
+
+                    <input type="radio" name="satisfaction" id="sat-1" value="1">
+                    <label for="sat-1">1</label>
+
+                    <input type="radio" name="satisfaction" id="sat-2" value="2">
+                    <label for="sat-2">2</label>
+
+                    <input type="radio" name="satisfaction" id="sat-3" value="3">
+                    <label for="sat-3">3</label>
+
+                    <input type="radio" name="satisfaction" id="sat-4" value="4">
+                    <label for="sat-4">4</label>
+
+                    <input type="radio" name="satisfaction" id="sat-5" value="5">
+                    <label for="sat-5">5</label>
+
+                    <input type="radio" name="satisfaction" id="sat-6" value="6">
+                    <label for="sat-6">6</label>
+
+                    <input type="radio" name="satisfaction" id="sat-7" value="7">
+                    <label for="sat-7" class="hint-trigger">7</label>
+
+                    <span class="likert-center-label right hint-target">Полностью доволен</span>
+                    <p class="center-scale-note">Ни то, ни сё</p>
+                </div>
+            </div>
+
+            <!-- Насколько показательная неделя (-3 до +3) -->
+            <div class="likert-scale-group">
+                <label>Насколько прошедшая неделя была похожа на ваш обычный режим работы?<span class="required-star">*</span></label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Эта неделя была значительно хуже</span>
+
+                    <input type="radio" name="representative" id="rep--3" value="-3">
+                    <label for="rep--3">-3</label>
+
+                    <input type="radio" name="representative" id="rep--2" value="-2">
+                    <label for="rep--2">-2</label>
+
+                    <input type="radio" name="representative" id="rep--1" value="-1">
+                    <label for="rep--1">-1</label>
+
+                    <input type="radio" name="representative" id="rep-0" value="0">
+                    <label for="rep-0">0</label>
+
+                    <input type="radio" name="representative" id="rep-1" value="1">
+                    <label for="rep-1">1</label>
+
+                    <input type="radio" name="representative" id="rep-2" value="2">
+                    <label for="rep-2">2</label>
+
+                    <input type="radio" name="representative" id="rep-3" value="3">
+                    <label for="rep-3">3</label>
+
+                    <span class="likert-center-label right">Эта неделя была значительно лучше</span>
+                    <p class="center-scale-note">Неделя прошла как обычно</p>
+                </div>
+            </div>
+
+            <!-- Доля работы (-3 до +3) -->
+            <div class="likert-scale-group">
+                <label>Как на прошедшей неделе вы распределили свою энергию между работой и личной жизнью?<span class="required-star">*</span></label>
+                <div class="likert-center-scale">
+                    <span class="likert-center-label left">Всё на личное</span>
+
+                    <input type="radio" name="work_life" id="wl--3" value="-3">
+                    <label for="wl--3">-3</label>
+
+                    <input type="radio" name="work_life" id="wl--2" value="-2">
+                    <label for="wl--2">-2</label>
+
+                    <input type="radio" name="work_life" id="wl--1" value="-1">
+                    <label for="wl--1">-1</label>
+
+                    <input type="radio" name="work_life" id="wl-0" value="0">
+                    <label for="wl-0">0</label>
+
+                    <input type="radio" name="work_life" id="wl-1" value="1">
+                    <label for="wl-1">1</label>
+
+                    <input type="radio" name="work_life" id="wl-2" value="2">
+                    <label for="wl-2">2</label>
+
+                    <input type="radio" name="work_life" id="wl-3" value="3">
+                    <label for="wl-3">3</label>
+
+                    <span class="likert-center-label right">Всё на работу</span>
+                    <p class="center-scale-note">Работа и личное в балансе</p>
+                </div>
+            </div>
+
+            <!-- Энергетический дефицит -->
+            <div class="likert-scale-group">
+                <label>Сколько кубиков энергии на этой неделе вам не хватило, чтобы сделать всё, что вы хотели?<span class="required-star">*</span></label>
+                <div class="likert-deficit-scale">
+                    <span class="likert-deficit-label left">Всего хватило</span>
+
+                    <input type="radio" name="energy_deficit" id="def-0" value="0">
+                    <label for="def-0">0</label>
+
+                    <input type="radio" name="energy_deficit" id="def-1" value="1">
+                    <label for="def-1">1</label>
+
+                    <input type="radio" name="energy_deficit" id="def-2" value="2">
+                    <label for="def-2">2</label>
+
+                    <input type="radio" name="energy_deficit" id="def-3" value="3">
+                    <label for="def-3">3</label>
+
+                    <input type="radio" name="energy_deficit" id="def-6" value="6">
+                    <label for="def-6">6</label>
+
+                    <input type="radio" name="energy_deficit" id="def-9" value="9">
+                    <label for="def-9">9</label>
+
+                    <span class="likert-deficit-label right">Минимум полтора раза по столько же</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Текстовые поля -->
+        <div class="card">
+            <div class="text-field">
+                <label for="takeaway">Что самое ценное вы вынесли для себя на этой неделе?</label>
+                <textarea id="takeaway" placeholder="Поделитесь главным инсайтом..." rows="3"></textarea>
+                <p class="field-hint">Необязательно</p>
+            </div>
+
+            <div class="text-field">
+                <label for="comment">Любой комментарий для нас</label>
+                <textarea id="comment" placeholder="Мысли, пожелания, вопросы..." rows="3"></textarea>
+                <p class="field-hint">Необязательно</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="btn-submit" class="btn btn-primary btn-large">Отправить</button>
+        </div>
+    </section>
+
+    <!-- Страница благодарности -->
+    <section id="thank-you" class="page">
+        <div class="thank-you">
+            <div class="emoji">🙏</div>
+            <h1>Спасибо!</h1>
+            <p>Ваши ответы сохранены.</p>
+        </div>
+    </section>
+
+</div>
+
+<script src="drag-drop.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

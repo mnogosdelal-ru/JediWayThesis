@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosine Similarity Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4a90d9;
+        }
+
+        .task-display {
+            background: #e8f4fd;
+            border-left: 4px solid #4a90d9;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .task-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            background: #4a90d9;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .result-item.good {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result-item.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+        }
+
+        .result-item.bad {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result-name {
+            font-weight: 600;
+        }
+
+        .result-score {
+            font-weight: 700;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-pass {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-fail {
+            background: #dc3545;
+            color: white;
+        }
+
+        .final-status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .final-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .final-status.failure {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .error-list {
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .error-list li {
+            margin: 5px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .model-names {
+            font-size: 14px;
+            color: #777;
+        }
+
+        .lemmas-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .lemmas-section h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .lemma-group {
+            margin-bottom: 15px;
+        }
+
+        .lemma-group-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .lemma-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .lemma-tag {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .lemma-tag.original {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .lemma-tag.paraphrase {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .lemma-tag.matched {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .comparison-table th {
+            background: #e9ecef;
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+
+        .comparison-table td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .match-yes {
+            color: #c62828;
+            font-weight: 600;
+        }
+
+        .match-no {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cosine Similarity Game</h1>
+
+        <div class="section" id="input-section">
+            <label for="tasks">Список задач (каждая строка — новая задача):</label>
+            <textarea id="tasks" placeholder="Написать отчёт
+Сходить в магазин
+Позвонить другу
+Прочитать книгу"></textarea>
+            <br><br>
+            <div class="btn-group">
+                <button class="btn" onclick="startGame()">Начать игру</button>
+            </div>
+        </div>
+
+        <div class="section hidden" id="game-section">
+            <div class="task-label">Переформулируй эту задачу:</div>
+            <div class="task-display" id="current-task"></div>
+
+            <label for="paraphrase">Твоя переформулировка:</label>
+            <textarea id="paraphrase" placeholder="Введите переформулированную задачу..."></textarea>
+            <br><br>
+            <div class="btn-group">
+                <button class="btn" onclick="checkParaphrase()">Проверить</button>
+                <button class="btn" onclick="nextTask()">Новая задача</button>
+            </div>
+        </div>
+
+        <div class="section hidden" id="results-section">
+            <h3>Результаты:</h3>
+            <div class="model-names">(paraphrase-multilingual, e5-multilingual, TF-IDF)</div>
+            <div id="results"></div>
+            <div id="final-status"></div>
+            <div id="lemmas-section" class="lemmas-section hidden">
+                <h4>Анализ лемм</h4>
+                <div id="lemmas-info"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function startGame() {
+            const tasks = document.getElementById('tasks').value;
+
+            const response = await fetch('/api/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({tasks})
+            });
+
+            const data = await response.json();
+
+            document.getElementById('input-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('current-task').textContent = data.task;
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('paraphrase').value = '';
+            document.getElementById('paraphrase').focus();
+        }
+
+        async function checkParaphrase() {
+            const paraphrase = document.getElementById('paraphrase').value;
+
+            const response = await fetch('/api/check', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({paraphrase})
+            });
+
+            const data = await response.json();
+            displayResults(data);
+        }
+
+        async function nextTask() {
+            const response = await fetch('/api/next', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+
+            if (!response.ok) {
+                alert('Нужно минимум 2 задачи для смены');
+                return;
+            }
+
+            const data = await response.json();
+
+            document.getElementById('current-task').textContent = data.task;
+            document.getElementById('paraphrase').value = '';
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('paraphrase').focus();
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const finalStatusDiv = document.getElementById('final-status');
+            const lemmasSection = document.getElementById('lemmas-section');
+            document.getElementById('results-section').classList.remove('hidden');
+
+            const sim = data.similarity;
+            const wordCheck = data.word_check;
+            const threshold = data.threshold;
+            const lemmas = data.lemmas;
+
+            resultsDiv.innerHTML = '';
+
+            addResultItem(resultsDiv, 'paraphrase-multilingual', sim['paraphrase-multilingual'], threshold);
+            addResultItem(resultsDiv, 'e5-multilingual', sim['e5-multilingual'], threshold);
+            addResultItem(resultsDiv, 'TF-IDF', sim['tfidf'], threshold);
+
+            const avgClass = sim.average >= threshold ? 'good' : (sim.average >= threshold - 0.2 ? 'warning' : 'bad');
+            addResultItem(resultsDiv, 'Среднее', sim.average, threshold, avgClass);
+
+            if (!wordCheck.passed) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-list';
+                errorDiv.innerHTML = `<strong>Использованы слова из оригинала:</strong><ul>${wordCheck.used_words.map(w => `<li>${w}</li>`).join('')}</ul>`;
+                resultsDiv.appendChild(errorDiv);
+            }
+
+            if (data.passed_threshold) {
+                finalStatusDiv.className = 'final-status success';
+                finalStatusDiv.textContent = 'Отлично! Задание выполнено!';
+            } else {
+                finalStatusDiv.className = 'final-status failure';
+                finalStatusDiv.textContent = 'Попробуй ещё раз!';
+            }
+
+            if (lemmas) {
+                lemmasSection.classList.remove('hidden');
+                displayLemmasInfo(lemmas);
+            }
+        }
+
+        function displayLemmasInfo(lemmas) {
+            const infoDiv = document.getElementById('lemmas-info');
+
+            const originalTags = lemmas.original.map(l =>
+                `<span class="lemma-tag ${lemmas.matched.includes(l) ? 'matched' : 'original'}">${l}</span>`
+            ).join('');
+
+            const paraphraseTags = lemmas.paraphrase.map(l =>
+                `<span class="lemma-tag ${lemmas.matched.includes(l) ? 'matched' : 'paraphrase'}">${l}</span>`
+            ).join('');
+
+            const matchedList = lemmas.matched.length > 0
+                ? lemmas.matched.map(l => `<span class="lemma-tag matched">${l}</span>`).join('')
+                : '<em style="color: #28a745">нет совпадений</em>';
+
+            let tableRows = '';
+            const maxLen = Math.max(lemmas.original.length, lemmas.paraphrase.length);
+            for (let i = 0; i < maxLen; i++) {
+                const orig = lemmas.original[i] || '';
+                const para = lemmas.paraphrase[i] || '';
+                const isMatch = orig && para && lemmas.matched.includes(orig) && lemmas.matched.includes(orig);
+                const matchClass = orig && para ? (isMatch ? 'match-yes' : 'match-no') : '';
+
+                tableRows += `<tr>
+                    <td>${orig}</td>
+                    <td>${para}</td>
+                    <td class="${matchClass}">${orig && para ? (isMatch ? '✓' : '—') : ''}</td>
+                </tr>`;
+            }
+
+            infoDiv.innerHTML = `
+                <div class="lemma-group">
+                    <div class="lemma-group-title">Леммы исходной фразы:</div>
+                    <div class="lemma-tags">${originalTags}</div>
+                </div>
+                <div class="lemma-group">
+                    <div class="lemma-group-title">Леммы переформулировки:</div>
+                    <div class="lemma-tags">${paraphraseTags}</div>
+                </div>
+                <div class="lemma-group">
+                    <div class="lemma-group-title">Совпавшие леммы (использованы повторно):</div>
+                    <div class="lemma-tags">${matchedList}</div>
+                </div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Исходная</th>
+                            <th>Переформулировка</th>
+                            <th>Совпадение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addResultItem(container, name, score, threshold, customClass = null) {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+
+            const isGood = score >= threshold;
+            const isWarning = score >= threshold - 0.2 && score < threshold;
+
+            if (customClass) {
+                div.classList.add(customClass);
+            } else if (isGood) {
+                div.classList.add('good');
+            } else if (isWarning) {
+                div.classList.add('warning');
+            } else {
+                div.classList.add('bad');
+            }
+
+            const status = isGood ? '✓' : (isWarning ? '~' : '✗');
+            div.innerHTML = `
+                <span class="result-name">${name}</span>
+                <span class="result-score">${(score * 100).toFixed(0)}% ${status}</span>
+            `;
+
+            container.appendChild(div);
+        }
+    </script>
+</body>
+</html>
