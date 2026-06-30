@@ -4,7 +4,7 @@
  * Вызывается из api.php после сохранения в БД
  */
 
-define('GOOGLE_SHEET_ID', '1i0xEqk5mI4mooI9Szc5Vq_E8G5qPEg8j8pLw5f1M5Gw');
+define('GOOGLE_SHEET_ID', '1x95B-ur84FjfrPbMmpexY4z5nDEGLXHlKzhiMAGqWFw');
 define('GOOGLE_SHEET_RANGE', 'RawData');
 define('CREDENTIALS_PATH', __DIR__ . '/api-project-380174387781-9ef8571a2149.json');
 define('LOG_FILE', __DIR__ . '/sheets_debug.log');
@@ -234,11 +234,14 @@ function ensureHeaders($token) {
         'cubes_reactive',
         'cubes_proactive',
         'cubes_operational',
-        'memory_vs_records',
+        'cubes_pool',
         'satisfaction',
         'representative',
         'work_life',
-        'energy_deficit',
+        'pss_1',
+        'pss_2',
+        'pss_3',
+        'pss_4',
         'takeaway',
         'comment',
         'time_total',
@@ -338,11 +341,14 @@ function formatDataRow($data) {
         $data['cubes_reactive'] ?? '',
         $data['cubes_proactive'] ?? '',
         $data['cubes_operational'] ?? '',
-        $data['memory_vs_records'] ?? '',
+        $data['cubes_pool'] ?? '',
         $data['satisfaction'] ?? '',
         $data['representative'] ?? '',
         $data['work_life'] ?? '',
-        $data['energy_deficit'] ?? '',
+        $data['pss_1'] ?? '',
+        $data['pss_2'] ?? '',
+        $data['pss_3'] ?? '',
+        $data['pss_4'] ?? '',
         $data['takeaway'] ?? '',
         $data['comment'] ?? '',
         $data['time_total'] ?? '',

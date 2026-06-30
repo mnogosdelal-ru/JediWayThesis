@@ -18,17 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Кнопка отправки
     document.getElementById('btn-submit').addEventListener('click', async () => {
         const state = window.getCubeState ? window.getCubeState() : null;
-        if (!state || state.pool !== 0) {
-            alert('Распределите все 6 кубиков по зонам!');
-            return;
-        }
 
         // Валидация обязательных radio-вопросов
         const requiredRadios = [
-            { name: 'satisfaction', label: 'Удовлетворённость прогрессом' },
+            { name: 'satisfaction', label: 'Я доволен своим прогрессом за неделю' },
             { name: 'representative', label: 'Показательность недели' },
             { name: 'work_life', label: 'Распределение энергии между работой и личной жизнью' },
-            { name: 'energy_deficit', label: 'Энергетический дефицит' }
+            { name: 'pss_1', label: 'PSS-4: контроль жизни' },
+            { name: 'pss_2', label: 'PSS-4: уверенность' },
+            { name: 'pss_3', label: 'PSS-4: всё идёт как надо' },
+            { name: 'pss_4', label: 'PSS-4: трудности' }
         ];
 
         for (const radio of requiredRadios) {
@@ -52,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('cubes_reactive', state.reactive);
             fd.append('cubes_proactive', state.proactive);
             fd.append('cubes_operational', state.operational);
+            fd.append('cubes_pool', state.pool);
             fd.append('time_total', Math.round((Date.now() - appStartTime) / 1000));
 
             // Радио
@@ -61,8 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (rep) fd.append('representative', rep.value);
             const wl = document.querySelector('input[name="work_life"]:checked');
             if (wl) fd.append('work_life', wl.value);
-            const def = document.querySelector('input[name="energy_deficit"]:checked');
-            if (def) fd.append('energy_deficit', def.value);
+
+            // PSS-4
+            for (let i = 1; i <= 4; i++) {
+                const pss = document.querySelector(`input[name="pss_${i}"]:checked`);
+                if (pss) fd.append(`pss_${i}`, pss.value);
+            }
 
             // Текст
             fd.append('takeaway', (document.getElementById('takeaway')?.value || '').trim());

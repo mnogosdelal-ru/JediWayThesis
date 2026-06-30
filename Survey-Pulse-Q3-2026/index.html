@@ -16,14 +16,15 @@
         <h1>Пульс-опрос</h1>
 
         <div class="card intro-card">
-            <p>Как прошла ваша неделя? Распределите 6 кубиков энергии и ответьте на пару вопросов.</p>
-            <p>Займёт <strong>~2 минуты</strong>.</p>
+            <p>Как прошла ваша неделя? Распределите кубики энергии и ответьте на пару вопросов.</p>
+            <p>Займёт <strong>~3 минуты</strong>.</p>
         </div>
 
         <!-- Инструкция и легенда -->
         <div class="card">
             <p>Перед тем как ответить, подумайте о <strong>прошедшей неделе</strong> и задачах, на которые вы тратили свою энергию (время, силы, мыслетопливо).</p>
-            <p><strong>У вас есть 6 кубиков</strong> — это весь ваш ресурс за неделю. Распределите их по трём зонам:</p>
+            <p><strong>6 кубиков</strong> — это ваша самая энергичная неделя. Сколько энергии относительно самой энергичной недели вы потратили и как распределили?</p>
+            <p>Перетаскивайте кубики по трём зонам — сколько сочтёте нужным, оставшиеся останутся в пуле.</p>
             <p style="text-align: center; color: var(--text-muted);">Перетаскивайте кубики мышкой или пальцем (на мобильном).</p>
         </div>
 
@@ -88,7 +89,7 @@
                 <!-- Кубики будут добавлены через JS -->
             </div>
             <div class="pool-counter">
-                Осталось: <span id="available-cubes">—</span>
+                В пуле: <span id="available-cubes">6</span>
             </div>
         </div>
 
@@ -188,35 +189,56 @@
                     <p class="center-scale-note">Работа и личное в балансе</p>
                 </div>
             </div>
+        </div>
 
-            <!-- Энергетический дефицит -->
+        <!-- PSS-4: Шкала воспринимаемого стресса -->
+        <div class="card">
+            <h2 style="font-size:1.1rem; margin-bottom:16px;">Шкала воспринимаемого стресса (PSS-4)</h2>
+            <p style="margin-bottom:16px;">В течение прошедшего месяца как часто Вы…</p>
+
             <div class="likert-scale-group">
-                <label>Сколько кубиков энергии на этой неделе вам не хватило, чтобы сделать всё, что вы хотели?<span class="required-star">*</span></label>
-                <div class="likert-deficit-scale">
-                    <span class="likert-deficit-label left">Всего хватило</span>
-
-                    <input type="radio" name="energy_deficit" id="def-0" value="0">
-                    <label for="def-0">0</label>
-
-                    <input type="radio" name="energy_deficit" id="def-1" value="1">
-                    <label for="def-1">1</label>
-
-                    <input type="radio" name="energy_deficit" id="def-2" value="2">
-                    <label for="def-2">2</label>
-
-                    <input type="radio" name="energy_deficit" id="def-3" value="3">
-                    <label for="def-3">3</label>
-
-                    <input type="radio" name="energy_deficit" id="def-6" value="6">
-                    <label for="def-6">6</label>
-
-                    <input type="radio" name="energy_deficit" id="def-9" value="9">
-                    <label for="def-9">9</label>
-
-                    <span class="likert-deficit-label right">Минимум полтора раза по столько же</span>
+                <label>1. …чувствовали, что не способны контролировать важные моменты своей жизни?</label>
+                <div class="likert-horiz-scale">
+                    <input type="radio" name="pss_1" id="pss1-0" value="0"><label for="pss1-0">Никогда</label>
+                    <input type="radio" name="pss_1" id="pss1-1" value="1"><label for="pss1-1">Почти никогда</label>
+                    <input type="radio" name="pss_1" id="pss1-2" value="2"><label for="pss1-2">Иногда</label>
+                    <input type="radio" name="pss_1" id="pss1-3" value="3"><label for="pss1-3">Часто</label>
+                    <input type="radio" name="pss_1" id="pss1-4" value="4"><label for="pss1-4">Очень часто</label>
                 </div>
             </div>
 
+            <div class="likert-scale-group">
+                <label>2. …чувствовали уверенность в своей способности справляться с личными проблемами?</label>
+                <div class="likert-horiz-scale">
+                    <input type="radio" name="pss_2" id="pss2-0" value="0"><label for="pss2-0">Никогда</label>
+                    <input type="radio" name="pss_2" id="pss2-1" value="1"><label for="pss2-1">Почти никогда</label>
+                    <input type="radio" name="pss_2" id="pss2-2" value="2"><label for="pss2-2">Иногда</label>
+                    <input type="radio" name="pss_2" id="pss2-3" value="3"><label for="pss2-3">Часто</label>
+                    <input type="radio" name="pss_2" id="pss2-4" value="4"><label for="pss2-4">Очень часто</label>
+                </div>
+            </div>
+
+            <div class="likert-scale-group">
+                <label>3. …чувствовали, что всё идёт так, как это нужно Вам?</label>
+                <div class="likert-horiz-scale">
+                    <input type="radio" name="pss_3" id="pss3-0" value="0"><label for="pss3-0">Никогда</label>
+                    <input type="radio" name="pss_3" id="pss3-1" value="1"><label for="pss3-1">Почти никогда</label>
+                    <input type="radio" name="pss_3" id="pss3-2" value="2"><label for="pss3-2">Иногда</label>
+                    <input type="radio" name="pss_3" id="pss3-3" value="3"><label for="pss3-3">Часто</label>
+                    <input type="radio" name="pss_3" id="pss3-4" value="4"><label for="pss3-4">Очень часто</label>
+                </div>
+            </div>
+
+            <div class="likert-scale-group">
+                <label>4. …чувствовали, что Вам не преодолеть всех скопившихся трудностей?</label>
+                <div class="likert-horiz-scale">
+                    <input type="radio" name="pss_4" id="pss4-0" value="0"><label for="pss4-0">Никогда</label>
+                    <input type="radio" name="pss_4" id="pss4-1" value="1"><label for="pss4-1">Почти никогда</label>
+                    <input type="radio" name="pss_4" id="pss4-2" value="2"><label for="pss4-2">Иногда</label>
+                    <input type="radio" name="pss_4" id="pss4-3" value="3"><label for="pss4-3">Часто</label>
+                    <input type="radio" name="pss_4" id="pss4-4" value="4"><label for="pss4-4">Очень часто</label>
+                </div>
+            </div>
         </div>
 
         <!-- Текстовые поля -->

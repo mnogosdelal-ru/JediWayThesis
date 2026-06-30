@@ -2,8 +2,8 @@
 /**
  * API пульс-опросов — сохранение ответа
  */
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -30,7 +30,7 @@ if (empty($sessionId)) {
 }
 
 // Проверяем дубликат
-$stmt = $pdo->prepare("SELECT id FROM pulse_responses WHERE session_id = :sid");
+$stmt = $pdo->prepare("SELECT id FROM pulse_responses_q3_2026 WHERE session_id = :sid");
 $stmt->execute([':sid' => $sessionId]);
 if ($stmt->fetch()) {
     http_response_code(409);
@@ -45,17 +45,18 @@ $groupId = isset($_POST['group_id']) && $_POST['group_id'] !== '' ? $_POST['grou
 $reactive = (int)($_POST['cubes_reactive'] ?? 0);
 $proactive = (int)($_POST['cubes_proactive'] ?? 0);
 $operational = (int)($_POST['cubes_operational'] ?? 0);
-
-if ($reactive + $proactive + $operational !== 6) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Сумма кубиков должна равняться 6']);
-    exit;
-}
+$pool = (int)($_POST['cubes_pool'] ?? 0);
 
 $representative = isset($_POST['representative']) ? $_POST['representative'] : null;
 $workLife = isset($_POST['work_life']) ? $_POST['work_life'] : null;
-$energyDeficit = isset($_POST['energy_deficit']) ? $_POST['energy_deficit'] : null;
 $satisfaction = isset($_POST['satisfaction']) ? $_POST['satisfaction'] : null;
+
+// PSS-4
+$pss1 = isset($_POST['pss_1']) ? $_POST['pss_1'] : null;
+$pss2 = isset($_POST['pss_2']) ? $_POST['pss_2'] : null;
+$pss3 = isset($_POST['pss_3']) ? $_POST['pss_3'] : null;
+$pss4 = isset($_POST['pss_4']) ? $_POST['pss_4'] : null;
+
 $takeaway = trim($_POST['takeaway'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
 $timeTotal = isset($_POST['time_total']) ? $_POST['time_total'] : null;
@@ -65,16 +66,18 @@ $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $device = preg_match('/Mobile|Android|iPhone|iPad/i', $ua) ? 'mobile' : 'desktop';
 
 $stmt = $pdo->prepare("
-    INSERT INTO pulse_responses (
+    INSERT INTO pulse_responses_q3_2026 (
         session_id, status, tg_id, week, group_id,
-        cubes_reactive, cubes_proactive, cubes_operational,
-        representative, work_life, energy_deficit, memory_vs_records, satisfaction,
+        cubes_reactive, cubes_proactive, cubes_operational, cubes_pool,
+        representative, work_life, satisfaction,
+        pss_1, pss_2, pss_3, pss_4,
         takeaway, comment, time_total,
         user_agent, ip_hash, device_type
     ) VALUES (
         :sid, 'completed', :tg_id, :week, :group_id,
-        :r, :g, :o,
-        :rep, :wl, :def, :mvr, :sat,
+        :r, :g, :o, :p,
+        :rep, :wl, :sat,
+        :pss1, :pss2, :pss3, :pss4,
         :takeaway, :comment, :tt,
         :ua, :ip, :device
     )
@@ -83,8 +86,9 @@ $stmt = $pdo->prepare("
 $stmt->execute([
     ':sid' => $sessionId,
     ':tg_id' => $tgId, ':week' => $week, ':group_id' => $groupId,
-    ':r' => $reactive, ':g' => $proactive, ':o' => $operational,
-    ':rep' => $representative, ':wl' => $workLife, ':def' => $energyDeficit, ':mvr' => $mvr, ':sat' => $satisfaction,
+    ':r' => $reactive, ':g' => $proactive, ':o' => $operational, ':p' => $pool,
+    ':rep' => $representative, ':wl' => $workLife, ':sat' => $satisfaction,
+    ':pss1' => $pss1, ':pss2' => $pss2, ':pss3' => $pss3, ':pss4' => $pss4,
     ':takeaway' => $takeaway ?: null, ':comment' => $comment ?: null, ':tt' => $timeTotal ?: null,
     ':ua' => $ua, ':ip' => $ipHash, ':device' => $device
 ]);
@@ -102,11 +106,14 @@ try {
         'cubes_reactive' => $reactive,
         'cubes_proactive' => $proactive,
         'cubes_operational' => $operational,
-        'memory_vs_records' => '',
+        'cubes_pool' => $pool,
         'satisfaction' => $satisfaction,
         'representative' => $representative,
         'work_life' => $workLife,
-        'energy_deficit' => $energyDeficit,
+        'pss_1' => $pss1,
+        'pss_2' => $pss2,
+        'pss_3' => $pss3,
+        'pss_4' => $pss4,
         'takeaway' => $takeaway,
         'comment' => $comment,
         'time_total' => $timeTotal,
