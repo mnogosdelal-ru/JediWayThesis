@@ -308,7 +308,13 @@ if (targetZoneName === 'pool') {
     }
 
     function updateUI() {
-        if (elements.availableCount) elements.availableCount.textContent = state.pool;
+        if (elements.availableCount) {
+            if (state.pool === 0) {
+                elements.availableCount.textContent = 'Вся энергия ушла в дело 😀!';
+            } else {
+                elements.availableCount.textContent = 'В пуле: ' + state.pool + ' (этой энергией воспользоваться не удалось ☹️ )';
+            }
+        }
         Object.keys(elements.counters).forEach(zone => {
             if (elements.counters[zone]) elements.counters[zone].textContent = state[zone];
         });
