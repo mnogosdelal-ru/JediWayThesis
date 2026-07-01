@@ -385,3 +385,45 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
     .btn-large { padding: 12px 30px; }
     .legend-item p { font-size: 0.75rem; }
 }
+
+/* === Модальное окно === */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal-box {
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    max-width: 440px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-text {
+    font-size: 1.05rem;
+    color: var(--text-main);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
