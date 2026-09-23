@@ -4,7 +4,8 @@
  * Вызывается из api.php после сохранения в БД
  */
 
-define('GOOGLE_SHEET_ID', '1x95B-ur84FjfrPbMmpexY4z5nDEGLXHlKzhiMAGqWFw');
+// Google Sheets Q4 2026 (см. задание протокола)
+define('GOOGLE_SHEET_ID', '1w5EJ5oyFeCa7EB592jLCHYu-DqoyHuzPnedFn1M6-aQ');
 define('GOOGLE_SHEET_RANGE', 'RawData');
 define('CREDENTIALS_PATH', __DIR__ . '/api-project-380174387781-9ef8571a2149.json');
 define('LOG_FILE', __DIR__ . '/sheets_debug.log');
@@ -235,20 +236,35 @@ function ensureHeaders($token) {
         'cubes_proactive',
         'cubes_operational',
         'cubes_pool',
+        'vitality_1',
+        'vitality_2',
+        'vitality_3',
+        'vitality_score',
+        'panas_pa_1',
+        'panas_pa_2',
+        'panas_pa_3',
+        'panas_pa_4',
+        'panas_pa_5',
+        'positive_affect',
+        'panas_na_1',
+        'panas_na_2',
+        'panas_na_3',
+        'panas_na_4',
+        'panas_na_5',
+        'negative_affect',
+        'emotion_intensity',
+        'positivity_percent',
         'satisfaction',
         'representative',
         'work_life',
-        'pss_1',
-        'pss_2',
-        'pss_3',
-        'pss_4',
         'takeaway',
         'comment',
         'time_total',
         'device_type'
     ];
 
-    $url = "https://sheets.googleapis.com/v4/spreadsheets/" . GOOGLE_SHEET_ID . "/values/" . GOOGLE_SHEET_RANGE . "!A1:Z1";
+    // Q4 2026: схема содержит 34 колонки — диапазон расширен до AZ1 (52 колонки)
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/" . GOOGLE_SHEET_ID . "/values/" . GOOGLE_SHEET_RANGE . "!A1:AZ1";
 
     $context = stream_context_create([
         'http' => [
@@ -317,7 +333,7 @@ function ensureHeaders($token) {
         ]
     ]);
 
-    $putUrl = "https://sheets.googleapis.com/v4/spreadsheets/" . GOOGLE_SHEET_ID . "/values/" . GOOGLE_SHEET_RANGE . "!A1:Z1?valueInputOption=RAW";
+    $putUrl = "https://sheets.googleapis.com/v4/spreadsheets/" . GOOGLE_SHEET_ID . "/values/" . GOOGLE_SHEET_RANGE . "!A1:AZ1?valueInputOption=RAW";
     $result = file_get_contents($putUrl, false, $context);
     $code = parseHttpCode($http_response_header ?? []);
 
@@ -342,13 +358,27 @@ function formatDataRow($data) {
         $data['cubes_proactive'] ?? '',
         $data['cubes_operational'] ?? '',
         $data['cubes_pool'] ?? '',
+        $data['vitality_1'] ?? '',
+        $data['vitality_2'] ?? '',
+        $data['vitality_3'] ?? '',
+        $data['vitality_score'] ?? '',
+        $data['panas_pa_1'] ?? '',
+        $data['panas_pa_2'] ?? '',
+        $data['panas_pa_3'] ?? '',
+        $data['panas_pa_4'] ?? '',
+        $data['panas_pa_5'] ?? '',
+        $data['positive_affect'] ?? '',
+        $data['panas_na_1'] ?? '',
+        $data['panas_na_2'] ?? '',
+        $data['panas_na_3'] ?? '',
+        $data['panas_na_4'] ?? '',
+        $data['panas_na_5'] ?? '',
+        $data['negative_affect'] ?? '',
+        $data['emotion_intensity'] ?? '',
+        $data['positivity_percent'] ?? '',
         $data['satisfaction'] ?? '',
         $data['representative'] ?? '',
         $data['work_life'] ?? '',
-        $data['pss_1'] ?? '',
-        $data['pss_2'] ?? '',
-        $data['pss_3'] ?? '',
-        $data['pss_4'] ?? '',
         $data['takeaway'] ?? '',
         $data['comment'] ?? '',
         $data['time_total'] ?? '',

@@ -30,7 +30,7 @@ if (empty($sessionId)) {
 }
 
 // Проверяем дубликат
-$stmt = $pdo->prepare("SELECT id FROM pulse_responses_q3_2026 WHERE session_id = :sid");
+$stmt = $pdo->prepare("SELECT id FROM pulse_responses_q4_2026 WHERE session_id = :sid");
 $stmt->execute([':sid' => $sessionId]);
 if ($stmt->fetch()) {
     http_response_code(409);
@@ -51,11 +51,31 @@ $representative = isset($_POST['representative']) ? $_POST['representative'] : n
 $workLife = isset($_POST['work_life']) ? $_POST['work_life'] : null;
 $satisfaction = isset($_POST['satisfaction']) ? $_POST['satisfaction'] : null;
 
-// PSS-4
-$pss1 = isset($_POST['pss_1']) ? $_POST['pss_1'] : null;
-$pss2 = isset($_POST['pss_2']) ? $_POST['pss_2'] : null;
-$pss3 = isset($_POST['pss_3']) ? $_POST['pss_3'] : null;
-$pss4 = isset($_POST['pss_4']) ? $_POST['pss_4'] : null;
+// Subjective Vitality (3-item state-версия, Q4 2026)
+$vitality1 = isset($_POST['vitality_1']) && $_POST['vitality_1'] !== '' ? $_POST['vitality_1'] : null;
+$vitality2 = isset($_POST['vitality_2']) && $_POST['vitality_2'] !== '' ? $_POST['vitality_2'] : null;
+$vitality3 = isset($_POST['vitality_3']) && $_POST['vitality_3'] !== '' ? $_POST['vitality_3'] : null;
+$vitalityScore = isset($_POST['vitality_score']) && $_POST['vitality_score'] !== '' ? $_POST['vitality_score'] : null;
+
+// Short PANAS (10-item, Q4 2026)
+$panasPa1 = isset($_POST['panas_pa_1']) && $_POST['panas_pa_1'] !== '' ? $_POST['panas_pa_1'] : null;
+$panasPa2 = isset($_POST['panas_pa_2']) && $_POST['panas_pa_2'] !== '' ? $_POST['panas_pa_2'] : null;
+$panasPa3 = isset($_POST['panas_pa_3']) && $_POST['panas_pa_3'] !== '' ? $_POST['panas_pa_3'] : null;
+$panasPa4 = isset($_POST['panas_pa_4']) && $_POST['panas_pa_4'] !== '' ? $_POST['panas_pa_4'] : null;
+$panasPa5 = isset($_POST['panas_pa_5']) && $_POST['panas_pa_5'] !== '' ? $_POST['panas_pa_5'] : null;
+$positiveAffect = isset($_POST['positive_affect']) && $_POST['positive_affect'] !== '' ? $_POST['positive_affect'] : null;
+$panasNa1 = isset($_POST['panas_na_1']) && $_POST['panas_na_1'] !== '' ? $_POST['panas_na_1'] : null;
+$panasNa2 = isset($_POST['panas_na_2']) && $_POST['panas_na_2'] !== '' ? $_POST['panas_na_2'] : null;
+$panasNa3 = isset($_POST['panas_na_3']) && $_POST['panas_na_3'] !== '' ? $_POST['panas_na_3'] : null;
+$panasNa4 = isset($_POST['panas_na_4']) && $_POST['panas_na_4'] !== '' ? $_POST['panas_na_4'] : null;
+$panasNa5 = isset($_POST['panas_na_5']) && $_POST['panas_na_5'] !== '' ? $_POST['panas_na_5'] : null;
+$negativeAffect = isset($_POST['negative_affect']) && $_POST['negative_affect'] !== '' ? $_POST['negative_affect'] : null;
+
+// Производные метрики эмоционального фона (club.mnogosdelal.ru/post/3289):
+//   emotion_intensity = max(PA_norm, NA_norm) * 100, где norm = (SUM - 5) / 20
+//   positivity_percent = atan2(PA_norm, NA_norm) / (pi/2) * 100
+$emotionIntensity = isset($_POST['emotion_intensity']) && $_POST['emotion_intensity'] !== '' ? $_POST['emotion_intensity'] : null;
+$positivityPercent = isset($_POST['positivity_percent']) && $_POST['positivity_percent'] !== '' ? $_POST['positivity_percent'] : null;
 
 $takeaway = trim($_POST['takeaway'] ?? '');
 $comment = trim($_POST['comment'] ?? '');
@@ -66,18 +86,24 @@ $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $device = preg_match('/Mobile|Android|iPhone|iPad/i', $ua) ? 'mobile' : 'desktop';
 
 $stmt = $pdo->prepare("
-    INSERT INTO pulse_responses_q3_2026 (
+    INSERT INTO pulse_responses_q4_2026 (
         session_id, status, tg_id, week, group_id,
         cubes_reactive, cubes_proactive, cubes_operational, cubes_pool,
+        vitality_1, vitality_2, vitality_3, vitality_score,
+        panas_pa_1, panas_pa_2, panas_pa_3, panas_pa_4, panas_pa_5, positive_affect,
+        panas_na_1, panas_na_2, panas_na_3, panas_na_4, panas_na_5, negative_affect,
+        emotion_intensity, positivity_percent,
         representative, work_life, satisfaction,
-        pss_1, pss_2, pss_3, pss_4,
         takeaway, comment, time_total,
         user_agent, ip_hash, device_type
     ) VALUES (
         :sid, 'completed', :tg_id, :week, :group_id,
         :r, :g, :o, :p,
+        :vit1, :vit2, :vit3, :vitscore,
+        :pa1, :pa2, :pa3, :pa4, :pa5, :pa,
+        :na1, :na2, :na3, :na4, :na5, :na,
+        :ei, :pp,
         :rep, :wl, :sat,
-        :pss1, :pss2, :pss3, :pss4,
         :takeaway, :comment, :tt,
         :ua, :ip, :device
     )
@@ -87,9 +113,14 @@ $stmt->execute([
     ':sid' => $sessionId,
     ':tg_id' => $tgId, ':week' => $week, ':group_id' => $groupId,
     ':r' => $reactive, ':g' => $proactive, ':o' => $operational, ':p' => $pool,
+    ':vit1' => $vitality1, ':vit2' => $vitality2, ':vit3' => $vitality3, ':vitscore' => $vitalityScore,
+    ':pa1' => $panasPa1, ':pa2' => $panasPa2, ':pa3' => $panasPa3, ':pa4' => $panasPa4, ':pa5' => $panasPa5, ':pa' => $positiveAffect,
+    ':na1' => $panasNa1, ':na2' => $panasNa2, ':na3' => $panasNa3, ':na4' => $panasNa4, ':na5' => $panasNa5, ':na' => $negativeAffect,
+    ':ei' => $emotionIntensity, ':pp' => $positivityPercent,
     ':rep' => $representative, ':wl' => $workLife, ':sat' => $satisfaction,
-    ':pss1' => $pss1, ':pss2' => $pss2, ':pss3' => $pss3, ':pss4' => $pss4,
-    ':takeaway' => $takeaway ?: null, ':comment' => $comment ?: null, ':tt' => $timeTotal ?: null,
+    ':takeaway' => ($takeaway !== '' ? $takeaway : null),
+    ':comment' => ($comment !== '' ? $comment : null),
+    ':tt' => ($timeTotal !== null && $timeTotal !== '' ? $timeTotal : null),
     ':ua' => $ua, ':ip' => $ipHash, ':device' => $device
 ]);
 
@@ -107,13 +138,27 @@ try {
         'cubes_proactive' => $proactive,
         'cubes_operational' => $operational,
         'cubes_pool' => $pool,
+        'vitality_1' => $vitality1,
+        'vitality_2' => $vitality2,
+        'vitality_3' => $vitality3,
+        'vitality_score' => $vitalityScore,
+        'panas_pa_1' => $panasPa1,
+        'panas_pa_2' => $panasPa2,
+        'panas_pa_3' => $panasPa3,
+        'panas_pa_4' => $panasPa4,
+        'panas_pa_5' => $panasPa5,
+        'positive_affect' => $positiveAffect,
+        'panas_na_1' => $panasNa1,
+        'panas_na_2' => $panasNa2,
+        'panas_na_3' => $panasNa3,
+        'panas_na_4' => $panasNa4,
+        'panas_na_5' => $panasNa5,
+        'negative_affect' => $negativeAffect,
+        'emotion_intensity' => $emotionIntensity,
+        'positivity_percent' => $positivityPercent,
         'satisfaction' => $satisfaction,
         'representative' => $representative,
         'work_life' => $workLife,
-        'pss_1' => $pss1,
-        'pss_2' => $pss2,
-        'pss_3' => $pss3,
-        'pss_4' => $pss4,
         'takeaway' => $takeaway,
         'comment' => $comment,
         'time_total' => $timeTotal,

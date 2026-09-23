@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const week = urlParams.get('week') || null;
     const groupId = urlParams.get('group_id') || null;
 
+    // ── Конфигурация новых шкал (Q4 2026) ──────────────────────────────
+    // Subjective Vitality — сокращённая 3-item state-версия с recall
+    // «в течение прошедшей недели» (7-балльная шкала согласия).
+    // Тексты пунктов и источники — в комментарии в index.html.
+    const VITALITY_ITEMS = ['vitality_1', 'vitality_2', 'vitality_3'];
+
+    // Short PANAS (Mackinnon et al., 1999): 5 пунктов Positive Affect +
+    // 5 пунктов Negative Affect. Русские формулировки — адаптация
+    // Осина (2012). Тексты пунктов — в комментарии в index.html.
+    const PANAS_PA_ITEMS = ['panas_pa_1', 'panas_pa_2', 'panas_pa_3', 'panas_pa_4', 'panas_pa_5'];
+    const PANAS_NA_ITEMS = ['panas_na_1', 'panas_na_2', 'panas_na_3', 'panas_na_4', 'panas_na_5'];
+
     // Показать форму
     document.getElementById('survey-page').classList.add('active');
     document.getElementById('thank-you').classList.remove('active');
@@ -36,6 +48,58 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('cubes_pool', state.pool);
             fd.append('time_total', Math.round((Date.now() - appStartTime) / 1000));
 
+            // Subjective Vitality: ответы 3 пунктов + средний балл
+            const vitalityValues = VITALITY_ITEMS.map(name => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? Number(el.value) : null;
+            });
+            VITALITY_ITEMS.forEach((name, i) => {
+                if (vitalityValues[i] !== null) fd.append(name, vitalityValues[i]);
+            });
+            if (vitalityValues.every(v => v !== null)) {
+                const vitalityScore = vitalityValues.reduce((s, v) => s + v, 0) / vitalityValues.length;
+                fd.append('vitality_score', vitalityScore.toFixed(3));
+            }
+
+            // Short PANAS: ответы 10 пунктов + средние PA и NA (раздельно, не объединяются)
+            const paValues = PANAS_PA_ITEMS.map(name => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? Number(el.value) : null;
+            });
+            const naValues = PANAS_NA_ITEMS.map(name => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? Number(el.value) : null;
+            });
+            PANAS_PA_ITEMS.forEach((name, i) => {
+                if (paValues[i] !== null) fd.append(name, paValues[i]);
+            });
+            PANAS_NA_ITEMS.forEach((name, i) => {
+                if (naValues[i] !== null) fd.append(name, naValues[i]);
+            });
+            if (paValues.every(v => v !== null)) {
+                const positiveAffect = paValues.reduce((s, v) => s + v, 0) / paValues.length;
+                fd.append('positive_affect', positiveAffect.toFixed(3));
+            }
+            if (naValues.every(v => v !== null)) {
+                const negativeAffect = naValues.reduce((s, v) => s + v, 0) / naValues.length;
+                fd.append('negative_affect', negativeAffect.toFixed(3));
+            }
+
+            // Производные метрики эмоционального фона (по заметке М. Дорофеева,
+            // club.mnogosdelal.ru/post/3289). Считаются от нормализованных значений,
+            // а не от средних: norm = (SUM - 5) / 20 -> 0..1
+            if (paValues.every(v => v !== null) && naValues.every(v => v !== null)) {
+                const paNorm = (paValues.reduce((s, v) => s + v, 0) - 5) / 20;
+                const naNorm = (naValues.reduce((s, v) => s + v, 0) - 5) / 20;
+                // Интенсивность эмоционального фона: max(pa, na), 0..100
+                fd.append('emotion_intensity', (Math.max(paNorm, naNorm) * 100).toFixed(2));
+                // Градус позитива: угол от оси негативного аффекта к вектору (pa, na),
+                // в % от прямого угла: чистый позитив = 100, чистый негатив = 0, равновесие = 50
+                let positivityPercent = Math.atan2(paNorm, naNorm) / (Math.PI / 2) * 100;
+                if (paNorm === 0 && naNorm === 0) positivityPercent = 50; // нулевой фон: направление не определено, считаем нейтральным
+                fd.append('positivity_percent', positivityPercent.toFixed(2));
+            }
+
             // Радио
             const sat = document.querySelector('input[name="satisfaction"]:checked');
             if (sat) fd.append('satisfaction', sat.value);
@@ -43,12 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (rep) fd.append('representative', rep.value);
             const wl = document.querySelector('input[name="work_life"]:checked');
             if (wl) fd.append('work_life', wl.value);
-
-            // PSS-4
-            for (let i = 1; i <= 4; i++) {
-                const pss = document.querySelector(`input[name="pss_${i}"]:checked`);
-                if (pss) fd.append(`pss_${i}`, pss.value);
-            }
 
             // Текст
             fd.append('takeaway', (document.getElementById('takeaway')?.value || '').trim());
@@ -96,13 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Валидация обязательных radio-вопросов
         const requiredRadios = [
+            { name: 'vitality_1', label: 'Ваша энергия на неделе — пункт 1' },
+            { name: 'vitality_2', label: 'Ваша энергия на неделе — пункт 2' },
+            { name: 'vitality_3', label: 'Ваша энергия на неделе — пункт 3' },
+            { name: 'panas_pa_1', label: 'Ваши эмоции на неделе — «вдохновленный»' },
+            { name: 'panas_pa_2', label: 'Ваши эмоции на неделе — «сосредоточенный»' },
+            { name: 'panas_pa_3', label: 'Ваши эмоции на неделе — «радостный»' },
+            { name: 'panas_pa_4', label: 'Ваши эмоции на неделе — «заинтересованный»' },
+            { name: 'panas_pa_5', label: 'Ваши эмоции на неделе — «решительный»' },
+            { name: 'panas_na_1', label: 'Ваши эмоции на неделе — «тревожный»' },
+            { name: 'panas_na_2', label: 'Ваши эмоции на неделе — «расстроенный»' },
+            { name: 'panas_na_3', label: 'Ваши эмоции на неделе — «нервный»' },
+            { name: 'panas_na_4', label: 'Ваши эмоции на неделе — «испуганный»' },
+            { name: 'panas_na_5', label: 'Ваши эмоции на неделе — «подавленный»' },
             { name: 'satisfaction', label: 'Я доволен своим прогрессом за неделю' },
             { name: 'representative', label: 'Показательность недели' },
-            { name: 'work_life', label: 'Распределение энергии между работой и личной жизнью' },
-            { name: 'pss_1', label: 'PSS-4: контроль жизни' },
-            { name: 'pss_2', label: 'PSS-4: уверенность' },
-            { name: 'pss_3', label: 'PSS-4: всё идёт как надо' },
-            { name: 'pss_4', label: 'PSS-4: трудности' }
+            { name: 'work_life', label: 'Распределение энергии между работой и личной жизнью' }
         ];
 
         for (const radio of requiredRadios) {
