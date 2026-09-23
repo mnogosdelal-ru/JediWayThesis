@@ -240,6 +240,9 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 .likert-center-label {
     font-size: 0.75rem; color: #6c757d; line-height: 1.2; text-align: center;
     display: flex; align-items: center; height: 32px; box-sizing: border-box; width: 110px;
+    /* Пробел между текстом и вложенным .gender-adaptive span схлопывается
+       на границе flex-элементов — компенсируем зазором */
+    column-gap: 0.3em;
 }
 .likert-center-label.left { justify-content: flex-end; padding-right: 8px; }
 .likert-center-label.right { justify-content: flex-start; padding-left: 8px; }
@@ -280,6 +283,27 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 .likert-horiz-scale input[type="radio"]:checked + label {
     background: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(52,152,219,0.3);
 }
+
+/* Легенда шкалы ШПАНА: подписи ступеней 1-5 над блоком пунктов.
+   Колонки легенды выровнены по колонкам кнопок (тот же gap и
+   горизонтальный padding, что у .likert-horiz-scale).
+   Формат «цифры на кнопках + подписи отдельно» — как в оригинальном
+   бланке PANAS (Watson, Clark & Tellegen, 1988), подробнее —
+   комментарий в index.html. */
+.panas-legend {
+    display: flex;
+    gap: 4px;
+    padding: 0 8px;
+    margin-bottom: 14px;
+}
+.panas-legend span {
+    flex: 1;
+    text-align: center;
+    font-size: 0.7rem;
+    line-height: 1.25;
+    color: var(--text-muted);
+}
+.panas-legend b { color: var(--text-main); }
 
 /* === Шкала дефицита === */
 .likert-deficit-scale {
@@ -434,7 +458,7 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 8px;
+    gap: 4px;
     flex-wrap: wrap;
     padding: 10px 0 4px;
 }
@@ -445,11 +469,36 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 7px;
+    padding: 5px 4px;
     border: 2px solid transparent;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: var(--transition);
+}
+.battery-scale .battery-option svg {
+    display: block;
+    width: 40px;
+    height: auto;
+}
+/* На узких экранах (смартфоны) — компактнее, чтобы все 7 батареек
+   помещались в один ряд без переноса */
+@media (max-width: 480px) {
+    .battery-scale {
+        gap: 2px;
+        padding: 8px 0 4px;
+    }
+    .battery-scale .battery-option {
+        padding: 3px 3px;
+    }
+    .battery-scale .battery-option svg {
+        width: 36px;
+    }
+}
+/* Совсем узкие экраны (320px): ещё компактнее, чтобы ряд не переносился */
+@media (max-width: 330px) {
+    .battery-scale .battery-option svg {
+        width: 27px;
+    }
 }
 .battery-scale .battery-option:hover {
     background: rgba(52, 152, 219, 0.08);

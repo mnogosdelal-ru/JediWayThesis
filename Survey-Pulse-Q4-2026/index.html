@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Пульс-опрос</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20260923-4">
 </head>
 <body>
 
@@ -16,17 +16,17 @@
         <h1>Пульс-опрос</h1>
 
         <div class="card intro-card">
-            <p>Как прошла ваша неделя? Распределите кубики энергии и ответьте на пару вопросов.</p>
+            <p>Как прошла твоя неделя? Распредели кубики энергии и ответь на пару вопросов.</p>
             <p>Займёт <strong>~3 минуты</strong>.</p>
         </div>
 
         <!-- Инструкция и легенда -->
         <div class="card">
-            <p>Перед тем как ответить, подумайте о <strong>прошедшей неделе</strong> и задачах, на которые вы тратили свою энергию (время, силы, мыслетопливо).</p>
-            <p>Пусть <strong>6 кубиков</strong> — это ваш максимум энергии. Сколько энергии на этой неделе вы потратили и как распределили?</p>
-            <p>Перетаскивайте кубики по трём зонам. Вы не обязаны распределить все кубики.</p>
-            <p>Чем меньше энергии у вас было на этой неделе, тем больше кубиков оставьте нераспределенными.</p>
-            <p style="text-align: center; color: var(--text-muted);">Перетаскивайте кубики мышкой или пальцем (на мобильном).</p>
+            <p>Перед тем как ответить, подумай о <strong>прошедшей неделе</strong> и задачах, на которые ты <span class="gender-adaptive" data-m="тратил" data-f="тратила">тратил</span> свою энергию (время, силы, мыслетопливо).</p>
+            <p>Пусть <strong>6 кубиков</strong> — это твой максимум энергии. Сколько энергии на этой неделе ты <span class="gender-adaptive" data-m="потратил" data-f="потратила">потратил</span> вы потратили и как <span class="gender-adaptive" data-m="распределил" data-f="распределила">распределил</span>?</p>
+            <p>Перетаскивай кубики по трём зонам. Не обязательно распределять <strong>все</strong> кубики.</p>
+            <p>Чем меньше энергии у тебя было на этой неделе, тем больше кубиков оставь нераспределенными.</p>
+            <p style="text-align: center; color: var(--text-muted);">Перетаскивай кубики мышкой или пальцем (на мобильном).</p>
         </div>
 
         <!-- Три зоны для сброса кубиков (теперь выше пула) -->
@@ -39,7 +39,7 @@
                 </div>
 <div class="zone-drop-area" id="reactive-zone">
                     <div class="zone-definition">
-                        Задачи, которые требовали немедленного решения (если бы вы их не сделали, то столкнулись бы с негативом)
+                        Задачи, которые требовали немедленного решения (если бы ты их не <span class="gender-adaptive" data-m="сделал" data-f="сделала">сделал</span>, то <span class="gender-adaptive" data-m="столкнулся" data-f="столкнулась">столкнулся</span> бы с негативом)
                     </div>
                     <div class="zone-cubes" id="reactive-cubes"></div>
                 </div>
@@ -56,7 +56,7 @@
                 </div>
 <div class="zone-drop-area" id="proactive-zone">
                     <div class="zone-definition">
-                        Задачи, приблизившие вас хотя бы к одной из ваших долгосрочных целей (личной или рабочей - не принципиально)
+                        Задачи, приблизившие тебя хотя бы к одной из твоих долгосрочных целей (личной или рабочей - не принципиально)
                     </div>
                     <div class="zone-cubes" id="proactive-cubes"></div>
                 </div>
@@ -97,7 +97,7 @@
         <!-- Доля работы (-3 до +3) -->
         <div class="card">
             <div class="likert-scale-group">
-                <label>Как на прошедшей неделе вы распределили свою энергию между работой и личной жизнью?<span class="required-star">*</span></label>
+                <label>Как на прошедшей неделе ты <span class="gender-adaptive" data-m="распределил" data-f="распределила">распределил</span> свою энергию между работой и личной жизнью?<span class="required-star">*</span></label>
                 <div class="likert-center-scale">
                     <span class="likert-center-label left">Всё на личное</span>
 
@@ -156,8 +156,8 @@
              оранжевую (3), оранжево-жёлтую (4) и жёлтую (5) к
              жёлто-зелёной (6) и зелёной (7). -->
         <div class="card">
-            <h2 style="font-size:1.1rem; margin-bottom:16px;">Ваша энергия на неделе</h2>
-            <p style="margin-bottom:16px;">То, как человек себя чувствует, часто описывают через уровень заряда батарейки — от <strong>«разряжена»</strong> до <strong>«полна энергии»</strong>. Выберите батарейку, которая лучше всего описывает ваше состояние <strong>в течение прошедшей недели</strong>.<span class="required-star">*</span></p>
+            <h2 style="font-size:1.1rem; margin-bottom:16px;">Твоя энергия на прошедшей неделе</h2>
+            <p style="margin-bottom:16px;">То, как человек себя чувствует, часто описывают через уровень заряда батарейки — от <strong>«разряжена»</strong> до <strong>«полна энергии»</strong>.<br/>Выбери батарейку, которая лучше всего описывает твое состояние <strong>в течение прошедшей недели</strong>.<span class="required-star">*</span></p>
 
             <div class="likert-scale-group">
                 <div class="battery-scale" role="radiogroup" aria-label="Уровень энергии на прошедшей неделе: от разряженной до полностью заряженной батарейки">
@@ -215,118 +215,139 @@
              NA: тревожный (afraid), расстроенный (upset), нервный (nervous),
                  испуганный (scared), подавленный (distressed).
              Порядок пунктов на странице — как в оригинальном PANAS.
-             Шкала 1-5 и её подписи — по Осину (2012). -->
+             Шкала 1-5 и её подписи — по Осину (2012).
+              Гендерная адаптация прилагательных: согласование форм m/f
+              через .gender-adaptive (URL-параметр s) — чисто
+              грамматическое согласование, конструкт не меняется.
+              Формат ответа — цифры 1-5 на кнопках + легенда подписей
+              над блоком (.panas-legend). Это сделано не просто так:
+              именно так размечен бланк в оригинальной статье PANAS —
+              Watson, Clark & Tellegen (1988). Development and
+              validation of brief measures of positive and negative
+              affect: The PANAS scales. J Pers Soc Psychol, 54(6),
+              1063-1070: на бланке подписаны только края шкалы
+              (1 = very slightly or not at all, 5 = extremely),
+              пункты ответа — цифры. Подписи ступеней в легенде —
+              формулировки Осина (2012), значения 1-5 не менялись. -->
         <div class="card">
-            <h2 style="font-size:1.1rem; margin-bottom:16px;">Ваши эмоции на неделе</h2>
+            <h2 style="font-size:1.1rem; margin-bottom:16px;">Твои эмоции на неделе</h2>
             <p style="margin-bottom:16px;">Прочитай каждое прилагательное и отметь, в какой мере ты <span class="gender-adaptive" data-m="чувствовал" data-f="чувствовала">чувствовал(а)</span> себя так в течение прошедшей недели.<span class="required-star">*</span></p>
+            <div class="panas-legend">
+                <span><b>1</b><br>почти или совсем нет</span>
+                <span><b>2</b><br>немного</span>
+                <span><b>3</b><br>умеренно</span>
+                <span><b>4</b><br>значительно</span>
+                <span><b>5</b><br>очень сильно</span>
+            </div>
+
 
             <div class="likert-scale-group">
-                <label>Подавленный</label>
+                <label><span class="gender-adaptive" data-m="Подавленный" data-f="Подавленная">Подавленный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_na_5" id="panas-na5-1" value="1"><label for="panas-na5-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_na_5" id="panas-na5-2" value="2"><label for="panas-na5-2">Немного</label>
-                    <input type="radio" name="panas_na_5" id="panas-na5-3" value="3"><label for="panas-na5-3">Умеренно</label>
-                    <input type="radio" name="panas_na_5" id="panas-na5-4" value="4"><label for="panas-na5-4">Значительно</label>
-                    <input type="radio" name="panas_na_5" id="panas-na5-5" value="5"><label for="panas-na5-5">Очень сильно</label>
+                    <input type="radio" name="panas_na_5" id="panas-na5-1" value="1"><label for="panas-na5-1">1</label>
+                    <input type="radio" name="panas_na_5" id="panas-na5-2" value="2"><label for="panas-na5-2">2</label>
+                    <input type="radio" name="panas_na_5" id="panas-na5-3" value="3"><label for="panas-na5-3">3</label>
+                    <input type="radio" name="panas_na_5" id="panas-na5-4" value="4"><label for="panas-na5-4">4</label>
+                    <input type="radio" name="panas_na_5" id="panas-na5-5" value="5"><label for="panas-na5-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Радостный</label>
+                <label><span class="gender-adaptive" data-m="Радостный" data-f="Радостная">Радостный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_pa_3" id="panas-pa3-1" value="1"><label for="panas-pa3-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_pa_3" id="panas-pa3-2" value="2"><label for="panas-pa3-2">Немного</label>
-                    <input type="radio" name="panas_pa_3" id="panas-pa3-3" value="3"><label for="panas-pa3-3">Умеренно</label>
-                    <input type="radio" name="panas_pa_3" id="panas-pa3-4" value="4"><label for="panas-pa3-4">Значительно</label>
-                    <input type="radio" name="panas_pa_3" id="panas-pa3-5" value="5"><label for="panas-pa3-5">Очень сильно</label>
+                    <input type="radio" name="panas_pa_3" id="panas-pa3-1" value="1"><label for="panas-pa3-1">1</label>
+                    <input type="radio" name="panas_pa_3" id="panas-pa3-2" value="2"><label for="panas-pa3-2">2</label>
+                    <input type="radio" name="panas_pa_3" id="panas-pa3-3" value="3"><label for="panas-pa3-3">3</label>
+                    <input type="radio" name="panas_pa_3" id="panas-pa3-4" value="4"><label for="panas-pa3-4">4</label>
+                    <input type="radio" name="panas_pa_3" id="panas-pa3-5" value="5"><label for="panas-pa3-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Расстроенный</label>
+                <label><span class="gender-adaptive" data-m="Расстроенный" data-f="Расстроенная">Расстроенный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_na_2" id="panas-na2-1" value="1"><label for="panas-na2-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_na_2" id="panas-na2-2" value="2"><label for="panas-na2-2">Немного</label>
-                    <input type="radio" name="panas_na_2" id="panas-na2-3" value="3"><label for="panas-na2-3">Умеренно</label>
-                    <input type="radio" name="panas_na_2" id="panas-na2-4" value="4"><label for="panas-na2-4">Значительно</label>
-                    <input type="radio" name="panas_na_2" id="panas-na2-5" value="5"><label for="panas-na2-5">Очень сильно</label>
+                    <input type="radio" name="panas_na_2" id="panas-na2-1" value="1"><label for="panas-na2-1">1</label>
+                    <input type="radio" name="panas_na_2" id="panas-na2-2" value="2"><label for="panas-na2-2">2</label>
+                    <input type="radio" name="panas_na_2" id="panas-na2-3" value="3"><label for="panas-na2-3">3</label>
+                    <input type="radio" name="panas_na_2" id="panas-na2-4" value="4"><label for="panas-na2-4">4</label>
+                    <input type="radio" name="panas_na_2" id="panas-na2-5" value="5"><label for="panas-na2-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Испуганный</label>
+                <label><span class="gender-adaptive" data-m="Испуганный" data-f="Испуганная">Испуганный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_na_4" id="panas-na4-1" value="1"><label for="panas-na4-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_na_4" id="panas-na4-2" value="2"><label for="panas-na4-2">Немного</label>
-                    <input type="radio" name="panas_na_4" id="panas-na4-3" value="3"><label for="panas-na4-3">Умеренно</label>
-                    <input type="radio" name="panas_na_4" id="panas-na4-4" value="4"><label for="panas-na4-4">Значительно</label>
-                    <input type="radio" name="panas_na_4" id="panas-na4-5" value="5"><label for="panas-na4-5">Очень сильно</label>
+                    <input type="radio" name="panas_na_4" id="panas-na4-1" value="1"><label for="panas-na4-1">1</label>
+                    <input type="radio" name="panas_na_4" id="panas-na4-2" value="2"><label for="panas-na4-2">2</label>
+                    <input type="radio" name="panas_na_4" id="panas-na4-3" value="3"><label for="panas-na4-3">3</label>
+                    <input type="radio" name="panas_na_4" id="panas-na4-4" value="4"><label for="panas-na4-4">4</label>
+                    <input type="radio" name="panas_na_4" id="panas-na4-5" value="5"><label for="panas-na4-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Сосредоточенный</label>
+                <label><span class="gender-adaptive" data-m="Сосредоточенный" data-f="Сосредоточенная">Сосредоточенный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_pa_2" id="panas-pa2-1" value="1"><label for="panas-pa2-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_pa_2" id="panas-pa2-2" value="2"><label for="panas-pa2-2">Немного</label>
-                    <input type="radio" name="panas_pa_2" id="panas-pa2-3" value="3"><label for="panas-pa2-3">Умеренно</label>
-                    <input type="radio" name="panas_pa_2" id="panas-pa2-4" value="4"><label for="panas-pa2-4">Значительно</label>
-                    <input type="radio" name="panas_pa_2" id="panas-pa2-5" value="5"><label for="panas-pa2-5">Очень сильно</label>
+                    <input type="radio" name="panas_pa_2" id="panas-pa2-1" value="1"><label for="panas-pa2-1">1</label>
+                    <input type="radio" name="panas_pa_2" id="panas-pa2-2" value="2"><label for="panas-pa2-2">2</label>
+                    <input type="radio" name="panas_pa_2" id="panas-pa2-3" value="3"><label for="panas-pa2-3">3</label>
+                    <input type="radio" name="panas_pa_2" id="panas-pa2-4" value="4"><label for="panas-pa2-4">4</label>
+                    <input type="radio" name="panas_pa_2" id="panas-pa2-5" value="5"><label for="panas-pa2-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Вдохновленный</label>
+                <label><span class="gender-adaptive" data-m="Вдохновленный" data-f="Вдохновленная">Вдохновленный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_pa_1" id="panas-pa1-1" value="1"><label for="panas-pa1-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_pa_1" id="panas-pa1-2" value="2"><label for="panas-pa1-2">Немного</label>
-                    <input type="radio" name="panas_pa_1" id="panas-pa1-3" value="3"><label for="panas-pa1-3">Умеренно</label>
-                    <input type="radio" name="panas_pa_1" id="panas-pa1-4" value="4"><label for="panas-pa1-4">Значительно</label>
-                    <input type="radio" name="panas_pa_1" id="panas-pa1-5" value="5"><label for="panas-pa1-5">Очень сильно</label>
+                    <input type="radio" name="panas_pa_1" id="panas-pa1-1" value="1"><label for="panas-pa1-1">1</label>
+                    <input type="radio" name="panas_pa_1" id="panas-pa1-2" value="2"><label for="panas-pa1-2">2</label>
+                    <input type="radio" name="panas_pa_1" id="panas-pa1-3" value="3"><label for="panas-pa1-3">3</label>
+                    <input type="radio" name="panas_pa_1" id="panas-pa1-4" value="4"><label for="panas-pa1-4">4</label>
+                    <input type="radio" name="panas_pa_1" id="panas-pa1-5" value="5"><label for="panas-pa1-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Нервный</label>
+                <label><span class="gender-adaptive" data-m="Нервный" data-f="Нервная">Нервный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_na_3" id="panas-na3-1" value="1"><label for="panas-na3-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_na_3" id="panas-na3-2" value="2"><label for="panas-na3-2">Немного</label>
-                    <input type="radio" name="panas_na_3" id="panas-na3-3" value="3"><label for="panas-na3-3">Умеренно</label>
-                    <input type="radio" name="panas_na_3" id="panas-na3-4" value="4"><label for="panas-na3-4">Значительно</label>
-                    <input type="radio" name="panas_na_3" id="panas-na3-5" value="5"><label for="panas-na3-5">Очень сильно</label>
+                    <input type="radio" name="panas_na_3" id="panas-na3-1" value="1"><label for="panas-na3-1">1</label>
+                    <input type="radio" name="panas_na_3" id="panas-na3-2" value="2"><label for="panas-na3-2">2</label>
+                    <input type="radio" name="panas_na_3" id="panas-na3-3" value="3"><label for="panas-na3-3">3</label>
+                    <input type="radio" name="panas_na_3" id="panas-na3-4" value="4"><label for="panas-na3-4">4</label>
+                    <input type="radio" name="panas_na_3" id="panas-na3-5" value="5"><label for="panas-na3-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Решительный</label>
+                <label><span class="gender-adaptive" data-m="Решительный" data-f="Решительная">Решительный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_pa_5" id="panas-pa5-1" value="1"><label for="panas-pa5-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_pa_5" id="panas-pa5-2" value="2"><label for="panas-pa5-2">Немного</label>
-                    <input type="radio" name="panas_pa_5" id="panas-pa5-3" value="3"><label for="panas-pa5-3">Умеренно</label>
-                    <input type="radio" name="panas_pa_5" id="panas-pa5-4" value="4"><label for="panas-pa5-4">Значительно</label>
-                    <input type="radio" name="panas_pa_5" id="panas-pa5-5" value="5"><label for="panas-pa5-5">Очень сильно</label>
+                    <input type="radio" name="panas_pa_5" id="panas-pa5-1" value="1"><label for="panas-pa5-1">1</label>
+                    <input type="radio" name="panas_pa_5" id="panas-pa5-2" value="2"><label for="panas-pa5-2">2</label>
+                    <input type="radio" name="panas_pa_5" id="panas-pa5-3" value="3"><label for="panas-pa5-3">3</label>
+                    <input type="radio" name="panas_pa_5" id="panas-pa5-4" value="4"><label for="panas-pa5-4">4</label>
+                    <input type="radio" name="panas_pa_5" id="panas-pa5-5" value="5"><label for="panas-pa5-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Тревожный</label>
+                <label><span class="gender-adaptive" data-m="Тревожный" data-f="Тревожная">Тревожный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_na_1" id="panas-na1-1" value="1"><label for="panas-na1-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_na_1" id="panas-na1-2" value="2"><label for="panas-na1-2">Немного</label>
-                    <input type="radio" name="panas_na_1" id="panas-na1-3" value="3"><label for="panas-na1-3">Умеренно</label>
-                    <input type="radio" name="panas_na_1" id="panas-na1-4" value="4"><label for="panas-na1-4">Значительно</label>
-                    <input type="radio" name="panas_na_1" id="panas-na1-5" value="5"><label for="panas-na1-5">Очень сильно</label>
+                    <input type="radio" name="panas_na_1" id="panas-na1-1" value="1"><label for="panas-na1-1">1</label>
+                    <input type="radio" name="panas_na_1" id="panas-na1-2" value="2"><label for="panas-na1-2">2</label>
+                    <input type="radio" name="panas_na_1" id="panas-na1-3" value="3"><label for="panas-na1-3">3</label>
+                    <input type="radio" name="panas_na_1" id="panas-na1-4" value="4"><label for="panas-na1-4">4</label>
+                    <input type="radio" name="panas_na_1" id="panas-na1-5" value="5"><label for="panas-na1-5">5</label>
                 </div>
             </div>
 
             <div class="likert-scale-group">
-                <label>Заинтересованный</label>
+                <label><span class="gender-adaptive" data-m="Заинтересованный" data-f="Заинтересованная">Заинтересованный</span></label>
                 <div class="likert-horiz-scale">
-                    <input type="radio" name="panas_pa_4" id="panas-pa4-1" value="1"><label for="panas-pa4-1">Почти или совсем нет</label>
-                    <input type="radio" name="panas_pa_4" id="panas-pa4-2" value="2"><label for="panas-pa4-2">Немного</label>
-                    <input type="radio" name="panas_pa_4" id="panas-pa4-3" value="3"><label for="panas-pa4-3">Умеренно</label>
-                    <input type="radio" name="panas_pa_4" id="panas-pa4-4" value="4"><label for="panas-pa4-4">Значительно</label>
-                    <input type="radio" name="panas_pa_4" id="panas-pa4-5" value="5"><label for="panas-pa4-5">Очень сильно</label>
+                    <input type="radio" name="panas_pa_4" id="panas-pa4-1" value="1"><label for="panas-pa4-1">1</label>
+                    <input type="radio" name="panas_pa_4" id="panas-pa4-2" value="2"><label for="panas-pa4-2">2</label>
+                    <input type="radio" name="panas_pa_4" id="panas-pa4-3" value="3"><label for="panas-pa4-3">3</label>
+                    <input type="radio" name="panas_pa_4" id="panas-pa4-4" value="4"><label for="panas-pa4-4">4</label>
+                    <input type="radio" name="panas_pa_4" id="panas-pa4-5" value="5"><label for="panas-pa4-5">5</label>
                 </div>
             </div>
         </div>
@@ -334,9 +355,9 @@
         <!-- Вопрос про удовлетворённость прогрессом -->
         <div class="card">
             <div class="likert-scale-group">
-                <label>В какой мере вы согласны с утверждением: Я доволен своим прогрессом за неделю?<span class="required-star">*</span></label>
+                <label>В какой мере ты <span class="gender-adaptive" data-m="доволен" data-f="довольна">доволен</span> своим прогрессом за неделю?<span class="required-star">*</span></label>
                 <div class="likert-center-scale">
-                    <span class="likert-center-label left">Всецело разочарован</span>
+                    <span class="likert-center-label left">Совсем не <span class="gender-adaptive" data-m="доволен" data-f="довольна">доволен</span></span>
 
                     <input type="radio" name="satisfaction" id="sat-1" value="1">
                     <label for="sat-1">1</label>
@@ -359,14 +380,14 @@
                     <input type="radio" name="satisfaction" id="sat-7" value="7">
                     <label for="sat-7" class="hint-trigger">7</label>
 
-                    <span class="likert-center-label right hint-target">Полностью доволен</span>
+                    <span class="likert-center-label right hint-target">Полностью <span class="gender-adaptive" data-m="доволен" data-f="довольна">доволен</span></span>
                     <p class="center-scale-note">Ни то, ни сё</p>
                 </div>
             </div>
 
             <!-- Насколько показательная неделя (-3 до +3) -->
             <div class="likert-scale-group">
-                <label>Насколько прошедшая неделя была похожа на ваш обычный режим работы?<span class="required-star">*</span></label>
+                <label>Насколько прошедшая неделя была похожа на твой обычный режим работы?<span class="required-star">*</span></label>
                 <div class="likert-center-scale">
                     <span class="likert-center-label left">Эта неделя была значительно хуже</span>
 
@@ -402,8 +423,8 @@
         <!-- Текстовые поля -->
         <div class="card">
             <div class="text-field">
-                <label for="takeaway">Что самое ценное вы вынесли для себя на этой неделе?</label>
-                <textarea id="takeaway" placeholder="Поделитесь главным инсайтом..." rows="3"></textarea>
+                <label for="takeaway">Что самое ценное ты <span class="gender-adaptive" data-m="вынес" data-f="вынесла">вынес</span> для себя на этой неделе?</label>
+                <textarea id="takeaway" placeholder="Поделись главным инсайтом..." rows="3"></textarea>
                 <p class="field-hint">Необязательно</p>
             </div>
 
@@ -443,6 +464,6 @@
 </div>
 
 <script src="drag-drop.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=20260923-2"></script>
 </body>
 </html>
