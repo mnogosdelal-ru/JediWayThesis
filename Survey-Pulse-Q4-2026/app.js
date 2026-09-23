@@ -11,11 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const week = urlParams.get('week') || null;
     const groupId = urlParams.get('group_id') || null;
 
+    // Пол участника для адаптации словоформ: s=m (мальчики) / s=f (девочки).
+    // По умолчанию — m (мальчики). Адаптирует все .gender-adaptive в index.html:
+    // у span'а заданы data-m="…мужская форма" и data-f="…женская форма".
+    const sex = urlParams.get('s') === 'f' ? 'f' : 'm';
+    document.querySelectorAll('.gender-adaptive').forEach(el => {
+        const word = el.dataset[sex];
+        if (word) el.textContent = word;
+    });
+
     // ── Конфигурация новых шкал (Q4 2026) ──────────────────────────────
-    // Subjective Vitality — сокращённая 3-item state-версия с recall
-    // «в течение прошедшей недели» (7-балльная шкала согласия).
-    // Тексты пунктов и источники — в комментарии в index.html.
-    const VITALITY_ITEMS = ['vitality_1', 'vitality_2', 'vitality_3'];
+    // SIMEA (Weigelt et al., 2022) — одно-пунктовая пиктограммная шкала
+    // энергетической активации: 7 батареек, кодирование 1–7.
+    // Инструкция, источники и адаптация — в комментарии в index.html.
 
     // Short PANAS (Mackinnon et al., 1999): 5 пунктов Positive Affect +
     // 5 пунктов Negative Affect. Русские формулировки — адаптация
@@ -42,24 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('tg_id', tgId || '');
             fd.append('week', week || '');
             fd.append('group_id', groupId || '');
+            fd.append('sex', sex);
             fd.append('cubes_reactive', state.reactive);
             fd.append('cubes_proactive', state.proactive);
             fd.append('cubes_operational', state.operational);
             fd.append('cubes_pool', state.pool);
             fd.append('time_total', Math.round((Date.now() - appStartTime) / 1000));
 
-            // Subjective Vitality: ответы 3 пунктов + средний балл
-            const vitalityValues = VITALITY_ITEMS.map(name => {
-                const el = document.querySelector(`input[name="${name}"]:checked`);
-                return el ? Number(el.value) : null;
-            });
-            VITALITY_ITEMS.forEach((name, i) => {
-                if (vitalityValues[i] !== null) fd.append(name, vitalityValues[i]);
-            });
-            if (vitalityValues.every(v => v !== null)) {
-                const vitalityScore = vitalityValues.reduce((s, v) => s + v, 0) / vitalityValues.length;
-                fd.append('vitality_score', vitalityScore.toFixed(3));
-            }
+            // SIMEA: одна пиктограммная шкала энергии — батарейка 1–7
+            const simea = document.querySelector('input[name="simea"]:checked');
+            if (simea) fd.append('simea', simea.value);
 
             // Short PANAS: ответы 10 пунктов + средние PA и NA (раздельно, не объединяются)
             const paValues = PANAS_PA_ITEMS.map(name => {
@@ -154,9 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Валидация обязательных radio-вопросов
         const requiredRadios = [
-            { name: 'vitality_1', label: 'Ваша энергия на неделе — пункт 1' },
-            { name: 'vitality_2', label: 'Ваша энергия на неделе — пункт 2' },
-            { name: 'vitality_3', label: 'Ваша энергия на неделе — пункт 3' },
+            { name: 'simea', label: 'Ваша энергия на неделе (батарейка)' },
             { name: 'panas_pa_1', label: 'Ваши эмоции на неделе — «вдохновленный»' },
             { name: 'panas_pa_2', label: 'Ваши эмоции на неделе — «сосредоточенный»' },
             { name: 'panas_pa_3', label: 'Ваши эмоции на неделе — «радостный»' },

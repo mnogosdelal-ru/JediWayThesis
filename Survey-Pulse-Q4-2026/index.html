@@ -128,63 +128,77 @@
             </div>
         </div>
 
-        <!-- ═══ Subjective Vitality: краткая 3-item state-версия ═══
-             Сокращённая форма для данного longitudinal-протокола:
-             recall «в течение прошедшей недели», 7-балльная шкала согласия.
-             Основана на русской адаптации SVS (Александрова, 2014,
-             DOI: 10.17323/1813-8918-2014-1-133-163) и литературе по коротким
-             state-версиям (Ryan & Frederick, 1997; Weigelt et al., 2022,
-             PMC9374102). Использованы прямые пункты 1, 4, 7 шкалы Vt-s
-             (обратный пункт 2 не включён); время «В данный момент»/«Сейчас»
-             заменено на recall по неделе согласно протоколу.
-             ВАЖНО: это НЕ «валидированная русская 3-item версия» —
-             сокращённая форма для данного протокола исследования. -->
+        <!-- ═══ SIMEA: Single-Item Measure of Energetic Activation ═══
+             Weigelt, O., Gierer, P., Prem, R., Fellmann, M., Lambusch, F.,
+             Siestrup, K., Marcus, B., Franke, T., Tsantidis, S., Golla, M.,
+             Wyss, C., & Blume, J. (2022). Time to recharge batteries —
+             development and validation of a pictorial scale of human energy.
+             European Journal of Work and Organizational Psychology, 31(5),
+             781–798. https://doi.org/10.1080/1359432X.2022.2050218 (CC-BY)
+
+             Одно-пунктовая пиктограммная шкала энергетической активации:
+             7 иконок батареек от разряженной до полностью заряженной,
+             кодирование 1–7 (1 = depleted «разряжена»,
+             7 = full of energy «полна энергии»).
+
+             Оригинальная инструкция (state-мера, «прямо сейчас»):
+             «How one feels at the moment is often described in terms of the
+             state of charge of a battery, ranging from 'depleted' to
+             'full of energy'. Please indicate which of the following symbols
+             best describes your current state.»
+
+             АДАПТАЦИЯ для данного протокола: recall изменён с «прямо сейчас»
+             на «в течение прошедшей недели» — как в остальных шкалах
+             еженедельного пульс-опроса. Русский перевод инструкции — наш.
+             Пиктограммы воспроизведены векторно по Figure 1 статьи
+             (7 равных ступеней заряда 0…6/6). Цвета ступеней — как в
+             оригинале: 1 — пустая батарейка, далее от красной (2) через
+             оранжевую (3), оранжево-жёлтую (4) и жёлтую (5) к
+             жёлто-зелёной (6) и зелёной (7). -->
         <div class="card">
             <h2 style="font-size:1.1rem; margin-bottom:16px;">Ваша энергия на неделе</h2>
-            <p style="margin-bottom:16px;">Насколько верно для вас каждое утверждение <strong>в течение прошедшей недели</strong>?<span class="required-star">*</span></p>
+            <p style="margin-bottom:16px;">То, как человек себя чувствует, часто описывают через уровень заряда батарейки — от <strong>«разряжена»</strong> до <strong>«полна энергии»</strong>. Выберите батарейку, которая лучше всего описывает ваше состояние <strong>в течение прошедшей недели</strong>.<span class="required-star">*</span></p>
 
             <div class="likert-scale-group">
-                <label>1. …я чувствовал(а) себя живым(ой) и полным(ой) сил</label>
-                <div class="likert-center-scale">
-                    <span class="likert-center-label left">Абсолютно неверно</span>
-                    <input type="radio" name="vitality_1" id="vit1-1" value="1"><label for="vit1-1">1</label>
-                    <input type="radio" name="vitality_1" id="vit1-2" value="2"><label for="vit1-2">2</label>
-                    <input type="radio" name="vitality_1" id="vit1-3" value="3"><label for="vit1-3">3</label>
-                    <input type="radio" name="vitality_1" id="vit1-4" value="4"><label for="vit1-4">4</label>
-                    <input type="radio" name="vitality_1" id="vit1-5" value="5"><label for="vit1-5">5</label>
-                    <input type="radio" name="vitality_1" id="vit1-6" value="6"><label for="vit1-6">6</label>
-                    <input type="radio" name="vitality_1" id="vit1-7" value="7"><label for="vit1-7">7</label>
-                    <span class="likert-center-label right">Абсолютно верно</span>
+                <div class="battery-scale" role="radiogroup" aria-label="Уровень энергии на прошедшей неделе: от разряженной до полностью заряженной батарейки">
+                    <input type="radio" name="simea" id="simea-1" value="1">
+                    <label for="simea-1" class="battery-option" title="1 — разряжена">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge" x="4" y="6" width="0" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-2" value="2">
+                    <label for="simea-2" class="battery-option" title="2">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-2" x="4" y="6" width="5" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-3" value="3">
+                    <label for="simea-3" class="battery-option" title="3">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-3" x="4" y="6" width="10" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-4" value="4">
+                    <label for="simea-4" class="battery-option" title="4">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-4" x="4" y="6" width="15" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-5" value="5">
+                    <label for="simea-5" class="battery-option" title="5">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-5" x="4" y="6" width="20" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-6" value="6">
+                    <label for="simea-6" class="battery-option" title="6">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-6" x="4" y="6" width="25" height="12" rx="1"/></svg>
+                    </label>
+
+                    <input type="radio" name="simea" id="simea-7" value="7">
+                    <label for="simea-7" class="battery-option" title="7 — полна энергии">
+                        <svg viewBox="0 0 44 24" width="44" height="24" aria-hidden="true"><rect class="battery-body" x="1" y="3" width="36" height="18" rx="3"/><rect class="battery-terminal" x="39.5" y="8" width="4" height="8" rx="1"/><rect class="battery-charge bc-7" x="4" y="6" width="30" height="12" rx="1"/></svg>
+                    </label>
                 </div>
-            </div>
-
-            <div class="likert-scale-group">
-                <label>2. …я был(а) полон(на) энергии и решимости</label>
-                <div class="likert-center-scale">
-                    <span class="likert-center-label left">Абсолютно неверно</span>
-                    <input type="radio" name="vitality_2" id="vit2-1" value="1"><label for="vit2-1">1</label>
-                    <input type="radio" name="vitality_2" id="vit2-2" value="2"><label for="vit2-2">2</label>
-                    <input type="radio" name="vitality_2" id="vit2-3" value="3"><label for="vit2-3">3</label>
-                    <input type="radio" name="vitality_2" id="vit2-4" value="4"><label for="vit2-4">4</label>
-                    <input type="radio" name="vitality_2" id="vit2-5" value="5"><label for="vit2-5">5</label>
-                    <input type="radio" name="vitality_2" id="vit2-6" value="6"><label for="vit2-6">6</label>
-                    <input type="radio" name="vitality_2" id="vit2-7" value="7"><label for="vit2-7">7</label>
-                    <span class="likert-center-label right">Абсолютно верно</span>
-                </div>
-            </div>
-
-            <div class="likert-scale-group">
-                <label>3. …я чувствовал(а) себя заряженным(ной) энергией</label>
-                <div class="likert-center-scale">
-                    <span class="likert-center-label left">Абсолютно неверно</span>
-                    <input type="radio" name="vitality_3" id="vit3-1" value="1"><label for="vit3-1">1</label>
-                    <input type="radio" name="vitality_3" id="vit3-2" value="2"><label for="vit3-2">2</label>
-                    <input type="radio" name="vitality_3" id="vit3-3" value="3"><label for="vit3-3">3</label>
-                    <input type="radio" name="vitality_3" id="vit3-4" value="4"><label for="vit3-4">4</label>
-                    <input type="radio" name="vitality_3" id="vit3-5" value="5"><label for="vit3-5">5</label>
-                    <input type="radio" name="vitality_3" id="vit3-6" value="6"><label for="vit3-6">6</label>
-                    <input type="radio" name="vitality_3" id="vit3-7" value="7"><label for="vit3-7">7</label>
-                    <span class="likert-center-label right">Абсолютно верно</span>
+                <div class="battery-scale-anchors">
+                    <span class="likert-center-label left">Разряжена</span>
+                    <span class="likert-center-label right">Полна энергии</span>
                 </div>
             </div>
         </div>
@@ -204,10 +218,10 @@
              Шкала 1-5 и её подписи — по Осину (2012). -->
         <div class="card">
             <h2 style="font-size:1.1rem; margin-bottom:16px;">Ваши эмоции на неделе</h2>
-            <p style="margin-bottom:16px;">Прочитай каждое прилагательное и отметь, в какой мере ты чувствовал(а) себя так в течение прошедшей недели.<span class="required-star">*</span></p>
+            <p style="margin-bottom:16px;">Прочитай каждое прилагательное и отметь, в какой мере ты <span class="gender-adaptive" data-m="чувствовал" data-f="чувствовала">чувствовал(а)</span> себя так в течение прошедшей недели.<span class="required-star">*</span></p>
 
             <div class="likert-scale-group">
-                <label>1. подавленный</label>
+                <label>Подавленный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_na_5" id="panas-na5-1" value="1"><label for="panas-na5-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_na_5" id="panas-na5-2" value="2"><label for="panas-na5-2">Немного</label>
@@ -218,7 +232,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>2. радостный</label>
+                <label>Радостный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_pa_3" id="panas-pa3-1" value="1"><label for="panas-pa3-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_pa_3" id="panas-pa3-2" value="2"><label for="panas-pa3-2">Немного</label>
@@ -229,7 +243,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>3. расстроенный</label>
+                <label>Расстроенный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_na_2" id="panas-na2-1" value="1"><label for="panas-na2-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_na_2" id="panas-na2-2" value="2"><label for="panas-na2-2">Немного</label>
@@ -240,7 +254,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>4. испуганный</label>
+                <label>Испуганный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_na_4" id="panas-na4-1" value="1"><label for="panas-na4-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_na_4" id="panas-na4-2" value="2"><label for="panas-na4-2">Немного</label>
@@ -251,7 +265,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>5. сосредоточенный</label>
+                <label>Сосредоточенный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_pa_2" id="panas-pa2-1" value="1"><label for="panas-pa2-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_pa_2" id="panas-pa2-2" value="2"><label for="panas-pa2-2">Немного</label>
@@ -262,7 +276,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>6. вдохновленный</label>
+                <label>Вдохновленный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_pa_1" id="panas-pa1-1" value="1"><label for="panas-pa1-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_pa_1" id="panas-pa1-2" value="2"><label for="panas-pa1-2">Немного</label>
@@ -273,7 +287,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>7. нервный</label>
+                <label>Нервный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_na_3" id="panas-na3-1" value="1"><label for="panas-na3-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_na_3" id="panas-na3-2" value="2"><label for="panas-na3-2">Немного</label>
@@ -284,7 +298,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>8. решительный</label>
+                <label>Решительный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_pa_5" id="panas-pa5-1" value="1"><label for="panas-pa5-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_pa_5" id="panas-pa5-2" value="2"><label for="panas-pa5-2">Немного</label>
@@ -295,7 +309,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>9. тревожный</label>
+                <label>Тревожный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_na_1" id="panas-na1-1" value="1"><label for="panas-na1-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_na_1" id="panas-na1-2" value="2"><label for="panas-na1-2">Немного</label>
@@ -306,7 +320,7 @@
             </div>
 
             <div class="likert-scale-group">
-                <label>10. заинтересованный</label>
+                <label>Заинтересованный</label>
                 <div class="likert-horiz-scale">
                     <input type="radio" name="panas_pa_4" id="panas-pa4-1" value="1"><label for="panas-pa4-1">Почти или совсем нет</label>
                     <input type="radio" name="panas_pa_4" id="panas-pa4-2" value="2"><label for="panas-pa4-2">Немного</label>

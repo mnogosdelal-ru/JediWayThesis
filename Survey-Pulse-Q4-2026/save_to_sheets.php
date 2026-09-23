@@ -232,14 +232,12 @@ function ensureHeaders($token) {
         'tg_id',
         'week',
         'group_id',
+        'sex',
         'cubes_reactive',
         'cubes_proactive',
         'cubes_operational',
         'cubes_pool',
-        'vitality_1',
-        'vitality_2',
-        'vitality_3',
-        'vitality_score',
+        'simea',
         'panas_pa_1',
         'panas_pa_2',
         'panas_pa_3',
@@ -263,7 +261,7 @@ function ensureHeaders($token) {
         'device_type'
     ];
 
-    // Q4 2026: схема содержит 34 колонки — диапазон расширен до AZ1 (52 колонки)
+    // Q4 2026: схема содержит 32 колонки — диапазон расширен до AZ1 (52 колонки)
     $url = "https://sheets.googleapis.com/v4/spreadsheets/" . GOOGLE_SHEET_ID . "/values/" . GOOGLE_SHEET_RANGE . "!A1:AZ1";
 
     $context = stream_context_create([
@@ -354,14 +352,12 @@ function formatDataRow($data) {
         $data['tg_id'] ?? '',
         $data['week'] ?? '',
         $data['group_id'] ?? '',
+        $data['sex'] ?? '',
         $data['cubes_reactive'] ?? '',
         $data['cubes_proactive'] ?? '',
         $data['cubes_operational'] ?? '',
         $data['cubes_pool'] ?? '',
-        $data['vitality_1'] ?? '',
-        $data['vitality_2'] ?? '',
-        $data['vitality_3'] ?? '',
-        $data['vitality_score'] ?? '',
+        $data['simea'] ?? '',
         $data['panas_pa_1'] ?? '',
         $data['panas_pa_2'] ?? '',
         $data['panas_pa_3'] ?? '',

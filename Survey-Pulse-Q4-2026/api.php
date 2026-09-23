@@ -42,6 +42,8 @@ if ($stmt->fetch()) {
 $tgId = isset($_POST['tg_id']) && $_POST['tg_id'] !== '' ? $_POST['tg_id'] : null;
 $week = isset($_POST['week']) && $_POST['week'] !== '' ? $_POST['week'] : null;
 $groupId = isset($_POST['group_id']) && $_POST['group_id'] !== '' ? $_POST['group_id'] : null;
+// Пол участника: s=m (мальчики, по умолчанию) / s=f (девочки)
+$sex = isset($_POST['sex']) && $_POST['sex'] !== '' ? $_POST['sex'] : null;
 $reactive = (int)($_POST['cubes_reactive'] ?? 0);
 $proactive = (int)($_POST['cubes_proactive'] ?? 0);
 $operational = (int)($_POST['cubes_operational'] ?? 0);
@@ -51,11 +53,8 @@ $representative = isset($_POST['representative']) ? $_POST['representative'] : n
 $workLife = isset($_POST['work_life']) ? $_POST['work_life'] : null;
 $satisfaction = isset($_POST['satisfaction']) ? $_POST['satisfaction'] : null;
 
-// Subjective Vitality (3-item state-версия, Q4 2026)
-$vitality1 = isset($_POST['vitality_1']) && $_POST['vitality_1'] !== '' ? $_POST['vitality_1'] : null;
-$vitality2 = isset($_POST['vitality_2']) && $_POST['vitality_2'] !== '' ? $_POST['vitality_2'] : null;
-$vitality3 = isset($_POST['vitality_3']) && $_POST['vitality_3'] !== '' ? $_POST['vitality_3'] : null;
-$vitalityScore = isset($_POST['vitality_score']) && $_POST['vitality_score'] !== '' ? $_POST['vitality_score'] : null;
+// SIMEA: одно-пунктовая пиктограммная шкала энергии (Weigelt et al., 2022), 1-7
+$simea = isset($_POST['simea']) && $_POST['simea'] !== '' ? $_POST['simea'] : null;
 
 // Short PANAS (10-item, Q4 2026)
 $panasPa1 = isset($_POST['panas_pa_1']) && $_POST['panas_pa_1'] !== '' ? $_POST['panas_pa_1'] : null;
@@ -87,9 +86,9 @@ $device = preg_match('/Mobile|Android|iPhone|iPad/i', $ua) ? 'mobile' : 'desktop
 
 $stmt = $pdo->prepare("
     INSERT INTO pulse_responses_q4_2026 (
-        session_id, status, tg_id, week, group_id,
+        session_id, status, tg_id, week, group_id, sex,
         cubes_reactive, cubes_proactive, cubes_operational, cubes_pool,
-        vitality_1, vitality_2, vitality_3, vitality_score,
+        simea,
         panas_pa_1, panas_pa_2, panas_pa_3, panas_pa_4, panas_pa_5, positive_affect,
         panas_na_1, panas_na_2, panas_na_3, panas_na_4, panas_na_5, negative_affect,
         emotion_intensity, positivity_percent,
@@ -97,9 +96,9 @@ $stmt = $pdo->prepare("
         takeaway, comment, time_total,
         user_agent, ip_hash, device_type
     ) VALUES (
-        :sid, 'completed', :tg_id, :week, :group_id,
+        :sid, 'completed', :tg_id, :week, :group_id, :sex,
         :r, :g, :o, :p,
-        :vit1, :vit2, :vit3, :vitscore,
+        :simea,
         :pa1, :pa2, :pa3, :pa4, :pa5, :pa,
         :na1, :na2, :na3, :na4, :na5, :na,
         :ei, :pp,
@@ -111,9 +110,9 @@ $stmt = $pdo->prepare("
 
 $stmt->execute([
     ':sid' => $sessionId,
-    ':tg_id' => $tgId, ':week' => $week, ':group_id' => $groupId,
+    ':tg_id' => $tgId, ':week' => $week, ':group_id' => $groupId, ':sex' => $sex,
     ':r' => $reactive, ':g' => $proactive, ':o' => $operational, ':p' => $pool,
-    ':vit1' => $vitality1, ':vit2' => $vitality2, ':vit3' => $vitality3, ':vitscore' => $vitalityScore,
+    ':simea' => $simea,
     ':pa1' => $panasPa1, ':pa2' => $panasPa2, ':pa3' => $panasPa3, ':pa4' => $panasPa4, ':pa5' => $panasPa5, ':pa' => $positiveAffect,
     ':na1' => $panasNa1, ':na2' => $panasNa2, ':na3' => $panasNa3, ':na4' => $panasNa4, ':na5' => $panasNa5, ':na' => $negativeAffect,
     ':ei' => $emotionIntensity, ':pp' => $positivityPercent,
@@ -134,14 +133,12 @@ try {
         'tg_id' => $tgId,
         'week' => $week,
         'group_id' => $groupId,
+        'sex' => $sex,
         'cubes_reactive' => $reactive,
         'cubes_proactive' => $proactive,
         'cubes_operational' => $operational,
         'cubes_pool' => $pool,
-        'vitality_1' => $vitality1,
-        'vitality_2' => $vitality2,
-        'vitality_3' => $vitality3,
-        'vitality_score' => $vitalityScore,
+        'simea' => $simea,
         'panas_pa_1' => $panasPa1,
         'panas_pa_2' => $panasPa2,
         'panas_pa_3' => $panasPa3,

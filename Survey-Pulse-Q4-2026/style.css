@@ -427,3 +427,62 @@ h2, h3 { margin-top: 0; color: #2c3e50; }
 .btn-secondary:hover {
     background: #7f8c8d;
 }
+
+/* ── SIMEA: пиктограммная шкала энергии (батарейки 1–7) ──
+   Weigelt et al. (2022), DOI: 10.1080/1359432X.2022.2050218 */
+.battery-scale {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 0 4px;
+}
+.battery-scale input[type="radio"] {
+    display: none;
+}
+.battery-scale .battery-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 7px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.battery-scale .battery-option:hover {
+    background: rgba(52, 152, 219, 0.08);
+    border-color: rgba(52, 152, 219, 0.4);
+    transform: scale(1.05);
+}
+.battery-scale input[type="radio"]:checked + .battery-option {
+    border-color: var(--primary-color);
+    background: rgba(52, 152, 219, 0.12);
+    box-shadow: var(--shadow);
+}
+.battery-body {
+    fill: none;
+    stroke: var(--text-main);
+    stroke-width: 2;
+}
+.battery-terminal {
+    fill: var(--text-main);
+}
+.battery-charge {
+    fill: var(--color-proactive);
+}
+/* Цветовые ступени заряда — как в Figure 1 оригинальной работы
+   (Weigelt et al., 2022): уровень 1 — пустая батарейка (без заливки),
+   далее от красной через оранжевую и жёлтую к зелёной */
+.battery-charge.bc-2 { fill: #e74c3c; }  /* красная */
+.battery-charge.bc-3 { fill: #e67e22; }  /* оранжевая */
+.battery-charge.bc-4 { fill: #f39c12; }  /* оранжево-жёлтая */
+.battery-charge.bc-5 { fill: #f1c40f; }  /* жёлтая */
+.battery-charge.bc-6 { fill: #9bc53d; }  /* жёлто-зелёная */
+.battery-charge.bc-7 { fill: #27ae60; }  /* зелёная */
+.battery-scale-anchors {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+}

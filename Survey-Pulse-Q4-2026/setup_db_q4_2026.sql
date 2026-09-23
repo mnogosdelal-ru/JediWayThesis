@@ -1,6 +1,7 @@
 -- Таблица для пульс-опросов Q4 2026
 -- Расширяет схему Q3 2026 (pulse_responses_q3_2026) блоками:
---   * Subjective Vitality — 3-item state-версия (recall: прошедшая неделя, шкала 1-7)
+--   * SIMEA — одно-пунктовая пиктограммная шкала энергии: 7 батареек, 1-7
+--     (Weigelt et al., 2022, DOI: 10.1080/1359432X.2022.2050218)
 --   * Short PANAS — 10-item (Mackinnon et al., 1999; шкала 1-5)
 -- Существующие поля кубиков и weekly satisfaction не изменены.
 CREATE TABLE IF NOT EXISTS pulse_responses_q4_2026 (
@@ -10,6 +11,7 @@ CREATE TABLE IF NOT EXISTS pulse_responses_q4_2026 (
     tg_id VARCHAR(64) DEFAULT NULL,
     week VARCHAR(32) DEFAULT NULL,
     group_id VARCHAR(64) DEFAULT NULL,
+    sex ENUM('m','f') DEFAULT NULL,          -- пол: m (мальчики, по умолчанию) / f (девочки); из URL-параметра s
     
     -- Кубики (без изменений)
     cubes_reactive INT DEFAULT 0,
@@ -17,11 +19,10 @@ CREATE TABLE IF NOT EXISTS pulse_responses_q4_2026 (
     cubes_operational INT DEFAULT 0,
     cubes_pool INT DEFAULT 0,
     
-    -- Subjective Vitality (3-item state-версия, шкала 1-7)
-    vitality_1 TINYINT DEFAULT NULL,
-    vitality_2 TINYINT DEFAULT NULL,
-    vitality_3 TINYINT DEFAULT NULL,
-    vitality_score DECIMAL(4,3) DEFAULT NULL,   -- mean(vitality_1, vitality_2, vitality_3)
+    -- SIMEA: пиктограммная шкала энергетической активации
+    -- (Weigelt et al., 2022, DOI: 10.1080/1359432X.2022.2050218):
+    -- 7 батареек от разряженной (1) до полностью заряженной (7)
+    simea TINYINT DEFAULT NULL,
     
     -- Short PANAS: Positive Affect (шкала 1-5)
     panas_pa_1 TINYINT DEFAULT NULL,
