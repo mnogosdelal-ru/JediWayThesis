@@ -286,7 +286,7 @@ def run_stability_analysis():
     
     sns.barplot(data=df_plot, x='Stability', y='Label_Wrapped', hue='Stability', palette='viridis', legend=False)
     plt.axvline(CORE_THRESHOLD, color='red', linestyle='--', label=f'{CORE_THRESHOLD}% Threshold')
-    plt.title(f"Stability Selection: Частота попадания в список значимых практик (p < {P_VALUE_THRESHOLD}, {TARGET_SCALE})")
+    plt.title(f"Stability Selection: Частота попадания в список значимых практик\n(p < {P_VALUE_THRESHOLD}, целевая шкала: {TARGET_SCALE})")
     plt.xlabel("Stability Score (%)")
     plt.ylabel("Практика")
     plt.tight_layout()
